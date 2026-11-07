@@ -8,7 +8,6 @@ import { AppText as Text } from "./ui/AppText";
 import { FabWordmark } from "./FabWordmark";
 import { IPAD_HOME_TITLE_OFFSET } from "../lib/layoutMetrics";
 import { resolveMobileStageLabel } from "../lib/mobileBranding";
-import { useAndroidControlSizing } from "./ui/useAndroidControlSizing";
 
 const BRAND_MAX_FONT_SCALE = 1.4;
 
@@ -27,7 +26,6 @@ export function CompactBrandTitle(
 ) {
   const stageLabel = resolveMobileStageLabel(Constants.expoConfig?.extra?.appVariant);
   const titleOffset = brandTitleOffset();
-  const { scale } = useAndroidControlSizing();
   const [availableWidth, setAvailableWidth] = useState<number | null>(null);
   // Measured only while the badge shows, so hiding it does not make it look like it fits.
   const [fullWidth, setFullWidth] = useState<number | null>(null);
@@ -44,36 +42,25 @@ export function CompactBrandTitle(
       accessible
       role="heading"
       className="flex-row items-center gap-1.5"
-      style={[
-        { marginLeft: titleOffset },
-        Platform.OS === "android" && { gap: 5.25 * scale },
-        props.fit && { flexShrink: 0 },
-      ]}
+      style={[{ marginLeft: titleOffset }, props.fit && { flexShrink: 0 }]}
     >
-      <FabWordmark colorClassName="accent-icon" height={Math.round(15 * scale)} />
+      <FabWordmark colorClassName="accent-icon" height={15} />
       {/* A logo beside a fixed-size wordmark: it may grow with Dynamic Type, not crowd the bar. */}
       <Text
         allowFontScaling={props.allowFontScaling}
         maxFontSizeMultiplier={BRAND_MAX_FONT_SCALE}
         className="font-fab-medium text-foreground-muted"
-        style={{ fontSize: 21 * scale, letterSpacing: -0.5 * scale }}
+        style={{ fontSize: 21, letterSpacing: -0.5 }}
       >
         Code
       </Text>
       {showStage ? (
-        <View
-          className="rounded-full bg-subtle px-1.5 py-0.5"
-          style={
-            Platform.OS === "android"
-              ? { paddingHorizontal: 5.25 * scale, paddingVertical: 1.75 * scale }
-              : undefined
-          }
-        >
+        <View className="rounded-full bg-subtle px-1.5 py-0.5">
           <Text
             allowFontScaling={props.allowFontScaling}
             maxFontSizeMultiplier={BRAND_MAX_FONT_SCALE}
             className="font-fab-bold text-foreground-muted uppercase"
-            style={{ fontSize: 9 * scale, letterSpacing: 0.9 * scale }}
+            style={{ fontSize: 9, letterSpacing: 0.9 }}
           >
             {stageLabel}
           </Text>

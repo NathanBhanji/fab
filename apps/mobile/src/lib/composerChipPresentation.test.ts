@@ -63,7 +63,7 @@ function chipSurfaces(theme: MobileThemeVariables) {
   }));
 }
 
-const BUILT_IN_THEMES = MOBILE_THEME_IDS.filter((id) => id !== "material-you").flatMap((id) =>
+const BUILT_IN_THEMES = MOBILE_THEME_IDS.flatMap((id) =>
   (["light", "dark"] as const).map((appearance) => ({
     name: `${id} ${appearance}`,
     theme: getMobileThemeVariables(id, appearance),
@@ -86,7 +86,7 @@ describe("contextChipAccent", () => {
     }
   });
 
-  it("reads on both a saturated Material You bubble and the light canvas beside it", () => {
+  it("reads on both a saturated bubble and the light canvas beside it", () => {
     const theme = {
       ...getMobileThemeVariables("fab", "light"),
       "--color-user-bubble": "#6750a4",

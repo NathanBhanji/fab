@@ -144,9 +144,9 @@ function WorkLogIcon(props: {
         props.icon === "pull-request"
           ? PullRequestGlyph.pullRequest
           : props.icon === "browser"
-            ? { ios: "globe", android: "public" }
+            ? { ios: "globe" }
             : props.icon === "device"
-              ? { ios: "iphone", android: "smartphone" }
+              ? { ios: "iphone" }
               : props.icon
       }
       size={14}
@@ -384,41 +384,41 @@ export function ShimmeringWorkContent(props: {
 function workRowSymbolName(icon: ThreadFeedActivity["icon"]): WorkContentIcon {
   switch (icon) {
     case "agent":
-      return { ios: "sparkles", android: "auto_awesome" };
+      return { ios: "sparkles" };
     case "alert":
-      return { ios: "exclamationmark.triangle", android: "error" };
+      return { ios: "exclamationmark.triangle" };
     case "browser":
-      return { ios: "safari", android: "public" };
+      return { ios: "safari" };
     case "check":
-      return { ios: "checkmark", android: "check" };
+      return { ios: "checkmark" };
     case "command":
-      return { ios: "terminal", android: "terminal" };
+      return { ios: "terminal" };
     case "computer":
       return "computer";
     case "code":
       return "chevron.left.forwardslash.chevron.right";
     case "edit":
-      return { ios: "square.and.pencil", android: "edit" };
+      return { ios: "square.and.pencil" };
     case "eye":
-      return { ios: "eye", android: "visibility" };
+      return { ios: "eye" };
     case "globe":
-      return { ios: "globe", android: "public" };
+      return { ios: "globe" };
     case "search":
       return "magnifyingglass";
     case "stop":
       return "stop.fill";
     case "hammer":
-      return { ios: "hammer", android: "construction" };
+      return { ios: "hammer" };
     case "lock":
-      return { ios: "lock", android: "lock" };
+      return { ios: "lock" };
     case "message":
-      return { ios: "bubble.left", android: "chat_bubble" };
+      return { ios: "bubble.left" };
     case "warning":
-      return { ios: "xmark", android: "close" };
+      return { ios: "xmark" };
     case "wrench":
-      return { ios: "wrench", android: "build" };
+      return { ios: "wrench" };
     case "zap":
-      return { ios: "bolt", android: "bolt" };
+      return { ios: "bolt" };
   }
 }
 
@@ -1560,31 +1560,31 @@ function toolGroupSummarySymbolName(kind: ToolGroupSummaryKind): AppSymbolName {
     case "unwatch-pr":
       return PullRequestGlyph.pullRequest;
     case "read":
-      return { ios: "eye", android: "visibility" };
+      return { ios: "eye" };
     case "edit":
-      return { ios: "square.and.pencil", android: "edit" };
+      return { ios: "square.and.pencil" };
     case "thread-create":
-      return { ios: "bubble.left", android: "chat" };
+      return { ios: "bubble.left" };
     case "command":
-      return { ios: "terminal", android: "terminal" };
+      return { ios: "terminal" };
     case "device":
-      return { ios: "iphone", android: "smartphone" };
+      return { ios: "iphone" };
     case "browser":
     case "search":
-      return { ios: "globe", android: "public" };
+      return { ios: "globe" };
     case "code-search":
       return "magnifyingglass";
     case "other":
-      return { ios: "wrench", android: "build" };
+      return { ios: "wrench" };
     case "reasoning":
-      return { ios: "brain", android: "psychology" };
+      return { ios: "brain" };
     case "agent-tool":
-      return { ios: "sparkles", android: "auto_awesome" };
+      return { ios: "sparkles" };
     case "tone-tool":
-      return { ios: "bolt", android: "bolt" };
+      return { ios: "bolt" };
     case "dynamic-tool":
     case "update":
     case "mixed":
-      return { ios: "hammer", android: "construction" };
+      return { ios: "hammer" };
   }
 }

@@ -27,7 +27,7 @@ Linux, so export it there and restart the app.
 
 ## Mobile app crash reports
 
-When the iOS or Android app crashes or hits an error, it sends a report to Fab: the error
+When the iPhone app crashes or hits an error, it sends a report to Fab: the error
 message, the stack trace, the app version, and the device model and OS version. Each launch also
 sends startup timings, and every report carries a random ID for the install. Reports go through
 the Fab Connect relay to Axiom. They do not include your threads, prompts, or connection details,

@@ -53,7 +53,6 @@ import IconDeviceLaptop from "@tabler/icons-react-native/IconDeviceLaptop";
 import IconDeviceMobile from "@tabler/icons-react-native/IconDeviceMobile";
 import IconDots from "@tabler/icons-react-native/IconDots";
 import IconPlusMinus from "@tabler/icons-react-native/IconPlusMinus";
-import IconDotsVertical from "@tabler/icons-react-native/IconDotsVertical";
 import IconDotsCircleHorizontal from "@tabler/icons-react-native/IconDotsCircleHorizontal";
 import IconEdit from "@tabler/icons-react-native/IconEdit";
 import IconExternalLink from "@tabler/icons-react-native/IconExternalLink";
@@ -64,7 +63,6 @@ import IconFileDiff from "@tabler/icons-react-native/IconFileDiff";
 import IconFilter from "@tabler/icons-react-native/IconFilter";
 import IconFilterFilled from "@tabler/icons-react-native/IconFilterFilled";
 import IconFolder from "@tabler/icons-react-native/IconFolder";
-import IconFolderOpen from "@tabler/icons-react-native/IconFolderOpen";
 import IconHeadphones from "@tabler/icons-react-native/IconHeadphones";
 import IconFolderPlus from "@tabler/icons-react-native/IconFolderPlus";
 import IconGitPullRequestClosed from "@tabler/icons-react-native/IconGitPullRequestClosed";
@@ -77,8 +75,6 @@ import IconHammer from "@tabler/icons-react-native/IconHammer";
 import IconHome from "@tabler/icons-react-native/IconHome";
 import IconInfoCircle from "@tabler/icons-react-native/IconInfoCircle";
 import IconKeyboard from "@tabler/icons-react-native/IconKeyboard";
-import IconKeyboardHide from "@tabler/icons-react-native/IconKeyboardHide";
-import IconLock from "@tabler/icons-react-native/IconLock";
 import IconLayoutColumns from "@tabler/icons-react-native/IconLayoutColumns";
 import IconLayoutSidebar from "@tabler/icons-react-native/IconLayoutSidebar";
 import IconLayoutSidebarRight from "@tabler/icons-react-native/IconLayoutSidebarRight";
@@ -120,7 +116,6 @@ import IconTarget from "@tabler/icons-react-native/IconTarget";
 import IconTerminal2 from "@tabler/icons-react-native/IconTerminal2";
 import IconTextDecrease from "@tabler/icons-react-native/IconTextDecrease";
 import IconTextIncrease from "@tabler/icons-react-native/IconTextIncrease";
-import IconTool from "@tabler/icons-react-native/IconTool";
 import IconTrash from "@tabler/icons-react-native/IconTrash";
 import IconTypography from "@tabler/icons-react-native/IconTypography";
 import IconUpload from "@tabler/icons-react-native/IconUpload";
@@ -134,10 +129,10 @@ import IconWifi from "@tabler/icons-react-native/IconWifi";
 import IconWifiOff from "@tabler/icons-react-native/IconWifiOff";
 import IconWorld from "@tabler/icons-react-native/IconWorld";
 import IconX from "@tabler/icons-react-native/IconX";
-import type { AndroidSymbol, SFSymbol, SymbolViewProps } from "expo-symbols";
+import type { SFSymbol, SymbolViewProps } from "expo-symbols";
 import { withUniwind } from "uniwind";
 
-const ANDROID_ICON_BY_SF_SYMBOL = {
+const ICON_BY_SF_SYMBOL = {
   plusminus: IconPlusMinus,
   "git.pull-request.closed": IconGitPullRequestClosed,
   "git.pull-request.draft": IconGitPullRequestDraft,
@@ -294,65 +289,31 @@ const SF_ICON_LOOKUP: Partial<
     SFSymbol | "git.pull-request.closed" | "git.pull-request.draft" | "git.commit" | "file.diff",
     Icon
   >
-> = ANDROID_ICON_BY_SF_SYMBOL;
-
-const ANDROID_ICON_BY_MATERIAL_NAME = {
-  auto_awesome: IconSparkles,
-  bolt: IconBolt,
-  build: IconTool,
-  chat: IconMessage,
-  chat_bubble: IconMessage,
-  check: IconCheck,
-  close: IconX,
-  construction: IconHammer,
-  content_copy: IconCopy,
-  desktop_windows: IconDeviceDesktop,
-  edit: IconEdit,
-  error: IconAlertCircle,
-  folder: IconFolder,
-  folder_open: IconFolderOpen,
-  keyboard: IconKeyboard,
-  keyboard_arrow_down: IconChevronDown,
-  keyboard_arrow_up: IconChevronUp,
-  keyboard_hide: IconKeyboardHide,
-  lock: IconLock,
-  more_vert: IconDotsVertical,
-  merge: IconGitMerge,
-  psychology: IconBrain,
-  public: IconWorld,
-  remove: IconMinus,
-  smartphone: IconDeviceMobile,
-  terminal: IconTerminal2,
-  visibility: IconEye,
-} satisfies Partial<Record<AndroidSymbol, Icon>>;
+> = ICON_BY_SF_SYMBOL;
 
 export type { SFSymbol } from "expo-symbols";
 export type AppSymbolName =
-  | keyof typeof ANDROID_ICON_BY_SF_SYMBOL
+  | keyof typeof ICON_BY_SF_SYMBOL
   | {
       ios: SFSymbol;
-      android: keyof typeof ANDROID_ICON_BY_MATERIAL_NAME;
     };
 
 export type AppSymbolViewProps = Omit<SymbolViewProps, "name"> & { name: AppSymbolName };
 
 export function isAppSymbolName(name: string): name is Extract<AppSymbolName, string> {
-  return Object.prototype.hasOwnProperty.call(ANDROID_ICON_BY_SF_SYMBOL, name);
+  return Object.prototype.hasOwnProperty.call(ICON_BY_SF_SYMBOL, name);
 }
 
 function AppSymbolView(props: AppSymbolViewProps) {
-  const materialName = typeof props.name === "string" ? undefined : props.name.android;
   const sfSymbol = typeof props.name === "string" ? props.name : props.name.ios;
-  const AndroidIcon =
-    (materialName ? ANDROID_ICON_BY_MATERIAL_NAME[materialName] : undefined) ??
-    (sfSymbol ? SF_ICON_LOOKUP[sfSymbol] : undefined);
+  const TablerIcon = SF_ICON_LOOKUP[sfSymbol];
 
-  if (!AndroidIcon) {
+  if (!TablerIcon) {
     return props.fallback ?? null;
   }
 
   return (
-    <AndroidIcon
+    <TablerIcon
       accessibilityLabel={props.accessibilityLabel}
       color={props.tintColor}
       size={props.size}

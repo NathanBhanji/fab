@@ -55,7 +55,7 @@ const ACCESS_CHOICES: ReadonlyArray<{
 const accessLabel = (access: AuthMcpClientAccess) =>
   ACCESS_CHOICES.find((choice) => choice.access === access)?.label ?? access;
 
-const LINK_SYMBOL: AppSymbolName = { ios: "link", android: "desktop_windows" };
+const LINK_SYMBOL: AppSymbolName = { ios: "link" };
 
 /** The machine list's row for linking by an address typed in. */
 const ANOTHER_ADDRESS = "another-address";

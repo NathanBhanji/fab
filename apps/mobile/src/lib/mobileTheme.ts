@@ -5,16 +5,15 @@ import {
   FAB_DARK_THEME_COLORS,
   getThemeColorsForAppearance,
   MOBILE_DEFAULT_THEME_ID,
-  MOBILE_THEME_IDS as SHARED_MOBILE_THEME_IDS,
-  type MobileThemeId as SharedMobileThemeId,
+  MOBILE_THEME_IDS,
+  type MobileThemeId,
   type ThemeAppearance,
   type ThemeColors,
 } from "@fab/shared/themePalettes";
 import { STANDARD_THEME_PREVIEW_COLORS, type ThemePreviewColors } from "@fab/shared/themePreview";
 
 export const DEFAULT_MOBILE_THEME_ID = MOBILE_DEFAULT_THEME_ID;
-export const MOBILE_THEME_IDS = [...SHARED_MOBILE_THEME_IDS, "material-you"] as const;
-export type MobileThemeId = SharedMobileThemeId | "material-you";
+export { MOBILE_THEME_IDS, type MobileThemeId };
 export type MobileThemeAppearance = ThemeAppearance;
 export type MobileThemeMode = MobileThemeAppearance | "system";
 export type MobileThemeIds = Readonly<Record<MobileThemeAppearance, MobileThemeId>>;
@@ -24,7 +23,6 @@ export const MOBILE_THEME_OPTIONS: ReadonlyArray<{
   readonly label: string;
 }> = [
   { id: DEFAULT_MOBILE_THEME_ID, label: "Fab" },
-  { id: "material-you", label: "Material You" },
   ...BUILT_IN_THEMES.map((theme) => ({ id: theme.id as MobileThemeId, label: theme.label })),
 ];
 
@@ -446,7 +444,7 @@ export function createMobileThemeVariables(
 }
 
 export function getMobileThemeColors(
-  themeId: SharedMobileThemeId,
+  themeId: MobileThemeId,
   appearance: MobileThemeAppearance,
 ): ThemeColors {
   if (themeId === DEFAULT_MOBILE_THEME_ID) {
@@ -457,7 +455,7 @@ export function getMobileThemeColors(
 }
 
 export function getMobileThemeVariables(
-  themeId: SharedMobileThemeId,
+  themeId: MobileThemeId,
   appearance: MobileThemeAppearance,
   overrides: Partial<MobileThemeVariables> | null = null,
 ): MobileThemeVariables {
@@ -503,8 +501,7 @@ export function getMobileThemePreviewColors(
   themeId: MobileThemeId,
   appearance: MobileThemeAppearance,
 ): ThemePreviewColors {
-  if (themeId === DEFAULT_MOBILE_THEME_ID || themeId === "material-you")
-    return STANDARD_THEME_PREVIEW_COLORS[appearance];
+  if (themeId === DEFAULT_MOBILE_THEME_ID) return STANDARD_THEME_PREVIEW_COLORS[appearance];
   const theme = BUILT_IN_THEMES.find((candidate) => candidate.id === themeId) ?? T3_CHAT_THEME;
   const colors = getThemeColorsForAppearance(theme, appearance) ?? theme.colors;
   return {

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { I18nManager, Platform, Pressable, View } from "react-native";
+import { I18nManager, Pressable, View } from "react-native";
 import Animated, { useAnimatedStyle, useReducedMotion, withTiming } from "react-native-reanimated";
 
 import { segmentedControlColors } from "./segmentedControlColors";
@@ -27,10 +27,9 @@ export function SegmentedControl<Value extends string | number>(
     colors,
     colorScheme,
     props.variant,
-    Platform.OS,
     themeId,
   );
-  const minHeight = props.size === "compact" ? 32 : Platform.OS === "android" ? 40 : 36;
+  const minHeight = props.size === "compact" ? 32 : 36;
 
   return (
     <View collapsable={false} className={props.className}>

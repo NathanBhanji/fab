@@ -10,7 +10,7 @@ import {
   type HtmlRenderTheme,
 } from "@fab/shared/htmlRender";
 import { useEffect, useRef, useState } from "react";
-import { Platform, Pressable, View, type ColorValue } from "react-native";
+import { Pressable, View, type ColorValue } from "react-native";
 import { WebView, type WebViewMessageEvent } from "react-native-webview";
 
 import { SymbolView } from "../../components/ui/AppSymbol";
@@ -28,14 +28,11 @@ export function htmlRenderRowHeight(frameHeight: number) {
 }
 
 function useHtmlRenderTheme() {
-  const { themeId, themeAppearance, themeVariables, systemColorsActive } =
-    useAppearancePreferences();
+  const { themeId, themeAppearance, themeVariables } = useAppearancePreferences();
   return mobileHtmlRenderTheme({
     themeId,
     appearance: themeAppearance,
     variables: themeVariables,
-    systemColors: systemColorsActive,
-    platform: Platform.OS,
   });
 }
 

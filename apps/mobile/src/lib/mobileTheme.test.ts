@@ -18,7 +18,6 @@ import {
   createMobileThemeSelectionPatch,
   createMobileThemeVariables,
   DEFAULT_MOBILE_THEME_ID,
-  flattenThemeColor,
   getMobileThemeVariables,
   resolveMobileThemeIds,
   themeColorWithAlpha,
@@ -144,61 +143,35 @@ describe("mobile themes", () => {
     }
   });
 
-  it.each(MOBILE_THEME_IDS)("keeps %s sidebar text readable on Android", (themeId) => {
-    for (const appearance of ["light", "dark"] as const) {
-      const variables = getMobileThemeRuntimeVariables(themeId, appearance, "android");
-      for (const foreground of [
-        "--color-drawer-foreground",
-        "--color-drawer-foreground-muted",
-      ] as const) {
-        expect(
-          contrastRatio(variables[foreground], variables["--color-drawer"]),
-          `${appearance}: ${foreground}`,
-        ).toBeGreaterThanOrEqual(4.5);
-      }
-    }
-  });
-
   it.each(MOBILE_THEME_IDS)("separates %s filled groups from their sheets", (themeId) => {
     for (const appearance of ["light", "dark"] as const) {
       const generated = readGeneratedMobileThemeVariables(
         themeId === DEFAULT_MOBILE_THEME_ID ? appearance : `${themeId}-${appearance}`,
       );
       expect(generated).toEqual(getMobileThemeVariables(themeId, appearance));
-      for (const platform of ["ios", "android"]) {
-        const variables = getMobileThemeRuntimeVariables(themeId, appearance, platform);
-        const sheet = variables["--color-sheet-solid"];
-        const group = variables["--color-grouped-card"];
+      const variables = getMobileThemeRuntimeVariables(themeId, appearance, "ios");
+      const sheet = variables["--color-sheet-solid"];
+      const group = variables["--color-grouped-card"];
+      expect(
+        contrastRatio(group, sheet),
+        `${appearance}: grouped surface on sheet`,
+      ).toBeGreaterThanOrEqual(1.025);
+      for (const role of [
+        "--color-foreground",
+        "--color-foreground-secondary",
+        "--color-foreground-muted",
+        "--color-placeholder",
+        "--color-primary-text",
+      ] as const) {
         expect(
-          contrastRatio(group, sheet),
-          `${platform} ${appearance}: grouped surface on sheet`,
-        ).toBeGreaterThanOrEqual(1.025);
-        for (const role of [
-          "--color-foreground",
-          "--color-foreground-secondary",
-          "--color-foreground-muted",
-          "--color-placeholder",
-          "--color-primary-text",
-        ] as const) {
-          expect(
-            contrastRatio(variables[role], group),
-            `${platform} ${appearance}: ${role} on grouped surface`,
-          ).toBeGreaterThanOrEqual(4.5);
-        }
-        if (platform === "android") {
-          const header = flattenThemeColor(variables["--color-header"], sheet);
-          for (const role of ["--color-header-foreground", "--color-foreground-muted"] as const) {
-            expect(
-              contrastRatio(variables[role], header),
-              `${appearance}: ${role} on Android header`,
-            ).toBeGreaterThanOrEqual(4.5);
-          }
-        }
-        expect(
-          contrastRatio(variables["--color-foreground-muted"], variables["--color-secondary"]),
-          `${platform} ${appearance}: muted label on secondary surface`,
+          contrastRatio(variables[role], group),
+          `${appearance}: ${role} on grouped surface`,
         ).toBeGreaterThanOrEqual(4.5);
       }
+      expect(
+        contrastRatio(variables["--color-foreground-muted"], variables["--color-secondary"]),
+        `${appearance}: muted label on secondary surface`,
+      ).toBeGreaterThanOrEqual(4.5);
     }
   });
 

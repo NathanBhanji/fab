@@ -1,5 +1,4 @@
 import {
-  Platform,
   Text as RNText,
   TextInput as RNTextInput,
   type TextInputInstance,
@@ -24,7 +23,6 @@ export function AppText({ className, textRole, ...props }: AppTextProps) {
         textRole && MOBILE_TEXT_CLASSES[textRole],
         className,
       )}
-      selectionColorClassName={Platform.OS === "android" ? "accent-focus/32" : undefined}
       {...props}
     />
   );
@@ -46,7 +44,6 @@ export function AppTextInput({ className, ref, ...props }: AppTextInputProps) {
       placeholderTextColorClassName="accent-placeholder"
       selectionColorClassName={"accent-focus/32"}
       cursorColorClassName={"accent-focus"}
-      selectionHandleColorClassName={Platform.OS === "android" ? "accent-focus" : undefined}
       {...props}
     />
   );

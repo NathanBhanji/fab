@@ -25,7 +25,7 @@ import { AsyncResult } from "effect/reactivity";
 import Constants from "expo-constants";
 import { useNavigation } from "@react-navigation/native";
 import { useEffect, useEffectEvent, useRef, useState } from "react";
-import { Platform, View } from "react-native";
+import { View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { WebView, type WebViewMessageEvent } from "react-native-webview";
 
@@ -133,14 +133,11 @@ export function ThreadMcpApp(props: {
   const [closed, setClosed] = useState(false);
   const [presentedFullscreen, setPresentedFullscreen] = useState(false);
 
-  const { themeId, themeAppearance, themeVariables, systemColorsActive } =
-    useAppearancePreferences();
+  const { themeId, themeAppearance, themeVariables } = useAppearancePreferences();
   const theme = mobileHtmlRenderTheme({
     themeId,
     appearance: themeAppearance,
     variables: themeVariables,
-    systemColors: systemColorsActive,
-    platform: Platform.OS,
   });
   const resource = {
     _tag: "attachment" as const,

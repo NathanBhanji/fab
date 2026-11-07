@@ -25,7 +25,6 @@ function LoadedMediaVideo(props: {
   readonly onPlaybackStart?: () => void;
 }) {
   const [attempt, setAttempt] = useState(0);
-  // Expo's Android player also reports completed playback as idle.
   const [loadState, setLoadState] = useState<"pending" | "complete" | "error">("pending");
   const player = useVideoPlayer(null, (player) => {
     player.staysActiveInBackground = false;
@@ -198,7 +197,7 @@ function MediaVideoPlayerContent(props: MediaVideoPlayerProps) {
           onPlaybackStart={props.onPlaybackStart}
         />
       ) : (
-        <MediaActionsMenu media={mediaActions} inModal={props.expanded} style={{ flex: 1 }}>
+        <MediaActionsMenu media={mediaActions} style={{ flex: 1 }}>
           <Pressable
             accessibilityRole="button"
             accessibilityLabel={`Play ${props.name}`}

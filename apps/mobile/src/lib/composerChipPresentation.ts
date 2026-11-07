@@ -54,7 +54,7 @@ const readableChipAccents = new Map<string, string>();
 /**
  * A chip keeps one color per theme so it looks the same in a message, a reply and the composer,
  * which means it must read on all of them; the user bubble is usually the hardest. A surface
- * whose text is the opposite shade, like Material You's primary-colored light bubble, can't share
+ * whose text is the opposite shade, like a primary-colored light bubble, can't share
  * a color with the canvas, so chips are matched only against surfaces like the one they sit on.
  */
 export function contextChipAccent(

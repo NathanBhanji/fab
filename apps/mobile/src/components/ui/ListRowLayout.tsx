@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { Platform, useWindowDimensions, View } from "react-native";
+import { useWindowDimensions, View } from "react-native";
 
 import { cn } from "../../lib/cn";
 import { AppText } from "./AppText";
@@ -36,7 +36,7 @@ export function ListRowLayout({
         <View className="size-6 items-center justify-center">
           <SymbolView
             name={icon}
-            size={Platform.OS === "android" ? 24 : 22}
+            size={22}
             tintColorClassName={tone === "danger" ? "accent-danger-foreground" : "accent-icon"}
             type="monochrome"
             weight="regular"

@@ -28,7 +28,7 @@ function ImagePreviewHeader(header: { readonly imageIndex: number }) {
         <AppText className="flex-1 text-base text-white" numberOfLines={2}>
           {source.name ?? "Image"}
         </AppText>
-        <MediaActionsMenu media={mediaActions} inModal />
+        <MediaActionsMenu media={mediaActions} />
         <Pressable
           accessibilityRole="button"
           accessibilityLabel="Close image"

@@ -11,7 +11,7 @@ import {
   markdownWithInlineFileLinks,
   markdownWithTableBreaks,
 } from "../lib/markdownDocument";
-import { isValidElement, useMemo, useState, type ReactNode } from "react";
+import { isValidElement, useMemo, useState } from "react";
 import { Platform, Share, StyleSheet, useWindowDimensions, View } from "react-native";
 import {
   EnrichedMarkdownText,
@@ -22,7 +22,6 @@ import {
 import type { SelectableMarkdownTextProps } from "./SelectableMarkdownText.types";
 
 import { useAppearancePreferences } from "../features/settings/appearance/AppearancePreferencesProvider";
-import { Menu } from "../components/ui/Menu";
 import { useEnrichedLinkVariants } from "./useEnrichedLinkVariants";
 import { useRetryingImageSource } from "./useRetryingImageSource";
 import { copyTextWithHaptic } from "../lib/copyTextWithHaptic";
@@ -202,10 +201,6 @@ export function MobileEnrichedMarkdownText(props: SelectableMarkdownTextProps) {
     : parsedLinkUrls;
   const { linkVariants, linkPillContent } = useEnrichedLinkVariants(linkUrls, props, fileHrefs);
   const linkRecognition = useMemo(() => ({ text: skillRegex ?? undefined }), [skillRegex]);
-  const [activeMenu, setActiveMenu] = useState<{
-    url: string;
-    menu: NonNullable<ReturnType<NonNullable<typeof props.fileContextMenu>>>;
-  } | null>(null);
   const { fileContextMenu, onFileContextMenuAction } = props;
   const onLinkPress = (url: string) =>
     (fileHrefs.has(url) ? (props.onImagePress ?? props.onLinkPress) : props.onLinkPress)?.(url);
@@ -287,95 +282,48 @@ export function MobileEnrichedMarkdownText(props: SelectableMarkdownTextProps) {
       }
     : undefined;
   const resolveNativeImageSource = useRetryingImageSource(resolveImageSource);
-  const renderMarkdown = (openAndroidMenu?: () => void) => {
-    const onLinkLongPress =
-      Platform.OS === "android" && props.fileContextMenu
-        ? ({ url }: { url: string }) => {
-            const menu = props.fileContextMenu?.(url) ?? {
-              title: url,
-              actions: [
-                { id: "enriched-open-link", title: "Open link" },
-                { id: "enriched-copy-link", title: "Copy link" },
-              ],
-            };
-            setActiveMenu({ url, menu });
-            openAndroidMenu?.();
-          }
-        : undefined;
-
-    return (
-      <View
-        style={{
-          flexShrink: 1,
-          minWidth: 0,
-          marginTop: props.marginTop,
-          marginBottom: props.marginBottom,
-        }}
-      >
-        <EnrichedMarkdownText
-          markdown={markdown}
-          markdownStyle={markdownStyle}
-          writingDirection={props.writingDirection}
-          onLinksChange={onLinksChange}
-          renderers={renderers}
-          resolveImageSource={resolveNativeImageSource}
-          onImagePress={
-            props.onImagePress || props.onLinkPress
-              ? ({ url }) => (props.onImagePress ?? props.onLinkPress)?.(url)
-              : undefined
-          }
-          linkRecognition={linkRecognition}
-          containerStyle={{ flexShrink: 1, minWidth: 0 }}
-          flavor="github"
-          selectable
-          selectionClipboard={selectionClipboard}
-          selectionColor={props.textStyle.selectionColor}
-          selectionHandleColor={props.textStyle.selectionHandleColor}
-          md4cFlags={{
-            latexMath: mathRenderingEnabled,
-            hardSoftBreaks: props.preserveSoftBreaks ?? false,
-            admonitions: true,
-          }}
-          enableTaskListItemToggle={false}
-          enableCodeBlockWrapToggle
-          spoilerOverlay="solid"
-          onLinkPress={
-            props.onLinkPress || props.onImagePress ? ({ url }) => onLinkPress(url) : undefined
-          }
-          onLinkLongPress={onLinkLongPress}
-          linkContextMenuItems={linkContextMenuItems}
-          linkPillContent={linkPillContent}
-        />
-      </View>
-    );
-  };
-
-  return Platform.OS === "android" && props.fileContextMenu ? (
-    <Menu
-      shouldOpenOnLongPress
-      title={activeMenu?.menu.title}
-      actions={
-        activeMenu?.menu.actions.map((action) => ({
-          id: action.id,
-          title: action.title,
-          attributes: { disabled: action.disabled },
-        })) ?? []
-      }
-      onPressAction={({ nativeEvent }) => {
-        if (activeMenu) performMenuAction(activeMenu.url, nativeEvent.event);
+  return (
+    <View
+      style={{
+        flexShrink: 1,
+        minWidth: 0,
+        marginTop: props.marginTop,
+        marginBottom: props.marginBottom,
       }}
-      style={{ flexShrink: 1, minWidth: 0 }}
     >
-      <MarkdownMenuAnchor renderMarkdown={renderMarkdown} />
-    </Menu>
-  ) : (
-    renderMarkdown()
+      <EnrichedMarkdownText
+        markdown={markdown}
+        markdownStyle={markdownStyle}
+        writingDirection={props.writingDirection}
+        onLinksChange={onLinksChange}
+        renderers={renderers}
+        resolveImageSource={resolveNativeImageSource}
+        onImagePress={
+          props.onImagePress || props.onLinkPress
+            ? ({ url }) => (props.onImagePress ?? props.onLinkPress)?.(url)
+            : undefined
+        }
+        linkRecognition={linkRecognition}
+        containerStyle={{ flexShrink: 1, minWidth: 0 }}
+        flavor="github"
+        selectable
+        selectionClipboard={selectionClipboard}
+        selectionColor={props.textStyle.selectionColor}
+        selectionHandleColor={props.textStyle.selectionHandleColor}
+        md4cFlags={{
+          latexMath: mathRenderingEnabled,
+          hardSoftBreaks: props.preserveSoftBreaks ?? false,
+          admonitions: true,
+        }}
+        enableTaskListItemToggle={false}
+        enableCodeBlockWrapToggle
+        spoilerOverlay="solid"
+        onLinkPress={
+          props.onLinkPress || props.onImagePress ? ({ url }) => onLinkPress(url) : undefined
+        }
+        linkContextMenuItems={linkContextMenuItems}
+        linkPillContent={linkPillContent}
+      />
+    </View>
   );
-}
-
-function MarkdownMenuAnchor(props: {
-  readonly renderMarkdown: (openMenu?: () => void) => ReactNode;
-  readonly onLongPress?: () => void;
-}) {
-  return props.renderMarkdown(props.onLongPress);
 }

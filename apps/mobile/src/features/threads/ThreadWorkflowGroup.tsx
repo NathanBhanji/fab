@@ -225,7 +225,7 @@ function WorkflowMemberRow(props: {
             {metadata.fast ? (
               <View className="shrink-0 flex-row items-center gap-0.5">
                 <SymbolView
-                  name={{ ios: "bolt.fill", android: "bolt" }}
+                  name={{ ios: "bolt.fill" }}
                   size={11}
                   tintColorClassName="accent-adaptive-amber-700-300"
                 />

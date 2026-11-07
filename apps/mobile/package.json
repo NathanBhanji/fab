@@ -56,7 +56,6 @@
     "@fab/mobile-terminal-native": "file:./modules/fab-terminal",
     "@fab/shared": "workspace:*",
     "@legendapp/list": "catalog:",
-    "@material/material-color-utilities": "0.3.0",
     "@noble/curves": "catalog:",
     "@pierre/diffs": "catalog:",
     "@pierre/highlights": "catalog:",

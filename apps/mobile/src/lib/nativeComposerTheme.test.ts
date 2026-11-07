@@ -4,7 +4,7 @@ import { getMobileThemeVariables } from "./mobileTheme";
 import { createNativeComposerTheme } from "./nativeComposerTheme";
 
 describe("native composer colors", () => {
-  it("flattens Material You alpha colors over the composer rather than falling back to defaults", () => {
+  it("flattens alpha colors over the composer rather than falling back to defaults", () => {
     const theme = createNativeComposerTheme({
       ...getMobileThemeVariables("fab", "light"),
       "--color-screen": "#ffffffff",

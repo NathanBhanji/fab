@@ -14,8 +14,6 @@ const SPLIT_SIDEBAR_DEFAULT_MAX_WIDTH = 380;
 
 const AUXILIARY_PANE_MIN_CONTENT_WIDTH = 960;
 export const CHAT_CONTENT_MAX_WIDTH = 960;
-// Limit Android reading width for wide foldables and keyboard-open split views.
-export const ANDROID_READING_MAX_WIDTH = 640;
 // min-h-8 uses the 14px rem configured in metro.config.js.
 export const THREAD_WORK_ROW_MIN_HEIGHT = 28;
 
@@ -86,18 +84,6 @@ export interface FileInspectorPaneLayout {
   readonly width: number | null;
 }
 
-export function deriveThreadFeedInitialContentInset(input: {
-  readonly platform: string;
-  readonly usesNativeAutomaticInsets: boolean;
-  readonly bottomContentInset: number;
-}): { readonly bottom: number } | undefined {
-  if (input.platform !== "android" || input.usesNativeAutomaticInsets) {
-    return undefined;
-  }
-
-  return { bottom: Math.max(0, input.bottomContentInset) };
-}
-
 export type WorkspaceAuxiliaryPaneRole = "supplementary" | "inspector";
 
 export function deriveLayout(input: {
@@ -158,28 +144,6 @@ export function deriveLayout(input: {
 export interface VerticalHinge {
   readonly x: number;
   readonly width: number;
-}
-
-/**
- * Moves the list/detail split onto a book-posture hinge so neither pane straddles the crease.
- * `leadingWidth` is chrome left of the list pane, such as the Android navigation rail.
- */
-export function alignListPaneToHinge(input: {
-  readonly layout: Layout;
-  readonly hinge: VerticalHinge | null;
-  readonly viewportWidth: number;
-  readonly leadingWidth: number;
-}): Layout {
-  const { layout, hinge } = input;
-  if (!hinge || !layout.usesSplitView) return layout;
-  const listPaneWidth = hinge.x - input.leadingWidth;
-  if (
-    listPaneWidth < SPLIT_SIDEBAR_MIN_WIDTH ||
-    input.viewportWidth - hinge.x - hinge.width < 320
-  ) {
-    return layout;
-  }
-  return { ...layout, listPaneWidth, listPaneGap: hinge.width };
 }
 
 /**

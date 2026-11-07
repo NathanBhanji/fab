@@ -1,6 +1,6 @@
 import type { NativeLayoutMetrics } from "./reserved-regions";
 
-/** Hardware type does not imply column space. Android lacks metrics and reports phone. */
+/** Hardware type does not imply column space. */
 export type DeviceType = "phone" | "duo-folded" | "duo-unfolded" | "pad";
 
 export function deriveDeviceType(input: {

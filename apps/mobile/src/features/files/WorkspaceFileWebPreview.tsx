@@ -9,7 +9,6 @@ import { FilePreviewLoading } from "./FilePreviewFeedback";
 import { LoadingStrip } from "../../components/ui/LoadingStrip";
 import { PdfPreview } from "../../components/PdfPreview";
 import { ControlPill } from "../../components/ui/ControlPill";
-import { useHardwareBack } from "../../lib/backHandler";
 import { isPdfPreviewUri } from "../../lib/pdfPreview";
 import { useNativeColumnLayoutMetrics } from "../../native/native-layout-metrics";
 
@@ -28,11 +27,6 @@ function DocumentWebPreview(props: { readonly uri: string }) {
   const [loadProgress, setLoadProgress] = useState(0);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [linkedPdf, setLinkedPdf] = useState<string | null>(null);
-
-  useHardwareBack(linkedPdf !== null, () => {
-    setLinkedPdf(null);
-    return true;
-  });
 
   if (isPdfPreviewUri(props.uri)) {
     return (

@@ -49,7 +49,7 @@ export function GlassSurface({
   const { themeAppearance } = useAppearancePreferences();
   const isDarkMode = themeAppearance === "dark";
   const supportsGlass = Platform.OS === "ios" && isGlassEffectAPIAvailable();
-  const hasShadow = chrome !== "none" && Platform.OS !== "android";
+  const hasShadow = chrome !== "none";
   const surfaceStyle: ViewStyle = {
     borderRadius: MOBILE_SHAPE.glass,
     overflow: "hidden",
@@ -57,7 +57,6 @@ export function GlassSurface({
     shadowOpacity: hasShadow ? (isDarkMode ? 0.22 : 0.08) : 0,
     shadowRadius: hasShadow ? 28 : 0,
     shadowOffset: { width: 0, height: hasShadow ? 14 : 0 },
-    elevation: hasShadow ? 12 : 0,
   };
 
   if (supportsGlass) {

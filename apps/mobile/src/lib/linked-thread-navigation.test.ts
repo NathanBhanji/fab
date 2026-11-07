@@ -1,12 +1,6 @@
 import * as NodeModule from "node:module";
 import { describe, expect, it } from "vite-plus/test";
-import {
-  linkedThreadStep,
-  parentThreadIsBelow,
-  resetAndroidWorkspace,
-  returnToAndroidWorkspaceList,
-} from "./android-workspace-navigation";
-import type { RootStackResetAction } from "./root-stack-reset";
+import { linkedThreadStep, parentThreadIsBelow } from "./linked-thread-navigation";
 
 const require = NodeModule.createRequire(import.meta.url);
 const nativePackage = require.resolve("@react-navigation/native/package.json");
@@ -56,63 +50,7 @@ function withThread() {
   return apply(router.getInitialState(options), StackActions.push(thread.name, thread.params));
 }
 
-function names(state: ReturnType<typeof router.getInitialState>) {
-  return state.routes.map((route) => route.name);
-}
-
-describe("Android workspace navigation", () => {
-  it("returns to a distinct previous thread, otherwise to the workspace list", () => {
-    const parent = withThread();
-    let state = apply(
-      parent,
-      StackActions.push("Thread", { ...thread.params, threadId: "child-a" }),
-    );
-    let listSelected = false;
-    const navigation = {
-      dispatch: (action: RootStackResetAction) => {
-        state = apply(state, action);
-      },
-      getParent: () => undefined,
-      getState: () => state,
-      goBack: () => {
-        state = apply(state, StackActions.pop());
-      },
-    };
-    const back = () =>
-      returnToAndroidWorkspaceList(navigation, () => {
-        listSelected = true;
-      });
-
-    back();
-    expect(state.routes).toEqual(parent.routes);
-    expect(state.index).toBe(parent.index);
-    expect(listSelected).toBe(false);
-
-    back();
-    expect(state.routes).toEqual([parent.routes[0]]);
-    expect(state.index).toBe(0);
-    expect(listSelected).toBe(true);
-
-    state = apply(
-      parent,
-      StackActions.push("Thread", { ...thread.params, environmentId: "environment-b" }),
-    );
-    listSelected = false;
-    back();
-    expect(state.routes).toEqual(parent.routes);
-    expect(state.index).toBe(parent.index);
-    expect(listSelected).toBe(false);
-
-    // Confirming a Git action from the inline inspector can duplicate the current thread.
-    state = apply(parent, StackActions.push("Thread", thread.params));
-    back();
-    expect({ routes: names(state), index: state.index, listSelected }).toEqual({
-      routes: ["Home"],
-      index: 0,
-      listSelected: true,
-    });
-  });
-
+describe("linked thread navigation", () => {
   it("opens a linked thread above the current one so Back returns to it", () => {
     const parent = withThread();
     const child = { ...thread.params, threadId: "child-a" };
@@ -156,39 +94,5 @@ describe("Android workspace navigation", () => {
         thread.params,
       ),
     ).toBe(false);
-  });
-
-  it("resets the root stack when a nested stack has focus", () => {
-    const root = apply(router.getInitialState(options), StackActions.push("Thread", thread.params));
-    const nested = router.getInitialState({ ...options, routeNames: ["Nested", "NestedChild"] });
-    const actions: RootStackResetAction[] = [];
-    const rootNavigation = {
-      dispatch: () => undefined,
-      getParent: () => undefined,
-      getState: () => root,
-    };
-    resetAndroidWorkspace({
-      dispatch: (action) => actions.push(action),
-      getParent: () => rootNavigation,
-      getState: () => nested,
-    });
-    const [action] = actions;
-    expect(action?.target).toBe(root.key);
-    expect(names(apply(root, action!))).toEqual(["Home"]);
-  });
-
-  it("resets from the navigation container before any navigation action", () => {
-    const root = router.getInitialState(options);
-    const actions: RootStackResetAction[] = [];
-    // The container only learns the root state after the first action.
-    resetAndroidWorkspace({
-      dispatch: (action) => actions.push(action),
-      getParent: () => undefined,
-      getState: () => undefined,
-      getRootState: () => root,
-    });
-    const [action] = actions;
-    expect(action?.target).toBe(root.key);
-    expect(names(apply(root, action!))).toEqual(["Home"]);
   });
 });
