@@ -4,8 +4,6 @@ import {
   mergePathEntries,
   readEnvironmentFromLoginShell,
   readPathFromLaunchctl,
-  resolveWindowsEnvironment,
-  setWindowsPath,
 } from "@fab/shared/shell";
 import * as Effect from "effect/Effect";
 import * as FileSystem from "effect/FileSystem";
@@ -66,28 +64,6 @@ export const fixPath = Effect.fn("fixPath")(function* (options?: {
 }): Effect.fn.Return<void, never, FileSystem.FileSystem | Path.Path> {
   const platform = yield* HostProcess.Platform;
   const env = yield* HostProcess.Environment;
-
-  if (platform === "win32") {
-    // Desktop already populated the child env; repeating PowerShell probes costs seconds.
-    if (options?.shellEnvironmentPrepared === true) return;
-    const repairedEnvironment = yield* resolveWindowsEnvironment(env).pipe(
-      Effect.catchDefect((defect) =>
-        Effect.sync(() => {
-          logPathHydrationWarning("Failed to hydrate PATH from the user environment.", defect);
-          return {} as Partial<NodeJS.ProcessEnv>;
-        }),
-      ),
-    );
-    for (const [key, value] of Object.entries(repairedEnvironment)) {
-      if (value === undefined) continue;
-      if (key === "PATH") {
-        setWindowsPath(env, value);
-      } else {
-        env[key] = value;
-      }
-    }
-    return;
-  }
 
   if (platform !== "darwin" && platform !== "linux") return;
 

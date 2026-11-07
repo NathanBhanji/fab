@@ -50,11 +50,9 @@ interface ManagedChild {
 
 const runtimePaths = (baseDir: string, version: string) => {
   const versionDir = NodePath.join(baseDir, "runtime", "versions", version);
-  // oxlint-disable-next-line fab/no-global-process-runtime -- Standalone launcher has no Effect runtime.
-  const executableName = process.platform === "win32" ? "fab.exe" : "fab";
   return {
     versionDir,
-    entryPath: NodePath.join(versionDir, executableName),
+    entryPath: NodePath.join(versionDir, "fab"),
     sentinelPath: NodePath.join(versionDir, ".install-complete"),
   };
 };
@@ -113,7 +111,6 @@ export async function readServiceEnvironment(
   return environment;
 }
 
-// Opened read-write: Windows refuses to flush a handle without write access.
 async function syncFile(filePath: string): Promise<void> {
   const handle = await NodeFSP.open(filePath, "r+");
   try {
@@ -123,7 +120,7 @@ async function syncFile(filePath: string): Promise<void> {
   }
 }
 
-// Fsync makes renames durable; Windows returns EPERM and NTFS journals them itself.
+// Fsync makes renames durable; some filesystems reject it with EPERM.
 async function syncDirectory(directory: string): Promise<void> {
   const handle = await NodeFSP.open(directory, "r");
   try {

@@ -423,8 +423,7 @@ export class CloudLink extends Context.Service<
   {
     /**
      * Signs the proof the relay asks for to link this environment. The request
-     * must reach this server directly. Desktop bootstrap sessions may use the
-     * WSL IP; all other sessions must use the loopback origin they name.
+     * must reach this server directly, through the loopback origin it names.
      */
     readonly linkProof: (
       request: RelayLinkProofRequest,
@@ -585,16 +584,11 @@ const make = Effect.gen(function* () {
   const makeCloudLinkProof = Effect.fn("environment.cloud.makeLinkProof")(function* (
     request: RelayLinkProofRequest,
     requestUrl: string,
-    allowNonLoopbackRequestHost = false,
   ) {
     const keyPair = yield* getOrCreateEnvironmentKeyPairFromSecretStore(secrets);
     if (
       !isSupportedLinkProviderKind(request) ||
-      !isAllowedEndpointOrigin({
-        origin: request.origin,
-        requestUrl,
-        allowNonLoopbackRequestHost,
-      })
+      !isAllowedEndpointOrigin({ origin: request.origin, requestUrl })
     ) {
       return yield* new CloudLinkOriginInvalidError({ origin: "endpoint" });
     }
@@ -637,13 +631,7 @@ const make = Effect.gen(function* () {
       if (requestUrl === null || hasForwardedAuthorityHeaders(httpRequest)) {
         return yield* new CloudLinkOriginInvalidError({ origin: "endpoint" });
       }
-      const principal = yield* EnvironmentAuthenticatedPrincipal;
-      // WSL desktop requests use the distro IP; only the server-issued bootstrap subject qualifies.
-      return yield* makeCloudLinkProof(
-        request,
-        requestUrl,
-        principal.subject === "desktop-bootstrap",
-      );
+      return yield* makeCloudLinkProof(request, requestUrl);
     },
     Effect.catchIf(ServerSecretStore.isSecretStoreError, internalError("generate-link-proof")),
   );

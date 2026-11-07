@@ -21,11 +21,7 @@ macOS, it then runs Fab as a [background service](./background-service.md).
 `fab connect` is the same as `fab up --connect`. Run `fab up` again to change your
 choice, and `fab status` to see it.
 
-The background service is not available on Windows, so there `fab up` prints the
-`fab serve` command to keep running in a terminal. You can also keep the desktop
-app running with its local environment enabled. Closing the desktop app's last
-window stops its local server. Saving your sign-in alone does not start a server
-or make the machine reachable.
+Saving your sign-in alone does not start a server or make the machine reachable.
 
 On your other device, sign in to the same Fab Connect account and choose the
 environment. On the app.fab.invalid home page with no computer added yet, signing

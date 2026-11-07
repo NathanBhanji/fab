@@ -230,7 +230,6 @@ const pinnedValue = (pin: ManagedProviderInstance | undefined, field: string): u
 const overlayInstance = (
   instance: ProviderInstanceConfig,
   rule: DriverRule,
-  variableKey: (name: string) => string,
 ): ProviderInstanceConfig => {
   const config = { ...configRecord(instance) };
   for (const field of rule.config) {
@@ -246,20 +245,18 @@ const overlayInstance = (
     value: variable.value,
     sensitive: false,
   }));
-  const pinnedByName = new Map(
-    pinnedEnvironment.map((variable) => [variableKey(variable.name), variable]),
-  );
+  const pinnedByName = new Map(pinnedEnvironment.map((variable) => [variable.name, variable]));
   const environment: Array<NonNullable<ProviderInstanceConfig["environment"]>[number]> =
     rule.environment === "all" ? pinnedEnvironment : [];
   if (rule.environment !== "all") {
     const seen = new Set<string>();
     // A user's override would replace launch arguments the administrator locked.
     const overrides = rule.config.includes("launchArgs")
-      ? new Set(LAUNCH_OVERRIDE_VARIABLES.map(variableKey))
+      ? new Set<string>(LAUNCH_OVERRIDE_VARIABLES)
       : new Set<string>();
     // The last entry for a name wins at launch, so a lock replaces every entry with that name.
     for (const variable of instance.environment ?? []) {
-      const key = variableKey(variable.name);
+      const key = variable.name;
       if (overrides.has(key)) continue;
       const pinned = rule.environment === "locked" ? pinnedByName.get(key) : undefined;
       if (pinned === undefined) environment.push(variable);
@@ -267,7 +264,7 @@ const overlayInstance = (
       seen.add(key);
     }
     for (const pinned of pinnedEnvironment) {
-      if (!seen.has(variableKey(pinned.name))) environment.push(pinned);
+      if (!seen.has(pinned.name)) environment.push(pinned);
     }
   }
   const { config: _config, environment: _environment, ...envelope } = instance;
@@ -286,12 +283,9 @@ const overlayInstance = (
 export function makeManagedProviders(
   limits: ManagedProviderLimits,
   maxRuntimeMode: RuntimeMode | undefined,
-  platform: NodeJS.Platform,
 ):
   | { readonly _tag: "Valid"; readonly providers: ManagedProviders }
   | { readonly _tag: "Invalid"; readonly reason: string } {
-  // Windows reads a variable name without regard to case, so there a lock covers every spelling.
-  const variableKey = (name: string) => (platform === "win32" ? name.toUpperCase() : name);
   for (const driver of limits.allowedDrivers ?? []) {
     if (!KNOWN_DRIVERS.has(driver)) {
       return { _tag: "Invalid", reason: `"${driver}" in allowedDrivers is not a known provider` };
@@ -311,7 +305,7 @@ export function makeManagedProviders(
         reason: `the ${known.label} provider has no ${unsupported} setting`,
       };
     }
-    const names = (pin.environment ?? []).map((variable) => variableKey(variable.name));
+    const names = (pin.environment ?? []).map((variable) => variable.name);
     if (new Set(names).size !== names.length) {
       return { _tag: "Invalid", reason: `instances.${driver}.environment repeats a variable` };
     }
@@ -338,9 +332,7 @@ export function makeManagedProviders(
       const home = HOME_VARIABLES.get(driver);
       const homeLocked =
         home !== undefined &&
-        (pin.environment ?? []).some(
-          (variable) => variableKey(variable.name) === variableKey(home.variable),
-        );
+        (pin.environment ?? []).some((variable) => variable.name === home.variable);
       rules.set(driver, {
         pin,
         config: pin.locked
@@ -381,7 +373,7 @@ export function makeManagedProviders(
     for (const [instanceId, instance] of Object.entries(providerInstances)) {
       const rule = rules.get(instance.driver);
       if (rule !== undefined) {
-        providerInstances[instanceId] = overlayInstance(instance, rule, variableKey);
+        providerInstances[instanceId] = overlayInstance(instance, rule);
       }
     }
     // A cleared selection falls back to the text generation model, which is resolved afterwards.
@@ -421,7 +413,7 @@ export function makeManagedProviders(
       } => {
     const pinned = rule.pin?.environment ?? [];
     const storedVariable = (name: string) =>
-      stored?.environment?.find((existing) => variableKey(existing.name) === variableKey(name));
+      stored?.environment?.find((existing) => existing.name === name);
     const storedUnchanged = (variable: ProviderInstanceEnvironmentVariable) =>
       (stored?.environment ?? []).some((existing) => sameVariable(variable, existing));
     const echoed = (variable: ProviderInstanceEnvironmentVariable) =>
@@ -437,18 +429,16 @@ export function makeManagedProviders(
     }
     let environment: ReadonlyArray<ProviderInstanceEnvironmentVariable> = next.environment ?? [];
     for (const variable of pinned) {
-      const sent = environment.find(
-        (existing) => variableKey(existing.name) === variableKey(variable.name),
-      );
+      const sent = environment.find((existing) => existing.name === variable.name);
       const kept = storedVariable(variable.name);
       if ((sent !== undefined && echoed(sent)) || sameVariable(sent, kept)) {
         // Put the user's own entries back where it was sent, or drop the echoed policy value.
         const storedEntries = (stored?.environment ?? []).filter(
-          (existing) => variableKey(existing.name) === variableKey(variable.name),
+          (existing) => existing.name === variable.name,
         );
         let restored = false;
         environment = environment.flatMap((existing) => {
-          if (variableKey(existing.name) !== variableKey(variable.name)) return [existing];
+          if (existing.name !== variable.name) return [existing];
           if (restored) return [];
           restored = true;
           return storedEntries;
@@ -462,12 +452,10 @@ export function makeManagedProviders(
     }
     // The client never saw a launch override the lock hides, so keep the stored one.
     if (rule.config.includes("launchArgs")) {
-      const overrides = new Set(LAUNCH_OVERRIDE_VARIABLES.map(variableKey));
+      const overrides = new Set<string>(LAUNCH_OVERRIDE_VARIABLES);
       environment = [
-        ...environment.filter((variable) => !overrides.has(variableKey(variable.name))),
-        ...(stored?.environment ?? []).filter((variable) =>
-          overrides.has(variableKey(variable.name)),
-        ),
+        ...environment.filter((variable) => !overrides.has(variable.name)),
+        ...(stored?.environment ?? []).filter((variable) => overrides.has(variable.name)),
       ];
     }
     return { _tag: "Kept", environment };

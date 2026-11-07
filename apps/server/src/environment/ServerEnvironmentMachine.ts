@@ -6,7 +6,6 @@ import * as FileSystem from "effect/FileSystem";
 import * as ProcessRunner from "../processRunner.ts";
 
 const DMI_ROOT = "/sys/class/dmi/id";
-const KERNEL_RELEASE_PATH = "/proc/sys/kernel/osrelease";
 
 // SMBIOS 3.x System Enclosure types (table 17).
 const DMI_CHASSIS_KINDS: Readonly<Record<string, EnvironmentMachineKind>> = {
@@ -129,16 +128,11 @@ const detectDarwinMachineKind = Effect.fn("detectDarwinMachineKind")(function* (
 });
 
 const detectLinuxMachineKind = Effect.fn("detectLinuxMachineKind")(function* () {
-  const [kernelRelease, chassisType, sysVendor, productName] = yield* Effect.all([
-    readOptionalFile(KERNEL_RELEASE_PATH),
+  const [chassisType, sysVendor, productName] = yield* Effect.all([
     readOptionalFile(`${DMI_ROOT}/chassis_type`),
     readOptionalFile(`${DMI_ROOT}/sys_vendor`),
     readOptionalFile(`${DMI_ROOT}/product_name`),
   ]);
-  // Check WSL first; WSL 2 presents as a Hyper-V VM in DMI.
-  if (kernelRelease?.toLowerCase().includes("microsoft")) {
-    return "linux";
-  }
   return machineKindFromDmi({ chassisType, sysVendor, productName });
 });
 

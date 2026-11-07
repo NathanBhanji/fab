@@ -14,10 +14,6 @@ import { Command } from "effect/cli";
 
 import { cli } from "../binCli.ts";
 import { symlinksSupported } from "@fab/shared/testing/symlinks";
-import * as HostProcess from "@fab/shared/HostProcess";
-
-// Windows chmod cannot force these directory or file permission failures.
-const windowsHost = HostProcess.Platform.defaultValue() === "win32";
 
 const runCli = (args: ReadonlyArray<string>) =>
   Command.runWith(cli, { version: "0.0.0" })(args).pipe(
@@ -132,7 +128,7 @@ describe("fab theme", () => {
     }),
   );
 
-  it.effect.skipIf(windowsHost)("restores the previous theme when a re-publish fails to set", () =>
+  it.effect("restores the previous theme when a re-publish fails to set", () =>
     Effect.gen(function* () {
       const baseDir = makeBaseDir();
       writeSettings(baseDir, {});
@@ -156,7 +152,7 @@ describe("fab theme", () => {
     }),
   );
 
-  it.effect.skipIf(windowsHost)("refuses to write when the settings file cannot be read", () =>
+  it.effect("refuses to write when the settings file cannot be read", () =>
     Effect.gen(function* () {
       const baseDir = makeBaseDir();
       writeSettings(baseDir, { enableProviderUpdateChecks: false });

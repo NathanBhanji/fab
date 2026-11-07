@@ -10,7 +10,6 @@ import * as DateTime from "effect/DateTime";
 import * as Effect from "effect/Effect";
 import * as Exit from "effect/Exit";
 import * as Layer from "effect/Layer";
-import * as Option from "effect/Option";
 import * as Random from "effect/Random";
 import * as Ref from "effect/Ref";
 import * as Result from "effect/Result";
@@ -76,7 +75,6 @@ const TelemetryEnvConfig = Config.all({
   maxBufferedEvents: Config.Number("FAB_TELEMETRY_MAX_BUFFERED_EVENTS").pipe(
     Config.withDefault(1_000),
   ),
-  wslDistroName: Config.String("WSL_DISTRO_NAME").pipe(Config.option),
 });
 
 export class AnalyticsService extends Context.Service<
@@ -105,8 +103,6 @@ function serverOsFromNodePlatform(platform: string): ClientOs {
   switch (platform) {
     case "darwin":
       return "macOS";
-    case "win32":
-      return "Windows";
     case "linux":
       return "Linux";
     case "android":
@@ -211,14 +207,12 @@ export const make = Effect.gen(function* () {
           ...(installId === null ? {} : { installId }),
           $process_person_profile: false,
           platform: hostPlatform,
-          wsl: Option.getOrUndefined(telemetryConfig.wslDistroName),
           arch: hostArchitecture,
           fabVersion: packageJson.version,
           telemetryChannel: ServerConfig.telemetryChannel,
           clientType,
           serverOs: serverOsFromNodePlatform(hostPlatform),
           serverArch: hostArchitecture,
-          serverWslDistro: Option.getOrUndefined(telemetryConfig.wslDistroName),
           serverAppVersion: packageJson.version,
           serverMode: serverConfig.mode,
         },

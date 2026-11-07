@@ -54,12 +54,11 @@ export function pinnedRuntimePaths(
   path: Path.Path,
   baseDir: string,
   version: string,
-  platform: NodeJS.Platform,
 ): PinnedRuntimePaths {
   const versionDir = path.join(pinnedRuntimeVersionsDir(path, baseDir), version);
   return {
     versionDir,
-    entryPath: path.join(versionDir, platform === "win32" ? "fab.exe" : "fab"),
+    entryPath: path.join(versionDir, "fab"),
     sentinelPath: path.join(versionDir, ".install-complete"),
   };
 }
@@ -273,7 +272,7 @@ const installPinnedRuntime = Effect.fn("cloud.pinned_runtime.ensure_installed")(
   input: PinnedRuntimeInstallInput,
 ) {
   const { fs } = input;
-  const paths = pinnedRuntimePaths(input.path, input.baseDir, input.version, input.platform);
+  const paths = pinnedRuntimePaths(input.path, input.baseDir, input.version);
   const [versionDirExists, entryExists, sentinel] = yield* Effect.all([
     fs.exists(paths.versionDir),
     fs.exists(paths.entryPath),
@@ -444,29 +443,24 @@ export const recordPinnedRuntimeLauncher = Effect.fn("cloud.pinned_runtime.recor
   },
 );
 
-/** The executable a `fab.cmd` shim written by the install script or `fab update` runs. */
-export const windowsShimTarget = (contents: string) => /^"([^"]+)"/m.exec(contents)?.[1];
-
 /** Where the `fab` launchers written by the install scripts and `fab update` point. */
 const shellLauncherTargets = Effect.fn("cloud.pinned_runtime.shell_launcher_targets")(function* (
   baseDir: string,
 ) {
   const fs = yield* FileSystem.FileSystem;
   const path = yield* Path.Path;
-  const platform = yield* HostProcess.Platform;
   const environment = yield* HostProcess.Environment;
   const home = yield* HostProcess.HomeDirectory;
-  const launcherName = platform === "win32" ? "fab.cmd" : "fab";
   const launchersFile = path.join(baseDir, PINNED_RUNTIME_DIR, PINNED_RUNTIME_LAUNCHERS_FILE);
   const recorded = (yield* fs.readFileString(launchersFile).pipe(Effect.orElseSucceed(() => "")))
     .split(/\r?\n/)
     .filter((launcher) => launcher.trim().length > 0);
   const found = [
     environment["FAB_INSTALL_BIN_DIR"] || path.join(home, ".local", "bin"),
-    ...(environment["PATH"] ?? environment["Path"] ?? "").split(platform === "win32" ? ";" : ":"),
+    ...(environment["PATH"] ?? "").split(":"),
   ]
     .filter((directory) => path.isAbsolute(directory))
-    .map((directory) => path.join(directory, launcherName));
+    .map((directory) => path.join(directory, "fab"));
   const versionsDir = pinnedRuntimeVersionsDir(path, baseDir);
   const realVersionsDir = yield* fs
     .realPath(versionsDir)
@@ -474,14 +468,8 @@ const shellLauncherTargets = Effect.fn("cloud.pinned_runtime.shell_launcher_targ
   const unrecorded: Array<string> = [];
   const targets: Array<string> = [];
   for (const launcher of [...recorded, ...found]) {
-    const target =
-      platform === "win32"
-        ? yield* fs.readFileString(launcher).pipe(
-            Effect.map(windowsShimTarget),
-            Effect.orElseSucceed(() => undefined),
-          )
-        : // Fully resolved, through chained links and a symlinked Fab home alike.
-          yield* fs.realPath(launcher).pipe(Effect.orElseSucceed(() => undefined));
+    // Fully resolved, through chained links and a symlinked Fab home alike.
+    const target = yield* fs.realPath(launcher).pipe(Effect.orElseSucceed(() => undefined));
     if (target === undefined) continue;
     targets.push(target);
     if (
@@ -503,8 +491,7 @@ const shellLauncherTargets = Effect.fn("cloud.pinned_runtime.shell_launcher_targ
 
 /**
  * Resolved executables rather than command lines: a server started through the `fab` symlink
- * shows up as `fab serve`, possibly from another Fab home that runs this home's runtimes. Windows
- * has no symlink launcher, and its `fab.cmd` shim runs the absolute path, so command lines do there.
+ * shows up as `fab serve`, possibly from another Fab home that runs this home's runtimes.
  */
 const runningExecutables = Effect.fn("cloud.pinned_runtime.running_executables")(function* () {
   const fs = yield* FileSystem.FileSystem;
@@ -525,17 +512,8 @@ const runningExecutables = Effect.fn("cloud.pinned_runtime.running_executables")
   }
   const result = yield* runner
     .run({
-      ...(platform === "win32"
-        ? {
-            command: "powershell.exe",
-            args: [
-              "-NoProfile",
-              "-NonInteractive",
-              "-Command",
-              "Get-CimInstance Win32_Process | Select-Object -ExpandProperty CommandLine",
-            ],
-          }
-        : { command: "lsof", args: ["-nP", "-w", "-d", "txt", "-F", "n"] }),
+      command: "lsof",
+      args: ["-nP", "-w", "-d", "txt", "-F", "n"],
       timeout: Duration.seconds(10),
       maxOutputBytes: 16 * 1024 * 1024,
     })
@@ -609,14 +587,11 @@ const selectUnusedRuntimes = Effect.fn("cloud.pinned_runtime.select_unused")(fun
   const executables = yield* runningExecutables();
   // Without a process list, a runtime in use would look unused.
   if (Option.isNone(executables)) return pruned;
-  const platform = yield* HostProcess.Platform;
-  // Windows paths are case-insensitive, and shims and process lists need not agree on case.
-  const foldCase = (value: string) => (platform === "win32" ? value.toLowerCase() : value);
   const references = [
     executables.value,
     ...(yield* shellLauncherTargets(input.baseDir)),
     ...input.references,
-  ].map(foldCase);
+  ];
   // Process executables are resolved, so they name the real path of a symlinked Fab home.
   const realVersionsDir = yield* fs
     .realPath(versionsDir)
@@ -624,9 +599,7 @@ const selectUnusedRuntimes = Effect.fn("cloud.pinned_runtime.select_unused")(fun
 
   for (const version of completed) {
     const versionDir = path.join(versionsDir, version);
-    const prefixes = [versionDir, path.join(realVersionsDir, version)].map((dir) =>
-      foldCase(dir + path.sep),
-    );
+    const prefixes = [versionDir, path.join(realVersionsDir, version)].map((dir) => dir + path.sep);
     if (
       keep.has(version) ||
       references.some((reference) => prefixes.some((prefix) => reference.includes(prefix)))

@@ -104,7 +104,7 @@ NodeAssert.deepEqual(fingerprints(NodeTls.getCACertificates("default")), expecte
       } as const;
       const fingerprints = (certificates: ReadonlyArray<string>) =>
         certificates.map((pem) => new NodeCrypto.X509Certificate(pem).fingerprint256).sort();
-      yield* applySnapshot({ ...message, platform: "win32" });
+      yield* applySnapshot({ ...message, platform: "linux" });
       expect(fingerprints(NodeTls.getCACertificates("default"))).toEqual(fingerprints([baseline]));
       expect(environment.FAB_DESKTOP_SHELL_DISCOVERY_PENDING).toBe("1");
       yield* applySnapshot(message);
@@ -159,7 +159,7 @@ NodeAssert.deepEqual(fingerprints(NodeTls.getCACertificates("default")), expecte
 
   it.effect.each([
     { platform: "darwin", discovered: true, applied: true, pending: false },
-    { platform: "win32", discovered: true, applied: false, pending: true },
+    { platform: "linux", discovered: true, applied: false, pending: true },
     { platform: "darwin", discovered: false, applied: true, pending: true },
   ])(
     "applies platform=$platform discovered=$discovered with pending=$pending",

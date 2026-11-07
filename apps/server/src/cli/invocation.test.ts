@@ -117,45 +117,26 @@ it.layer(NodeServices.layer)("root CLI commands", (it) => {
 });
 
 it.layer(NodeServices.layer)("host CLI commands", (it) => {
-  it.effect("renders a PowerShell command line on Windows", () =>
+  it.effect("quotes arguments for POSIX shells", () =>
     Effect.gen(function* () {
       const fs = yield* FileSystem.FileSystem;
       const path = yield* Path.Path;
       const home = yield* fs.makeTempDirectoryScoped();
-      const shim = path.join(home, "fab.cmd");
-      yield* fs.writeFileString(shim, "@echo off\r\n");
-      const hostCommand = (platform: NodeJS.Platform, env: Record<string, string>) =>
-        resolveHostCliCommand("doctor", ["--base-dir", "C:\\Users\\Jane Doe\\.fab"]).pipe(
-          Effect.provideService(HostProcess.ExecutablePath, "C:\\Program Files\\Fab\\fab.exe"),
-          Effect.provideService(HostProcess.Arguments, [
-            "C:\\Program Files\\Fab\\fab.exe",
-            "C:\\Program Files\\Fab\\resources\\app.asar\\apps\\server\\dist\\bin.mjs",
-          ]),
-          Effect.provideService(HostProcess.IsExecutable, false),
-          Effect.provideService(HostProcess.Platform, platform),
-          Effect.provideService(HostProcess.Environment, { PATH: "", ...env }),
-        );
-      expect((yield* hostCommand("win32", { FAB_CLI_PATH: shim })).command).toBe(
-        `& "${shim}" doctor "--base-dir" "C:\\Users\\Jane Doe\\.fab"`,
+      const shim = path.join(home, "fab");
+      yield* fs.writeFileString(shim, "#!/bin/sh\n");
+      const command = yield* resolveHostCliCommand("doctor", [
+        "--base-dir",
+        "/home/Jane Doe/.fab",
+      ]).pipe(
+        Effect.provideService(HostProcess.ExecutablePath, "/opt/Fab/fab"),
+        Effect.provideService(HostProcess.Arguments, [
+          "/opt/Fab/fab",
+          "/opt/Fab/resources/app.asar/apps/server/dist/bin.mjs",
+        ]),
+        Effect.provideService(HostProcess.IsExecutable, false),
+        Effect.provideService(HostProcess.Environment, { PATH: "", FAB_CLI_PATH: shim }),
       );
-      expect((yield* hostCommand("win32", {})).command).toBe(
-        'fab doctor "--base-dir" "C:\\Users\\Jane Doe\\.fab"',
-      );
-      expect(
-        (yield* resolveHostCliCommand("doctor", [
-          "--base-dir",
-          "C:\\Fab\\\u201CArchive\u201D",
-        ]).pipe(
-          Effect.provideService(HostProcess.Platform, "win32"),
-          Effect.provideService(HostProcess.Environment, { PATH: "" }),
-          Effect.provideService(HostProcess.ExecutablePath, "C:\\fab.exe"),
-          Effect.provideService(HostProcess.Arguments, ["C:\\fab.exe", "C:\\bin.mjs"]),
-          Effect.provideService(HostProcess.IsExecutable, false),
-        )).command,
-      ).toBe('fab doctor "--base-dir" "C:\\Fab\\\u201C\u201CArchive\u201D\u201D"');
-      expect((yield* hostCommand("linux", { FAB_CLI_PATH: shim })).command).toMatch(
-        / doctor --base-dir 'C:\\Users\\Jane Doe\\\.fab'$/,
-      );
+      expect(command.command).toBe(`${shim} doctor --base-dir '/home/Jane Doe/.fab'`);
     }).pipe(Effect.scoped),
   );
 });
@@ -216,7 +197,6 @@ it.layer(NodeServices.layer)("manual server installation ownership", (it) => {
       const resolve = resolveServerInstallation.pipe(
         Effect.provideService(HostProcess.Arguments, ["node", entry]),
         Effect.provideService(HostProcess.IsExecutable, false),
-        Effect.provideService(HostProcess.Platform, "linux"),
       );
       expect(yield* resolve).toBeNull();
       yield* fs.symlink(entry, globalBin);
@@ -224,7 +204,6 @@ it.layer(NodeServices.layer)("manual server installation ownership", (it) => {
       yield* fs.remove(globalBin);
       yield* fs.writeFileString(globalBin, "an unrelated fab command");
       expect(yield* resolve).toBeNull();
-      expect(yield* resolve.pipe(Effect.provideService(HostProcess.Platform, "win32"))).toBeNull();
     }),
   );
 

@@ -1,7 +1,3 @@
-// @effect-diagnostics nodeBuiltinImport:off
-// Windows cleanup must outlive this executable to delete its directory; scoped ChildProcess kills children on exit.
-import * as NodeChildProcess from "node:child_process";
-
 import * as HostProcess from "@fab/shared/HostProcess";
 import * as Console from "effect/Console";
 import * as Effect from "effect/Effect";
@@ -12,14 +8,10 @@ import * as Schema from "effect/Schema";
 import { Command, Flag, GlobalFlag, Prompt } from "effect/cli";
 
 import * as BootService from "../cloud/bootService.ts";
-import {
-  launcherOwnsVersionsDir,
-  pinnedRuntimeVersionsDir,
-  windowsShimTarget,
-} from "../cloud/pinnedRuntime.ts";
+import { launcherOwnsVersionsDir, pinnedRuntimeVersionsDir } from "../cloud/pinnedRuntime.ts";
 import { projectLocationFlags, resolveCliAuthConfig } from "./config.ts";
 import * as CliService from "./service.ts";
-import { findWindowsShim, resolveLauncherPath } from "./update.ts";
+import { resolveLauncherPath } from "./update.ts";
 
 export class CliUninstallError extends Schema.TaggedError<CliUninstallError>()(
   "CliUninstallError",
@@ -44,43 +36,12 @@ export const findOwnedLauncher = Effect.fn("cli.uninstall.find_launcher")(functi
 }) {
   const fs = yield* FileSystem.FileSystem;
   const path = yield* Path.Path;
-  const platform = yield* HostProcess.Platform;
   if (input.launchedAs === undefined) return undefined;
-  if (platform === "win32") {
-    const shimPath = yield* findWindowsShim(input.launchedAs);
-    if (shimPath === undefined) return undefined;
-    const contents = yield* fs.readFileString(shimPath).pipe(Effect.option);
-    const target = Option.isSome(contents) ? windowsShimTarget(contents.value) : undefined;
-    return target !== undefined && launcherOwnsVersionsDir(path, input.versionsDir, target)
-      ? shimPath
-      : undefined;
-  }
   const linkTarget = yield* fs.readLink(input.launchedAs).pipe(Effect.option);
   if (Option.isNone(linkTarget)) return undefined;
   const resolved = path.resolve(path.dirname(input.launchedAs), linkTarget.value);
   return launcherOwnsVersionsDir(path, input.versionsDir, resolved) ? input.launchedAs : undefined;
 });
-
-// cmd.exe needs verbatim quoting and a literal path, with delayed expansion disabled.
-export function spawnWindowsRemoval(comspec: string, dir: string) {
-  return NodeChildProcess.spawn(
-    comspec,
-    [
-      "/d",
-      "/v:off",
-      "/s",
-      "/c",
-      '"ping -n 3 127.0.0.1 >nul & rmdir /s /q "%FAB_UNINSTALL_RUNTIME%""',
-    ],
-    {
-      env: { ...process.env, FAB_UNINSTALL_RUNTIME: dir },
-      windowsVerbatimArguments: true,
-      detached: true,
-      stdio: "ignore",
-      windowsHide: true,
-    },
-  );
-}
 
 const planUninstall = Effect.fn("cli.uninstall.plan")(function* (input: {
   readonly baseDir: string;
@@ -135,8 +96,6 @@ const runUninstall = Effect.fn("cli.uninstall.run")(function* (input: {
   readonly assumeYes: boolean;
 }) {
   const fs = yield* FileSystem.FileSystem;
-  const platform = yield* HostProcess.Platform;
-  const environment = yield* HostProcess.Environment;
   const service = yield* BootService.BootService;
   const plan = yield* planUninstall({ baseDir: input.baseDir });
 
@@ -192,28 +151,14 @@ const runUninstall = Effect.fn("cli.uninstall.run")(function* (input: {
     yield* Console.log(`Removed ${plan.launcher}.`);
   }
   if (plan.runtimeDir !== undefined) {
-    // Windows refuses to unlink this running executable; a detached shell removes it after exit.
-    if (platform === "win32") {
-      const runtimeDir = plan.runtimeDir;
-      const comspec = environment["ComSpec"] ?? environment["COMSPEC"] ?? "cmd.exe";
-      yield* Effect.try({
-        try: () => spawnWindowsRemoval(comspec, runtimeDir).unref(),
-        catch: () =>
-          new CliUninstallError({
-            reason: `Could not schedule removal of ${runtimeDir}. Delete it yourself once this window is closed.`,
-          }),
-      });
-      yield* Console.log(`${runtimeDir} will be removed once fab exits.`);
-    } else {
-      yield* fs
-        .remove(plan.runtimeDir, { recursive: true, force: true })
-        .pipe(
-          Effect.mapError(
-            () => new CliUninstallError({ reason: `Could not remove ${plan.runtimeDir}.` }),
-          ),
-        );
-      yield* Console.log(`Removed ${plan.runtimeDir}.`);
-    }
+    yield* fs
+      .remove(plan.runtimeDir, { recursive: true, force: true })
+      .pipe(
+        Effect.mapError(
+          () => new CliUninstallError({ reason: `Could not remove ${plan.runtimeDir}.` }),
+        ),
+      );
+    yield* Console.log(`Removed ${plan.runtimeDir}.`);
   }
   yield* Console.log("");
   yield* Console.log("fab is uninstalled. Thanks for trying Fab.");
