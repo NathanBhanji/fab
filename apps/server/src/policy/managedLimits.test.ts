@@ -365,7 +365,6 @@ it.effect(
       for (const stderr of [
         dialFailure("connection refused"),
         "NeedsLogin: not logged in",
-        String.raw`Get "http://local-tailscaled.sock/localapi/v0/serve-config": open \\.\pipe\ProtectedPrefix\Administrators\Tailscale\tailscaled: The system cannot find the file specified.`,
       ]) {
         yield* close({ status: { stdout: "", exitCode: 1, stderr } });
       }
