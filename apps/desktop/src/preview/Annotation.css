@@ -1,0 +1,68 @@
+@import "tailwindcss";
+
+@theme inline {
+  --font-sans: var(--fab-font-sans);
+  --font-mono: var(--fab-font-mono);
+  --color-background: var(--fab-background);
+  --color-foreground: var(--fab-foreground);
+  --color-popover: var(--fab-popover);
+  --color-popover-foreground: var(--fab-popover-foreground);
+  --color-primary: var(--fab-primary);
+  --color-primary-foreground: var(--fab-primary-foreground);
+  --color-muted: var(--fab-muted);
+  --color-muted-foreground: var(--fab-muted-foreground);
+  --color-accent: var(--fab-accent);
+  --color-accent-foreground: var(--fab-accent-foreground);
+  --color-border: var(--fab-border);
+  --color-input: var(--fab-input);
+  --color-ring: var(--fab-ring);
+  --radius-sm: calc(var(--fab-radius) - 4px);
+  --radius-md: calc(var(--fab-radius) - 2px);
+  --radius-lg: var(--fab-radius);
+  --radius-xl: calc(var(--fab-radius) + 4px);
+  --radius-2xl: calc(var(--fab-radius) + 8px);
+}
+
+:host {
+  --fab-font-sans:
+    "DM Sans Variable", "DM Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui,
+    sans-serif;
+  --fab-font-mono:
+    "SF Mono", "SFMono-Regular", "JetBrains Mono", Consolas, "Liberation Mono", Menlo, monospace;
+  --fab-radius: 0.625rem;
+  --fab-background: white;
+  --fab-foreground: oklch(0.269 0 0);
+  --fab-popover: white;
+  --fab-popover-foreground: oklch(0.269 0 0);
+  --fab-primary: oklch(0.488 0.217 264);
+  --fab-primary-foreground: white;
+  --fab-muted: rgb(0 0 0 / 4%);
+  --fab-muted-foreground: oklch(0.556 0 0);
+  --fab-accent: rgb(0 0 0 / 4%);
+  --fab-accent-foreground: oklch(0.269 0 0);
+  --fab-border: rgb(0 0 0 / 8%);
+  --fab-input: rgb(0 0 0 / 10%);
+  --fab-ring: oklch(0.488 0.217 264);
+  color: var(--fab-foreground);
+  font-family: var(--fab-font-sans);
+}
+
+* {
+  box-sizing: border-box;
+  border-color: var(--fab-border);
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--fab-ring) 72%, transparent);
+  outline-offset: -2px;
+}

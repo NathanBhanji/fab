@@ -1,0 +1,4 @@
+interface:
+  display_name: "Fab App Testing"
+  short_description: "Test web and desktop in Fab's Browser panel"
+  default_prompt: "Use $test-fab-app to verify the affected web or desktop flow through Fab's Browser panel."

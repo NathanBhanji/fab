@@ -1,0 +1,23 @@
+{
+  "name": "@fab/source-control-definitions",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./registry": {
+      "types": "./src/registry.ts",
+      "import": "./src/registry.ts"
+    }
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@fab/source-control-azure-devops": "workspace:*",
+    "@fab/source-control-bitbucket": "workspace:*",
+    "@fab/source-control-core": "workspace:*",
+    "@fab/source-control-forgejo": "workspace:*",
+    "@fab/source-control-gitcafe": "workspace:*",
+    "@fab/source-control-github": "workspace:*",
+    "@fab/source-control-gitlab": "workspace:*"
+  }
+}

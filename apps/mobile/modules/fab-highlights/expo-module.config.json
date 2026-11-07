@@ -1,0 +1,10 @@
+{
+  "platforms": ["apple", "android"],
+  "apple": {
+    "modules": ["FabHighlightsModule"],
+    "podspecPath": "FabHighlightsNative.podspec"
+  },
+  "android": {
+    "modules": ["expo.modules.fabhighlights.FabHighlightsModule"]
+  }
+}
