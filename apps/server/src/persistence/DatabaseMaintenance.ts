@@ -1,4 +1,3 @@
-import * as HostProcess from "@fab/shared/HostProcess";
 import * as NodeSqliteClient from "@fab/shared/nodeSqliteClient";
 import * as Context from "effect/Context";
 import * as Effect from "effect/Effect";
@@ -205,16 +204,7 @@ const make = Effect.gen(function* () {
         { discard: true },
       );
       const connection = NodeSqliteClient.layer({ filename: legacy });
-      if ((yield* HostProcess.Platform) === "win32") {
-        // Windows blocks unlink while any SQLite handle is open, including our own.
-        yield* lockExclusively(legacy).pipe(Effect.provide(connection));
-        yield* removeFiles;
-      } else {
-        yield* lockExclusively(legacy).pipe(
-          Effect.andThen(removeFiles),
-          Effect.provide(connection),
-        );
-      }
+      yield* lockExclusively(legacy).pipe(Effect.andThen(removeFiles), Effect.provide(connection));
     },
     (effect, databasePath) =>
       effect.pipe(

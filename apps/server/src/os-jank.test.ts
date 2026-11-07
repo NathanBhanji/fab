@@ -1,7 +1,7 @@
 import * as NodeServices from "@effect/platform-node/NodeServices";
 import { it as effectIt } from "@effect/vitest";
 import * as HostProcess from "@fab/shared/HostProcess";
-import { CommandAvailability, WindowsShellEnvironment } from "@fab/shared/shell";
+
 import * as Effect from "effect/Effect";
 // @effect-diagnostics-next-line nodeBuiltinImport:off -- Observe the existing synchronous shell probe without launching the user's login shell.
 import * as NodeChildProcess from "node:child_process";
@@ -134,20 +134,4 @@ effectIt.effect("hydrates a missing JAVA_HOME from the login shell and keeps an 
       }),
     (probe) => Effect.sync(() => probe.mockRestore()),
   ),
-);
-
-effectIt.effect("replaces a Path-spelled Windows PATH instead of adding a second key", () =>
-  Effect.gen(function* () {
-    const env: NodeJS.ProcessEnv = { Path: "C:\\Windows" };
-
-    yield* fixPath().pipe(
-      Effect.provideService(HostProcess.Platform, "win32"),
-      Effect.provideService(HostProcess.Environment, env),
-      Effect.provideService(WindowsShellEnvironment, () => Effect.succeed({ PATH: "C:\\Tools" })),
-      Effect.provideService(CommandAvailability, () => Effect.succeed(true)),
-      Effect.provide(NodeServices.layer),
-    );
-
-    assert.deepEqual(env, { PATH: "C:\\Tools;C:\\Windows" });
-  }),
 );

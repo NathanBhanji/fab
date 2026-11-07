@@ -53,7 +53,6 @@ const make = Effect.fn("makeHostResources")(function* () {
         ? Math.min(1, Math.max(0, 1 - idleDelta / totalDelta))
         : null;
     const totalMemoryBytes = NodeOS.totalmem();
-    // On Windows libuv returns GlobalMemoryStatusEx.ullAvailPhys, including standby memory.
     let availableMemoryBytes = NodeOS.freemem();
     if (platform === "linux") {
       const meminfo = yield* fs

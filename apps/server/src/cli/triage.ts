@@ -16,7 +16,6 @@ import { resolveBaseDir } from "../os-jank.ts";
 import { buildTriageLaunchPrompt } from "../triage/triagePrompt.ts";
 import { describeServerProcess, writeTriageSession } from "../triage/triageSession.ts";
 import { baseDirFlag } from "./config.ts";
-import { interactiveStdin } from "./consoleStdin.ts";
 import { resolveCliCommand } from "./invocation.ts";
 
 interface TriageAgent {
@@ -92,8 +91,7 @@ const runInteractiveSession = (input: {
   Effect.callback<number, TriageAgentSpawnError>((resume) => {
     const child = NodeChildProcess.spawn(input.command, [...input.args], {
       cwd: input.cwd,
-      // The Windows desktop launcher supplies terminal input through the reopened console.
-      stdio: [interactiveStdin(), "inherit", "inherit"],
+      stdio: "inherit",
       shell: input.shell,
     });
     child.once("error", (cause) =>
@@ -163,7 +161,7 @@ export const triageCommand = Command.make("triage", {
         selected = yield* pickAgent(installed);
       }
 
-      // Windows .cmd shims cannot carry multiline argv; the prompt file also serves as the paste fallback.
+      // The prompt file also serves as the paste fallback.
       const { sessionDir, promptFilePath, contextFilePath } = session;
 
       if (selected === undefined) {

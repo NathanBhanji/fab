@@ -43,8 +43,7 @@ unconstrained states. Headless servers leave unavailable power data unknown.
   restarts would discard the new monitor's samples until its sequence caught up.
 - Sampling can miss a process that starts and exits between samples. Cumulative
   counters still yield deltas for processes observed across samples.
-- Windows process I/O includes more than disk traffic. Unix counters report storage
-  I/O, which can differ from logical application reads and writes because of OS
+- Process I/O counters report storage I/O, which can differ from logical application reads and writes because of OS
   caching. Keep instrumented logical I/O separate from these counters.
 - Group totals accumulate observed deltas since telemetry started. Per-process
   cumulative counters cover the operating system's lifetime for that process.

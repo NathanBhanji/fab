@@ -3,9 +3,8 @@ import { assert, it } from "@effect/vitest";
 import * as Effect from "effect/Effect";
 import * as FileSystem from "effect/FileSystem";
 import * as Path from "effect/Path";
-import * as HostProcess from "@fab/shared/HostProcess";
 
-import { findOwnedLauncher, spawnWindowsRemoval } from "./uninstall.ts";
+import { findOwnedLauncher } from "./uninstall.ts";
 
 it.layer(NodeServices.layer)("fab uninstall launcher", (it) => {
   it.effect("claims only a launcher that points into this home's runtime tree", () =>
@@ -32,29 +31,6 @@ it.layer(NodeServices.layer)("fab uninstall launcher", (it) => {
       assert.isUndefined(yield* findOwnedLauncher({ launchedAs: theirs, versionsDir }));
       assert.isUndefined(yield* findOwnedLauncher({ launchedAs: copy, versionsDir }));
       assert.isUndefined(yield* findOwnedLauncher({ launchedAs: undefined, versionsDir }));
-    }).pipe(Effect.scoped, Effect.provideService(HostProcess.Platform, "linux")),
+    }).pipe(Effect.scoped),
   );
 });
-
-it.live.runIf(HostProcess.Platform.defaultValue() === "win32")(
-  "fab uninstall has cmd.exe remove the runtime directory, preserving spaces and literal environment-variable syntax",
-  () =>
-    Effect.gen(function* () {
-      const fs = yield* FileSystem.FileSystem;
-      const path = yield* Path.Path;
-      const root = yield* fs.makeTempDirectoryScoped({ prefix: "fab-uninstall-" });
-      const runtimeDir = path.join(root, "fab home %COMSPEC% !COMSPEC! & data", "runtime");
-      yield* fs.makeDirectory(path.join(runtimeDir, "versions", "1.0.0"), { recursive: true });
-      yield* fs.writeFileString(path.join(runtimeDir, "versions", "1.0.0", "fab.exe"), "");
-
-      const child = spawnWindowsRemoval(process.env.ComSpec ?? "cmd.exe", runtimeDir);
-      yield* Effect.callback<void, Error>((resume) => {
-        child.once("error", (error) => resume(Effect.fail(error)));
-        child.once("exit", (code) =>
-          resume(code === 0 ? Effect.void : Effect.die(`cmd.exe exited with ${code}`)),
-        );
-      });
-
-      assert.isFalse(yield* fs.exists(runtimeDir));
-    }).pipe(Effect.scoped, Effect.provide(NodeServices.layer)),
-);

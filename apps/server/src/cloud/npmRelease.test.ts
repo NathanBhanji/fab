@@ -40,16 +40,11 @@ const makeService = Effect.fnUntraced(function* (
   const fs = yield* FileSystem.FileSystem;
   const path = yield* Path.Path;
   const npmBin = yield* fs.makeTempDirectoryScoped({ prefix: "fab-npm-release-" });
-  for (const name of ["npm", "npm.cmd"]) {
-    yield* fs.writeFileString(path.join(npmBin, name), "", { mode: 0o755 });
-  }
+  yield* fs.writeFileString(path.join(npmBin, "npm"), "", { mode: 0o755 });
   return yield* NpmRelease.make().pipe(
     Effect.provideService(ProcessRunner.ProcessRunner, { run }),
     Effect.provideService(HttpClient.HttpClient, publicRegistry),
-    Effect.provideService(HostProcess.Environment, {
-      PATH: npmInstalled ? npmBin : "",
-      PATHEXT: ".CMD",
-    }),
+    Effect.provideService(HostProcess.Environment, { PATH: npmInstalled ? npmBin : "" }),
   );
 }, Effect.provide(NodeServices.layer));
 
@@ -80,7 +75,7 @@ it.effect.each([
     expect(yield* service.get({ spec: fixture.spec })).toEqual(expected);
     expect(calls).toHaveLength(1);
     expect(calls[0]).toMatchObject({
-      command: expect.stringMatching(/[/\\]npm(?:\.cmd)?$/i),
+      command: expect.stringMatching(/\/npm$/),
       args: ["view", "--global", "--json", `fab@${fixture.spec}`, "version", "fab"],
       maxOutputBytes: 256 * 1024,
     });

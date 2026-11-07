@@ -105,7 +105,7 @@ const makeHarness = Effect.fn("test.make_boot_service_harness")(function* (
   );
   const baseDir = path.join(home, ".fab");
   const statePath = path.join(baseDir, "runtime", "service-state.json");
-  const runtime = pinnedRuntimePaths(path, baseDir, "1.2.3", platform);
+  const runtime = pinnedRuntimePaths(path, baseDir, "1.2.3");
   yield* fs.makeDirectory(path.dirname(runtime.entryPath), { recursive: true });
   yield* fs.writeFileString(runtime.entryPath, "#!/bin/sh\n");
   yield* fs.writeFileString(runtime.sentinelPath, "1.2.3\n");
@@ -193,7 +193,7 @@ const makeHarness = Effect.fn("test.make_boot_service_harness")(function* (
     hostExecPath = "/usr/bin/fab",
   ) =>
     Effect.gen(function* () {
-      const paths = pinnedRuntimePaths(path, serviceBaseDir, cliVersion, platform);
+      const paths = pinnedRuntimePaths(path, serviceBaseDir, cliVersion);
       yield* fs.makeDirectory(path.dirname(paths.entryPath), { recursive: true });
       yield* fs.writeFileString(paths.entryPath, "#!/bin/sh\n");
       yield* fs.writeFileString(paths.sentinelPath, `${cliVersion}\n`);
@@ -725,7 +725,7 @@ it.layer(NodeServices.layer)("boot service install", (it) => {
         `--property=StandardOutput=append:${plan.logPath}`,
         `--property=StandardError=append:${plan.logPath}`,
         "--setenv=FAB_BOOT_SERVICE_UNIT=",
-        pinnedRuntimePaths(path, baseDir, "1.2.4", "linux").entryPath,
+        pinnedRuntimePaths(path, baseDir, "1.2.4").entryPath,
         "service",
         "install",
         "--base-dir",
@@ -904,7 +904,7 @@ it.layer(NodeServices.layer)("boot service install", (it) => {
       const { makeService, fs, baseDir, runtime } = yield* makeHarness("darwin");
       const path = yield* Path.Path;
       const previous = runtime.versionDir;
-      const installed = pinnedRuntimePaths(path, baseDir, "1.2.4", "darwin").versionDir;
+      const installed = pinnedRuntimePaths(path, baseDir, "1.2.4").versionDir;
       // The 1.2.3 CLI, or the 1.2.3 service's own PATH, installs 1.2.4.
       const updated = yield* makeService(
         `/usr/bin:${previous}:/bin`,

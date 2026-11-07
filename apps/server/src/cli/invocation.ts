@@ -65,7 +65,6 @@ export const resolveEntryPath = Effect.gen(function* () {
 export const resolveServerInstallation = Effect.gen(function* () {
   const fs = yield* FileSystem.FileSystem;
   const path = yield* Path.Path;
-  const platform = yield* HostProcess.Platform;
   const entry = yield* fs.realPath(yield* resolveEntryPath);
   const match = /^(.*)\/lib\/node_modules\/fab\/(?:dist\/bin\.mjs|bin\/fab\.mjs)$/.exec(entry);
   if (!match) {
@@ -74,7 +73,6 @@ export const resolveServerInstallation = Effect.gen(function* () {
       ? null
       : ({ kind: runner === "pnpm dlx" ? "pnpm-dlx" : runner } satisfies ServerInstallation);
   }
-  if (platform === "win32") return null;
   const prefix = match[1] || "/";
   if (
     prefix.includes("/node_modules/") ||
@@ -120,16 +118,6 @@ export const resolveCliCommand = (subcommand: string) =>
 const shellWord = (value: string) =>
   /^[\w@%+=:,./-]+$/.test(value) ? value : `'${value.replaceAll("'", `'"'"'`)}'`;
 
-/** PowerShell also treats typographic quotes as delimiters; escape them and suppress expansion. */
-const powershellWord = (value: string) =>
-  `"${value
-    .replaceAll("`", "``")
-    .replaceAll("$", "`$")
-    .replace(/["\u201C\u201D\u201E]/g, "$&$&")}"`;
-
-const hostShellWord = (platform: NodeJS.Platform, value: string) =>
-  platform === "win32" ? powershellWord(value) : shellWord(value);
-
 /** Script installs have no single launcher; desktop shims and standalone binaries do. */
 const resolveInstallLauncher = Effect.gen(function* () {
   const fs = yield* FileSystem.FileSystem;
@@ -144,15 +132,13 @@ const resolveInstallLauncher = Effect.gen(function* () {
 
 /**
  * Uses this install's `fab` on PATH, the originating runner, or its absolute launcher path.
- * Arguments are quoted for POSIX shells or PowerShell on Windows.
+ * Arguments are quoted for POSIX shells.
  */
 export const resolveHostCliCommand = Effect.fn("invocation.resolveHostCliCommand")(function* (
   subcommand: string,
   args: ReadonlyArray<string> = [],
 ) {
-  const platform = yield* HostProcess.Platform;
-  const withArgs = (prefix: string) =>
-    [prefix, ...args.map((arg) => hostShellWord(platform, arg))].join(" ");
+  const withArgs = (prefix: string) => [prefix, ...args.map(shellWord)].join(" ");
   const command = yield* resolveCliCommand(subcommand);
   if (command !== `fab ${subcommand}`) return { command: withArgs(command), launcher: false };
   const onPath = yield* resolveCommandPath("fab");
@@ -167,10 +153,7 @@ export const resolveHostCliCommand = Effect.fn("invocation.resolveHostCliCommand
   }
   const launcher = yield* resolveInstallLauncher;
   if (Option.isNone(launcher)) return { command: withArgs(command), launcher: false };
-  // PowerShell runs a quoted path only through the call operator.
-  const quoted = hostShellWord(platform, launcher.value);
-  const call = platform === "win32" ? `& ${quoted}` : quoted;
-  return { command: withArgs(`${call} ${subcommand}`), launcher: true };
+  return { command: withArgs(`${shellWord(launcher.value)} ${subcommand}`), launcher: true };
 });
 
 /**

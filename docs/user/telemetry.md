@@ -23,7 +23,7 @@ An administrator can turn product events and relay tracing off for every user on
 a [managed policy](./managed-policy.md#other-capabilities).
 
 The desktop app reads `FAB_TELEMETRY_ENABLED` from your shell profile (for example `~/.zshrc`) on macOS and
-Linux, so export it there and restart the app. On Windows, set it as a user environment variable.
+Linux, so export it there and restart the app.
 
 ## Mobile app crash reports
 

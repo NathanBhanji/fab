@@ -32,7 +32,6 @@ import {
   pinnedRuntimeVersionsDir,
   prunePinnedRuntimes,
   recordPinnedRuntimeLauncher,
-  windowsShimTarget,
 } from "../cloud/pinnedRuntime.ts";
 import { compareExactServiceVersions, isExactServiceVersion } from "../cloud/serviceProtocol.ts";
 import * as ManagedPolicy from "../policy/ManagedPolicy.ts";
@@ -151,7 +150,6 @@ export const repointLauncher = Effect.fn("cli.update.repoint_launcher")(function
 }) {
   const fs = yield* FileSystem.FileSystem;
   const path = yield* Path.Path;
-  const platform = yield* HostProcess.Platform;
   if (input.launchedAs === undefined) return Option.none<string>();
   const versionsDir = pinnedRuntimeVersionsDir(path, input.baseDir);
   const ownsTarget = (candidate: string) => launcherOwnsVersionsDir(path, versionsDir, candidate);
@@ -161,24 +159,6 @@ export const repointLauncher = Effect.fn("cli.update.repoint_launcher")(function
         () => new CliUpdateError({ reason: `Could not record the fab launcher at ${launcher}.` }),
       ),
     );
-
-  if (platform === "win32") {
-    const shimPath = yield* findWindowsShim(input.launchedAs);
-    if (shimPath === undefined) return Option.none<string>();
-    const current = yield* fs.readFileString(shimPath).pipe(Effect.option);
-    const quoted = Option.isSome(current) ? windowsShimTarget(current.value) : undefined;
-    if (quoted === undefined || !ownsTarget(quoted)) return Option.none<string>();
-    yield* remember(shimPath);
-    yield* fs
-      .writeFileString(shimPath, `@echo off\r\n"${input.targetEntryPath}" %*`)
-      .pipe(
-        Effect.mapError(
-          () =>
-            new CliUpdateError({ reason: `Could not rewrite the fab launcher at ${shimPath}.` }),
-        ),
-      );
-    return Option.some(shimPath);
-  }
 
   const linkTarget = yield* fs.readLink(input.launchedAs).pipe(Effect.option);
   if (Option.isNone(linkTarget)) return Option.none<string>();
@@ -205,42 +185,14 @@ export const resolveLauncherPath = Effect.gen(function* () {
   const invokedAs = yield* HostProcess.InvokedAs;
   const cwd = yield* HostProcess.WorkingDirectory;
   const environment = yield* HostProcess.Environment;
-  const platform = yield* HostProcess.Platform;
   if (invokedAs.includes("/") || invokedAs.includes("\\")) {
     return path.resolve(cwd, invokedAs);
   }
-  const delimiter = platform === "win32" ? ";" : ":";
-  for (const directory of (environment["PATH"] ?? "").split(delimiter)) {
+  for (const directory of (environment["PATH"] ?? "").split(":")) {
     if (directory.length === 0) continue;
     const candidate = path.join(directory, invokedAs);
     if (yield* fs.exists(candidate).pipe(Effect.orElseSucceed(() => false))) {
       return candidate;
-    }
-  }
-  return undefined;
-});
-
-/** Windows executables see their own path, so find the installer shim by matching fab.cmd targets on PATH. */
-export const findWindowsShim = Effect.fn("cli.update.find_windows_shim")(function* (
-  executablePath: string,
-) {
-  const fs = yield* FileSystem.FileSystem;
-  const path = yield* Path.Path;
-  const environment = yield* HostProcess.Environment;
-  const candidates = [
-    ...(environment["FAB_INSTALL_BIN_DIR"] ? [environment["FAB_INSTALL_BIN_DIR"]] : []),
-    ...(environment["PATH"] ?? environment["Path"] ?? "").split(";"),
-  ].filter((entry) => entry.trim().length > 0);
-  for (const directory of candidates) {
-    const shimPath = path.join(directory, "fab.cmd");
-    const contents = yield* fs.readFileString(shimPath).pipe(Effect.option);
-    if (Option.isNone(contents)) continue;
-    const target = windowsShimTarget(contents.value);
-    if (
-      target !== undefined &&
-      path.resolve(target).toLowerCase() === path.resolve(executablePath).toLowerCase()
-    ) {
-      return shimPath;
     }
   }
   return undefined;
@@ -457,7 +409,7 @@ export const runUpdate = Effect.fn("cli.update.run")(function* (input: {
   }
 
   const alreadyOnDisk = yield* fs
-    .readFileString(pinnedRuntimePaths(path, input.baseDir, targetVersion, platform).sentinelPath)
+    .readFileString(pinnedRuntimePaths(path, input.baseDir, targetVersion).sentinelPath)
     .pipe(
       Effect.map((sentinel) => sentinel.trim() === targetVersion),
       Effect.orElseSucceed(() => false),

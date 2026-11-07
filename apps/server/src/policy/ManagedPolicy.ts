@@ -99,11 +99,7 @@ export const fromDocument = Effect.fn("ManagedPolicy.fromDocument")(function* (
   const providers =
     providerLimits === undefined && maxRuntimeMode === undefined
       ? undefined
-      : ManagedProviders.makeManagedProviders(
-          providerLimits ?? {},
-          maxRuntimeMode,
-          yield* HostProcess.Platform,
-        );
+      : ManagedProviders.makeManagedProviders(providerLimits ?? {}, maxRuntimeMode);
   if (providers?._tag === "Invalid") {
     return yield* new ManagedPolicyFileError({ path, reason: providers.reason });
   }

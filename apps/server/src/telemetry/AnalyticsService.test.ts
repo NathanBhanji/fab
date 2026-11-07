@@ -129,7 +129,7 @@ const analyticsLayerWith = (client: HttpClient.HttpClient, policy?: ManagedPolic
     ),
     Layer.provide(
       Layer.mergeAll(
-        Layer.succeed(HostProcess.Platform, "win32"),
+        Layer.succeed(HostProcess.Platform, "linux"),
         Layer.succeed(HostProcess.Architecture, "x64"),
         Layer.succeed(HttpClient.HttpClient, client),
         ManagedPolicy.layerTest(policy),

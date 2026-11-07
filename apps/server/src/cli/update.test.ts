@@ -109,10 +109,10 @@ it.effect("reads the newest version from the update feed file a mirror publishes
     ]);
     // A feed for the wrong track is not trusted to mean the requested one.
     assert.include(
-      yield* resolve("stable", "win32", "x64", "version: 1.5.0-nightly.20261101.2\n"),
-      "Could not read latest.yml from Example Corp's update mirror.",
+      yield* resolve("stable", "linux", "x64", "version: 1.5.0-nightly.20261101.2\n"),
+      "Could not read latest-linux.yml from Example Corp's update mirror.",
     );
-    assert.include(yield* resolve("preview", "win32", "x64", ""), "has no preview builds");
+    assert.include(yield* resolve("preview", "linux", "x64", ""), "has no preview builds");
   }),
 );
 
@@ -223,7 +223,6 @@ it.layer(NodeServices.layer)("fab update launcher", (it) => {
     { name: "no launcher records", recorded: undefined },
     { name: "an empty launcher record", recorded: "" },
     { name: "whole launcher records", recorded: "/opt/fab\n" },
-    { name: "Windows launcher records", recorded: "C:\\fab.cmd\r\n" },
     // An interrupted append cut this record short.
     { name: "an unterminated launcher record", recorded: "/opt/t" },
     // Another process's append is cut short after fab update reads the records.
@@ -463,7 +462,7 @@ it.layer(NodeServices.layer)("fab update with a background service", (it) => {
       const path = yield* Path.Path;
       const baseDir = yield* fs.makeTempDirectoryScoped({ prefix: "fab-update-" });
       const version = packageJson.version;
-      const runtime = pinnedRuntimePaths(path, baseDir, version, "linux");
+      const runtime = pinnedRuntimePaths(path, baseDir, version);
       yield* fs.makeDirectory(runtime.versionDir, { recursive: true });
       yield* fs.writeFileString(runtime.entryPath, "");
       yield* fs.writeFileString(runtime.sentinelPath, `${version}\n`);

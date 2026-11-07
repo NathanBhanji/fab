@@ -82,14 +82,13 @@ export function parseManagedEndpointLocalOrigin(localOrigin: string) {
 export function isAllowedEndpointOrigin(input: {
   readonly origin: RelayManagedEndpointOrigin;
   readonly requestUrl: string;
-  readonly allowNonLoopbackRequestHost?: boolean;
 }): boolean {
   if (!isLoopbackHostname(input.origin.localHttpHost)) {
     return false;
   }
 
   const url = new URL(input.requestUrl);
-  if (!input.allowNonLoopbackRequestHost && !isLoopbackHostname(url.hostname)) {
+  if (!isLoopbackHostname(url.hostname)) {
     return false;
   }
 

@@ -85,8 +85,8 @@ const layerLinkProofRoutes = HttpApiBuilder.layer(LinkProofTestApi).pipe(
     ServerEnvironment.layerIdentity,
     Layer.mock(ServerEnvironment.ServerEnvironment)({
       getDescriptor: Effect.succeed({
-        environmentId: EnvironmentId.make("wsl-environment"),
-        label: "WSL",
+        environmentId: EnvironmentId.make("test-environment"),
+        label: "Test",
         platform: { os: "linux", arch: "x64" },
         serverVersion: "0.0.0-test",
         capabilities: { repositoryIdentity: false },
@@ -127,7 +127,7 @@ const withLinkProofClient = async (
     path: string,
     payload: unknown,
     headers?: Record<string, string>,
-    origin = NON_LOOPBACK_ORIGIN,
+    origin = LOOPBACK_ORIGIN,
   ) =>
     handler(
       new Request(`${origin}${path}`, {
@@ -138,7 +138,7 @@ const withLinkProofClient = async (
     );
   const exchange = async (credential: string, scope?: string) => {
     const response = await handler(
-      new Request(`${NON_LOOPBACK_ORIGIN}/oauth/token`, {
+      new Request(`${LOOPBACK_ORIGIN}/oauth/token`, {
         method: "POST",
         body: new URLSearchParams({
           grant_type: AuthTokenExchangeGrantType,
@@ -160,8 +160,8 @@ const withLinkProofClient = async (
   }
 };
 
-describe("link proof over a non-loopback desktop transport", () => {
-  it("signs a loopback tunnel origin after desktop bootstrap token exchange over a non-loopback host", () =>
+describe("link proof", () => {
+  it("signs a loopback tunnel origin after desktop bootstrap token exchange", () =>
     withLinkProofClient(async ({ post, exchange }) => {
       const token = await exchange(DESKTOP_BOOTSTRAP_TOKEN);
       const response = await post("/api/connect/link-proof", proofRequest, {
@@ -176,7 +176,7 @@ describe("link proof over a non-loopback desktop transport", () => {
         {
           algorithms: ["EdDSA"],
           typ: RELAY_LINK_PROOF_TYP,
-          issuer: "fab-env:wsl-environment",
+          issuer: "fab-env:test-environment",
           audience: proofRequest.relayIssuer,
         },
       );
@@ -188,40 +188,13 @@ describe("link proof over a non-loopback desktop transport", () => {
       expect(response.headers.get("cache-control")).toBe("no-store");
     }));
 
-  it("does not pass desktop trust to a paired client or accept client-supplied provenance", () =>
-    withLinkProofClient(async ({ post, exchange }) => {
-      const desktop = await exchange(DESKTOP_BOOTSTRAP_TOKEN);
-      const paired = await post(
-        "/api/auth/pairing-token",
-        {
-          scopes: ["relay:write"],
-          label: "desktop-bootstrap",
-          subject: "desktop-bootstrap",
-        },
-        { authorization: `Bearer ${desktop}` },
-      );
-      expect(paired.status).toBe(200);
-      const { credential } = (await paired.json()) as { credential: string };
-      const token = await exchange(credential);
-      const headers = { authorization: `Bearer ${token}`, "x-desktop-bootstrap": "true" };
-      const payload = {
-        ...proofRequest,
-        allowNonLoopbackRequestHost: true,
-        subject: "desktop-bootstrap",
-      };
-      const rejected = await post("/api/connect/link-proof", payload, headers);
-      expect(rejected.status).toBe(400);
-      expect(await rejected.json()).toMatchObject({ message: "Invalid managed endpoint origin." });
-      const loopback = await post(
-        "/api/connect/link-proof",
-        proofRequest,
-        headers,
-        LOOPBACK_ORIGIN,
-      );
-      expect(loopback.status).toBe(200);
-    }));
-
   it.each([
+    {
+      name: "non-loopback request host",
+      origin: proofRequest.origin,
+      headers: {},
+      requestOrigin: NON_LOOPBACK_ORIGIN,
+    },
     {
       name: "non-loopback tunnel origin",
       origin: { localHttpHost: "172.24.162.233", localHttpPort: 3773 },
@@ -242,13 +215,14 @@ describe("link proof over a non-loopback desktop transport", () => {
       origin: proofRequest.origin,
       headers: { "x-forwarded-proto": "http" },
     },
-  ])("rejects $name even for desktop bootstrap", ({ origin, headers }) =>
+  ])("rejects $name even for desktop bootstrap", ({ origin, headers, requestOrigin }) =>
     withLinkProofClient(async ({ post, exchange }) => {
       const token = await exchange(DESKTOP_BOOTSTRAP_TOKEN);
       const response = await post(
         "/api/connect/link-proof",
         { ...proofRequest, origin },
         { ...headers, authorization: `Bearer ${token}` },
+        requestOrigin,
       );
       expect(response.status).toBe(400);
       expect(await response.json()).toMatchObject({ message: "Invalid managed endpoint origin." });

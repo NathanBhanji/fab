@@ -1,6 +1,5 @@
 import * as NodeServices from "@effect/platform-node/NodeServices";
 import { assert, it } from "@effect/vitest";
-import * as HostProcess from "@fab/shared/HostProcess";
 import * as NodeSqliteClient from "@fab/shared/nodeSqliteClient";
 import * as Clock from "effect/Clock";
 import * as Duration from "effect/Duration";
@@ -67,28 +66,7 @@ it.layer(DatabaseMaintenance.layer.pipe(Layer.provideMerge(NodeServices.layer)))
 
         yield* Effect.flatMap(DatabaseMaintenance.DatabaseMaintenance, (service) =>
           service.removeLegacyDatabase(dbPath),
-        ).pipe(
-          Effect.provide(Layer.fresh(DatabaseMaintenance.layer)),
-          Effect.provideService(HostProcess.Platform, "win32"),
-          Effect.provideService(FileSystem.FileSystem, {
-            ...fs,
-            remove: (target, options) =>
-              Effect.gen(function* () {
-                if (target === legacy) {
-                  yield* Effect.gen(function* () {
-                    const sql = yield* SqlClient.SqlClient;
-                    yield* sql`PRAGMA busy_timeout = 0`;
-                    yield* sql`BEGIN EXCLUSIVE`;
-                    yield* sql`COMMIT`;
-                  }).pipe(Effect.provide(NodeSqliteClient.layer({ filename: legacy })));
-                  // Create sidecars after the probe closes so only Doctor can remove them.
-                  yield* fs.writeFileString(`${legacy}-wal`, "leftover WAL");
-                  yield* fs.writeFileString(`${legacy}-shm`, "leftover SHM");
-                }
-                yield* fs.remove(target, options);
-              }),
-          }),
-        );
+        ).pipe(Effect.provide(Layer.fresh(DatabaseMaintenance.layer)));
         assert.isFalse(yield* fs.exists(legacy));
         assert.isFalse(yield* fs.exists(`${legacy}-wal`));
         assert.isFalse(yield* fs.exists(`${legacy}-shm`));

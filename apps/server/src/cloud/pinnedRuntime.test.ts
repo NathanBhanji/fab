@@ -219,7 +219,7 @@ it.layer(NodeServices.layer)("ensurePinnedRuntimeInstalled", (it) => {
       const fs = yield* FileSystem.FileSystem;
       const path = yield* Path.Path;
       const baseDir = yield* fs.makeTempDirectoryScoped({ prefix: "fab-pinned-runtime-test-" });
-      const finalPaths = pinnedRuntimePaths(path, baseDir, version, "linux");
+      const finalPaths = pinnedRuntimePaths(path, baseDir, version);
       let validatedDirectory = "";
 
       const installed = yield* ensurePinnedRuntimeInstalled({
@@ -251,7 +251,7 @@ it.layer(NodeServices.layer)("ensurePinnedRuntimeInstalled", (it) => {
       const fs = yield* FileSystem.FileSystem;
       const path = yield* Path.Path;
       const baseDir = yield* fs.makeTempDirectoryScoped({ prefix: "fab-pinned-runtime-test-" });
-      const finalPaths = pinnedRuntimePaths(path, baseDir, version, "linux");
+      const finalPaths = pinnedRuntimePaths(path, baseDir, version);
 
       yield* ensurePinnedRuntimeInstalled({
         baseDir,
@@ -281,7 +281,7 @@ it.layer(NodeServices.layer)("ensurePinnedRuntimeInstalled", (it) => {
       const fs = yield* FileSystem.FileSystem;
       const path = yield* Path.Path;
       const baseDir = yield* fs.makeTempDirectoryScoped({ prefix: "fab-pinned-runtime-repair-" });
-      const finalPaths = pinnedRuntimePaths(path, baseDir, version, "linux");
+      const finalPaths = pinnedRuntimePaths(path, baseDir, version);
       yield* fs.makeDirectory(finalPaths.versionDir, { recursive: true });
       yield* fs.writeFileString(path.join(finalPaths.versionDir, "partial"), "incomplete\n");
 
@@ -307,7 +307,7 @@ it.layer(NodeServices.layer)("ensurePinnedRuntimeInstalled", (it) => {
       const fs = yield* FileSystem.FileSystem;
       const path = yield* Path.Path;
       const baseDir = yield* fs.makeTempDirectoryScoped({ prefix: "fab-pinned-runtime-mirror-" });
-      const cached = pinnedRuntimePaths(path, baseDir, version, "linux");
+      const cached = pinnedRuntimePaths(path, baseDir, version);
       yield* fs.makeDirectory(path.dirname(cached.entryPath), { recursive: true });
       yield* fs.writeFileString(cached.entryPath, "#!/bin/sh\n");
       yield* fs.writeFileString(cached.sentinelPath, `${version}\n`);
@@ -343,7 +343,7 @@ it.layer(NodeServices.layer)("ensurePinnedRuntimeInstalled", (it) => {
       const fs = yield* FileSystem.FileSystem;
       const path = yield* Path.Path;
       const baseDir = yield* fs.makeTempDirectoryScoped({ prefix: "fab-pinned-runtime-repair-" });
-      const finalPaths = pinnedRuntimePaths(path, baseDir, version, "linux");
+      const finalPaths = pinnedRuntimePaths(path, baseDir, version);
       yield* fs.makeDirectory(path.dirname(finalPaths.entryPath), { recursive: true });
       yield* fs.writeFileString(finalPaths.entryPath, "broken\n");
       yield* fs.writeFileString(finalPaths.sentinelPath, `${version}\n`);
@@ -542,30 +542,6 @@ it.layer(NodeServices.layer)("prunePinnedRuntimes", (it) => {
 
       assert.deepEqual(removed, []);
       assert.isTrue(yield* fs.exists(path.join(versionsDir, "1.0.0", "fab")));
-    }),
-  );
-
-  it.effect("matches a Windows shim whatever its casing", () =>
-    Effect.gen(function* () {
-      const fs = yield* FileSystem.FileSystem;
-      const path = yield* Path.Path;
-      const { baseDir, versionsDir } = yield* setup(["1.0.0", "1.1.0"]);
-      const shim = path.join(baseDir, "fab.cmd");
-      yield* fs.writeFileString(
-        shim,
-        `@echo off\r\n"${path.join(versionsDir, "1.0.0", "fab.exe").toUpperCase()}" %*`,
-      );
-      yield* fs.writeFileString(path.join(baseDir, "runtime", "launchers"), `${shim}\n`);
-
-      const removed = yield* prunePinnedRuntimes({ baseDir, keep: ["2.0.0"] }).pipe(
-        Effect.provideService(
-          ProcessRunner.ProcessRunner,
-          lsofRunner("C:\\Windows\\explorer.exe\n"),
-        ),
-        Effect.provideService(HostProcess.Platform, "win32"),
-        Effect.provideService(HostProcess.Environment, {}),
-      );
-      assert.deepEqual(removed, ["1.1.0"]);
     }),
   );
 

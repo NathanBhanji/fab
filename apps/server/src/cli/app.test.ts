@@ -189,23 +189,15 @@ describe("fab server command safety", () => {
         yield* Effect.promise(() => NodeFSP.mkdir(stateDir, { recursive: true }));
         yield* Effect.promise(() => NodeFSP.writeFile(statePath, record));
         const newDirectory = NodePath.join(root, "new-project");
-        const platform = yield* HostProcess.Platform;
         for (const args of [
           [],
           ["start"],
           ["."],
           ["node_modules"],
-          ["C:new-project"],
           [newDirectory],
           ["start", newDirectory],
         ]) {
-          const error = yield* runCli(args, { FAB_HOME: baseDir }).pipe(
-            Effect.provideService(
-              HostProcess.Platform,
-              args[0] === "C:new-project" ? "win32" : platform,
-            ),
-            Effect.flip,
-          );
+          const error = yield* runCli(args, { FAB_HOME: baseDir }).pipe(Effect.flip);
           expect(String(error)).toContain("A Fab server is already running");
           expect(yield* Effect.promise(() => NodeFSP.readFile(statePath, "utf8"))).toBe(record);
           expect(yield* pathExists(newDirectory)).toBe(false);
@@ -222,55 +214,51 @@ describe("fab app", () => {
   it.live.each(["permissions", "owner", "symlink", "missing owner"] as const)(
     "rejects unsafe %s on the socket directory before sending",
     (unsafe) =>
-      Effect.gen(function* () {
-        const platform = yield* HostProcess.Platform;
-        if (platform === "win32") return;
-        yield* withTempDirectory(
-          "fab-app-unsafe-",
-          (root) =>
-            Effect.gen(function* () {
-              const previousTmpdir = process.env.TMPDIR;
-              yield* Effect.acquireRelease(
+      withTempDirectory(
+        "fab-app-unsafe-",
+        (root) =>
+          Effect.gen(function* () {
+            const previousTmpdir = process.env.TMPDIR;
+            yield* Effect.acquireRelease(
+              Effect.sync(() => {
+                process.env.TMPDIR = root;
+              }),
+              () =>
                 Effect.sync(() => {
-                  process.env.TMPDIR = root;
+                  if (previousTmpdir === undefined) delete process.env.TMPDIR;
+                  else process.env.TMPDIR = previousTmpdir;
                 }),
-                () =>
-                  Effect.sync(() => {
-                    if (previousTmpdir === undefined) delete process.env.TMPDIR;
-                    else process.env.TMPDIR = previousTmpdir;
-                  }),
-              );
-              const baseDir = NodePath.join(root, ".fab");
-              const userId = yield* HostProcess.UserId;
-              assert(userId !== undefined);
-              const expectedUserId =
-                unsafe === "missing owner" ? undefined : unsafe === "owner" ? userId + 1 : userId;
-              const desktop = yield* fakeDesktop({ baseDir }).pipe(
-                Effect.provideService(HostProcess.UserId, expectedUserId),
-              );
-              const directory = desktop.directory;
-              assert(directory !== null);
-              if (unsafe === "permissions") {
-                yield* Effect.promise(() => NodeFSP.chmod(directory, 0o755));
-              } else if (unsafe === "symlink") {
-                const moved = NodePath.join(root, "moved");
-                yield* Effect.promise(() => NodeFSP.rename(directory, moved));
-                yield* Effect.promise(() => NodeFSP.symlink(moved, directory));
-              }
-              const result = yield* runCli(["app"]).pipe(
-                Effect.provideService(HostProcess.HomeDirectory, root),
-                Effect.provideService(HostProcess.UserId, expectedUserId),
-                Effect.result,
-              );
-              expect(desktop.received).toEqual([]);
-              expect(result).toMatchObject({
-                _tag: "Failure",
-                failure: { _tag: "DesktopAppUnreachableError" },
-              });
-            }).pipe(Effect.scoped),
-          "/tmp",
-        );
-      }),
+            );
+            const baseDir = NodePath.join(root, ".fab");
+            const userId = yield* HostProcess.UserId;
+            assert(userId !== undefined);
+            const expectedUserId =
+              unsafe === "missing owner" ? undefined : unsafe === "owner" ? userId + 1 : userId;
+            const desktop = yield* fakeDesktop({ baseDir }).pipe(
+              Effect.provideService(HostProcess.UserId, expectedUserId),
+            );
+            const directory = desktop.directory;
+            assert(directory !== null);
+            if (unsafe === "permissions") {
+              yield* Effect.promise(() => NodeFSP.chmod(directory, 0o755));
+            } else if (unsafe === "symlink") {
+              const moved = NodePath.join(root, "moved");
+              yield* Effect.promise(() => NodeFSP.rename(directory, moved));
+              yield* Effect.promise(() => NodeFSP.symlink(moved, directory));
+            }
+            const result = yield* runCli(["app"]).pipe(
+              Effect.provideService(HostProcess.HomeDirectory, root),
+              Effect.provideService(HostProcess.UserId, expectedUserId),
+              Effect.result,
+            );
+            expect(desktop.received).toEqual([]);
+            expect(result).toMatchObject({
+              _tag: "Failure",
+              failure: { _tag: "DesktopAppUnreachableError" },
+            });
+          }).pipe(Effect.scoped),
+        "/tmp",
+      ),
   );
 
   it.effect("uses FAB_HOME or --base-dir and sends the default or explicit path", () =>

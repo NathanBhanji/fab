@@ -109,7 +109,6 @@ it.layer(NodeServices.layer)("cli config resolution", (it) => {
     yield* fs.writeFileString(filePath, `${encoded}\n`);
     return yield* Effect.acquireRelease(
       Effect.sync(() => NodeFS.openSync(filePath, "r")),
-      // Windows cannot reopen the fd through /proc or /dev/fd, so the reader closes it.
       (fd) =>
         Effect.sync(() => {
           try {
@@ -756,30 +755,33 @@ it.layer(NodeServices.layer)("cli config resolution", (it) => {
     lan: Option.none<boolean>(),
   });
 
-  it.effect("uses the automatic port selector only when no port is configured", () =>
+  it.effect("finds an available port only when no port is configured", () =>
     Effect.gen(function* () {
       const baseDir = yield* FileSystem.FileSystem.pipe(
         Effect.flatMap((fs) => fs.makeTempDirectoryScoped({ prefix: "fab-cli-auto-port-" })),
       );
       const selected: number[] = [];
-      const selectAutomaticPort = (preferred: number) =>
-        Effect.sync(() => {
-          selected.push(preferred);
-          return 50_123;
-        });
+      const net = Layer.effect(
+        NetService.NetService,
+        Effect.map(NetService.NetService, (real) =>
+          NetService.NetService.of({
+            ...real,
+            findAvailablePort: (preferred) =>
+              Effect.sync(() => {
+                selected.push(preferred);
+                return 50_123;
+              }),
+          }),
+        ),
+      ).pipe(Layer.provide(NetService.layer));
       const resolvePort = (flags: {
         readonly mode?: Option.Option<"web" | "desktop">;
         readonly port: Option.Option<number>;
       }) =>
-        resolveServerConfig({ ...minimalWebFlags(baseDir), ...flags }, Option.none(), {
-          selectAutomaticPort,
-        }).pipe(
+        resolveServerConfig({ ...minimalWebFlags(baseDir), ...flags }, Option.none()).pipe(
           Effect.map((config) => config.port),
           Effect.provide(
-            Layer.merge(
-              NetService.layer,
-              ConfigProvider.layer(ConfigProvider.fromEnv({ env: {} })),
-            ),
+            Layer.merge(net, ConfigProvider.layer(ConfigProvider.fromEnv({ env: {} }))),
           ),
         );
 

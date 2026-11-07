@@ -173,10 +173,6 @@ const makeBootstrapInputStream = Effect.fn("bootstrap.makeBootstrapInputStream")
   const fdPath = resolveFdPath(fd, platform);
   return yield* Effect.try<NodeStream.Readable, BootstrapInputStreamOpenError>({
     try: () => {
-      if (fdPath === undefined) {
-        return makeDirectBootstrapStream(fd);
-      }
-
       let streamFd: number | undefined;
       try {
         streamFd = NodeFS.openSync(fdPath, "r");
@@ -199,7 +195,7 @@ const makeBootstrapInputStream = Effect.fn("bootstrap.makeBootstrapInputStream")
       new BootstrapInputStreamOpenError({
         fd,
         platform,
-        ...(fdPath === undefined ? {} : { fdPath }),
+        fdPath,
         cause: error,
       }),
   });
@@ -223,19 +219,13 @@ const makeDirectBootstrapStream = (fd: number): NodeStream.Readable => {
   }
 };
 
-// WSL-inherited stdin pipes cannot be reopened via /proc/self/fd/0 (EACCES),
+// Some inherited stdin pipes cannot be reopened via /proc/self/fd/0 (EACCES),
 // so they must be read directly.
 const isBootstrapFdPathDuplicationError = Predicate.compose(
   Predicate.hasProperty("code"),
   (_) => _.code === "ENXIO" || _.code === "EINVAL" || _.code === "EPERM" || _.code === "EACCES",
 );
 
-function resolveFdPath(fd: number, platform: NodeJS.Platform): string | undefined {
-  if (platform === "linux") {
-    return `/proc/self/fd/${fd}`;
-  }
-  if (platform === "win32") {
-    return undefined;
-  }
-  return `/dev/fd/${fd}`;
+function resolveFdPath(fd: number, platform: NodeJS.Platform): string {
+  return platform === "linux" ? `/proc/self/fd/${fd}` : `/dev/fd/${fd}`;
 }

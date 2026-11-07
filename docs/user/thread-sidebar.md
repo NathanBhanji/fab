@@ -283,7 +283,7 @@ serves a web page. A server the agent started stays listed after the agent's
 turn ends.
 Select a server to open it in the browser panel. **Stop** ends the server's job
 and keeps the agent, the terminal, and Fab running. Stop needs terminal
-access to the environment and is not available on Windows.
+access to the environment.
 
 To choose what the thread details card shows, right-click the card or open
 **Settings → Appearance → Thread details**. Hidden rows keep their keyboard

@@ -45,8 +45,7 @@ vi.mock("node:fs", async (importOriginal) => {
   };
 });
 
-const windowsHost = HostProcess.Platform.defaultValue() === "win32";
-const nullDevice = windowsHost ? "\\\\.\\NUL" : "/dev/null";
+const nullDevice = "/dev/null";
 const closeIfOpen = (fd: number) => {
   try {
     NodeFS.closeSync(fd);
@@ -55,11 +54,11 @@ const closeIfOpen = (fd: number) => {
   }
 };
 
-// Windows auto-closes the inherited fd; POSIX reopens it, leaving the original for the test to close.
+// The reader reopens the inherited fd, leaving the original for the test to close.
 const openBootstrapInputFd = (filePath: string) =>
   Effect.acquireRelease(
     Effect.sync(() => NodeFS.openSync(filePath, "r")),
-    (fd) => (windowsHost ? Effect.void : Effect.sync(() => closeIfOpen(fd))),
+    (fd) => Effect.sync(() => closeIfOpen(fd)),
   );
 
 const TestEnvelopeSchema = Schema.Struct({ mode: Schema.String });
