@@ -112,7 +112,7 @@
       ]
     },
     {
-      "bundles": ["android", "assets", "mobile", "web"],
+      "bundles": ["assets", "web"],
       "license": "MIT",
       "name": "libghostty-vt",
       "noticeFile": "native/libghostty-vt/LICENSE",
@@ -141,18 +141,6 @@
       ]
     },
     {
-      "bundles": ["android", "assets", "mobile"],
-      "license": "Apache-2.0",
-      "name": "MesloLGS NF",
-      "sourceUrl": "https://github.com/romkatv/powerlevel10k-media",
-      "generatedNotices": [
-        {
-          "licenseId": "Apache-2.0",
-          "copyrights": ["Copyright 2009, 2010, 2013 Andr\u00e9 Berg"]
-        }
-      ]
-    },
-    {
       "bundles": ["mobile"],
       "license": "MIT",
       "name": "react-native-uitextview",
@@ -168,7 +156,7 @@
       "sourceUrl": "https://github.com/expo/expo"
     },
     {
-      "bundles": ["ios", "android", "mobile"],
+      "bundles": ["ios", "mobile"],
       "license": "Apache-2.0",
       "name": "wasm2c runtime (WABT)",
       "version": "1.0.42",
@@ -176,7 +164,7 @@
       "sourceUrl": "https://github.com/WebAssembly/wabt/tree/1.0.42/wasm2c"
     },
     {
-      "bundles": ["ios", "android", "mobile"],
+      "bundles": ["ios", "mobile"],
       "license": "MIT",
       "name": "SIMD Everywhere",
       "version": "0.8.2",
@@ -184,7 +172,7 @@
       "sourceUrl": "https://github.com/simd-everywhere/simde/tree/v0.8.2"
     },
     {
-      "bundles": ["ios", "android", "mobile"],
+      "bundles": ["ios", "mobile"],
       "license": "MIT",
       "name": "RaTeX",
       "version": "0.1.15",
@@ -197,7 +185,7 @@
       ]
     },
     {
-      "bundles": ["ios", "android", "mobile", "web", "desktop"],
+      "bundles": ["ios", "mobile", "web", "desktop"],
       "license": "MIT",
       "name": "micromark-extension-llm-math",
       "version": "3.1.0",
@@ -210,7 +198,7 @@
       ]
     },
     {
-      "bundles": ["ios", "android", "mobile", "web", "desktop"],
+      "bundles": ["ios", "mobile", "web", "desktop"],
       "license": "OFL-1.1",
       "name": "KaTeX mathematical fonts",
       "sourceUrl": "https://github.com/KaTeX/KaTeX",

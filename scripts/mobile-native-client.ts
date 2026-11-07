@@ -2,7 +2,7 @@ import * as NodeRuntime from "@effect/platform-node/NodeRuntime";
 import * as NodeCrypto from "@effect/platform-node/NodeCrypto";
 import * as NodeServices from "@effect/platform-node/NodeServices";
 import * as HostProcess from "@fab/shared/HostProcess";
-import { isCommandAvailable, resolveSpawnCommand } from "@fab/shared/shell";
+import { resolveSpawnCommand } from "@fab/shared/shell";
 import * as Clock from "effect/Clock";
 import * as Console from "effect/Console";
 import * as Context from "effect/Context";
@@ -19,7 +19,7 @@ import { Argument, Command, Flag } from "effect/cli";
 import { FetchHttpClient, HttpClient, HttpClientRequest, HttpClientResponse } from "effect/http";
 import { ChildProcess, ChildProcessSpawner } from "effect/process";
 
-export type NativePlatform = "ios" | "android";
+export type NativePlatform = "ios";
 const NativeClientRecord = Schema.Struct({ fingerprint: Schema.String, binary: Schema.String });
 const encodeRecord = Schema.encodeEffect(Schema.fromJsonString(NativeClientRecord));
 const decodeRecord = Schema.decodeUnknownEffect(Schema.fromJsonString(NativeClientRecord));
@@ -149,22 +149,6 @@ const collect = <E>(stream: Stream.Stream<Uint8Array, E>) =>
       (a, b) => a + b,
     ),
   );
-export const resolveAdb = Effect.gen(function* () {
-  if (yield* isCommandAvailable("adb")) return "adb";
-  const environment = yield* HostProcess.Environment;
-  const path = yield* Path.Path;
-  const executable = (yield* HostProcess.Platform) === "win32" ? "adb.exe" : "adb";
-  for (const sdk of [environment.ANDROID_SDK_ROOT, environment.ANDROID_HOME]) {
-    if (!sdk) continue;
-    const candidate = path.join(sdk, "platform-tools", executable);
-    if (yield* isCommandAvailable(candidate)) return candidate;
-  }
-  return yield* new NativeClientError({
-    message:
-      "adb was not found on PATH or in ANDROID_SDK_ROOT/ANDROID_HOME. Install Android SDK platform-tools.",
-  });
-});
-
 /** Build tool output goes to this file instead of the caller's terminal; null streams it. */
 const BuildLog = Context.Reference<string | null>("nativeClient/BuildLog", {
   defaultValue: () => null,
@@ -179,7 +163,7 @@ const command = Effect.fn("nativeClient.command")(function* (
   const spawner = yield* ChildProcessSpawner.ChildProcessSpawner;
   const environment = yield* HostProcess.Environment;
   const log = inherit ? yield* BuildLog : null;
-  const spawn = yield* resolveSpawnCommand(program === "adb" ? yield* resolveAdb : program, args);
+  const spawn = yield* resolveSpawnCommand(program, args);
   const child = yield* spawner.spawn(
     ChildProcess.make(spawn.command, spawn.args, {
       shell: spawn.shell,
@@ -229,7 +213,7 @@ const fingerprint = Effect.fn("nativeClient.fingerprint")(function* (platform: N
     "--eval",
     // Same hash on every machine: generated native projects and the config's `extra` (env-specific
     // values a dev client reads from Metro) stay out, so a Mac and a Linux VM share builds.
-    `const f = require('expo/fingerprint'); f.createFingerprintAsync(process.cwd(), { platforms: [process.argv[1]], silent: true, ignorePaths: ['android/**', 'ios/**'], sourceSkips: f.DEFAULT_SOURCE_SKIPS | f.SourceSkips.ExpoConfigExtraSection }).then(fp => console.log('FAB_NATIVE_FINGERPRINT=' + fp.hash)).catch(e => { console.error(e); process.exitCode = 1; });`,
+    `const f = require('expo/fingerprint'); f.createFingerprintAsync(process.cwd(), { platforms: [process.argv[1]], silent: true, ignorePaths: ['ios/**'], sourceSkips: f.DEFAULT_SOURCE_SKIPS | f.SourceSkips.ExpoConfigExtraSection }).then(fp => console.log('FAB_NATIVE_FINGERPRINT=' + fp.hash)).catch(e => { console.error(e); process.exitCode = 1; });`,
     platform,
   ]);
   const hash = output
@@ -260,82 +244,41 @@ const resolveDevice = Effect.fn("nativeClient.resolveDevice")(function* (
         ),
       ].join("\n"),
     });
-  if (platform === "ios") {
-    if ((yield* HostProcess.Platform) !== "darwin")
-      return yield* new NativeClientError({
-        message: "Run iOS installs on the Mac that hosts the simulator.",
-      });
-    // The shared iOS client is an arm64 simulator build; Intel simulators cannot run it.
-    if ((yield* HostProcess.Architecture) !== "arm64")
-      return yield* new NativeClientError({
-        message: "mobile:install needs an Apple silicon Mac. Use vp run ios:dev on Intel Macs.",
-      });
-    const listing = yield* decodeSimulators(
-      yield* command("xcrun", ["simctl", "list", "devices", "available", "--json"]),
-    );
-    const simulators = Object.entries(listing.devices).flatMap(([runtime, devices]) =>
-      devices.map((device) => ({ ...device, label: `${device.name} (${runtimeName(runtime)})` })),
-    );
-    const booted = simulators
-      .filter((simulator) => simulator.state === "Booted")
-      .map(({ udid, label }) => ({ id: udid, label }));
-    if (requested === undefined) {
-      if (booted.length === 1) return booted[0]!;
-      return yield* booted.length === 0
-        ? new NativeClientError({
-            message:
-              "No iOS simulator is booted. Open one with device_open, or boot one: xcrun simctl boot <udid>",
-          })
-        : choose(booted, "Several iOS simulators are booted. Pick one:");
-    }
-    const simulator = simulators.find((entry) => entry.udid === requested);
-    if (!simulator)
-      return yield* choose(booted, `No available iOS simulator with UDID ${requested}. Booted:`);
-    if (simulator.state !== "Booted")
-      return yield* new NativeClientError({
-        message: `Boot the selected simulator first: xcrun simctl boot ${requested}`,
-      });
-    return { id: simulator.udid, label: simulator.label };
-  }
-  const attached = (yield* command("adb", ["devices", "-l"]))
-    .split("\n")
-    .slice(1)
-    .map((line) => line.trim().split(/\s+/))
-    .filter((parts) => parts.length >= 2)
-    .map(([id, state, ...details]) => ({
-      id: id!,
-      state: state!,
-      label: details.find((detail) => detail.startsWith("model:"))?.slice(6) ?? id!,
-    }));
-  const ready = attached.filter((device) => device.state === "device");
-  const device =
-    requested === undefined ? ready : attached.filter((entry) => entry.id === requested);
-  if (requested === undefined && ready.length !== 1)
-    return yield* ready.length === 0
+  if ((yield* HostProcess.Platform) !== "darwin")
+    return yield* new NativeClientError({
+      message: "Run iOS installs on the Mac that hosts the simulator.",
+    });
+  // The shared iOS client is an arm64 simulator build; Intel simulators cannot run it.
+  if ((yield* HostProcess.Architecture) !== "arm64")
+    return yield* new NativeClientError({
+      message: "mobile:install needs an Apple silicon Mac. Use vp run ios:dev on Intel Macs.",
+    });
+  const listing = yield* decodeSimulators(
+    yield* command("xcrun", ["simctl", "list", "devices", "available", "--json"]),
+  );
+  const simulators = Object.entries(listing.devices).flatMap(([runtime, devices]) =>
+    devices.map((device) => ({ ...device, label: `${device.name} (${runtimeName(runtime)})` })),
+  );
+  const booted = simulators
+    .filter((simulator) => simulator.state === "Booted")
+    .map(({ udid, label }) => ({ id: udid, label }));
+  if (requested === undefined) {
+    if (booted.length === 1) return booted[0]!;
+    return yield* booted.length === 0
       ? new NativeClientError({
           message:
-            "No Android emulator or phone is connected. Open one with device_open, or start an emulator.",
+            "No iOS simulator is booted. Open one with device_open, or boot one: xcrun simctl boot <udid>",
         })
-      : choose(ready, "Several Android devices are connected. Pick one:");
-  const selected = device[0];
-  if (!selected)
-    return yield* choose(ready, `Android device ${requested} is not connected. Ready:`);
-  if (selected.state === "unauthorized")
+      : choose(booted, "Several iOS simulators are booted. Pick one:");
+  }
+  const simulator = simulators.find((entry) => entry.udid === requested);
+  if (!simulator)
+    return yield* choose(booted, `No available iOS simulator with UDID ${requested}. Booted:`);
+  if (simulator.state !== "Booted")
     return yield* new NativeClientError({
-      message: `Unlock ${selected.label} and accept the USB debugging prompt, then run this again.`,
+      message: `Boot the selected simulator first: xcrun simctl boot ${requested}`,
     });
-  if (selected.state !== "device")
-    return yield* new NativeClientError({
-      message: `Android device ${selected.id} is ${selected.state}, not ready.`,
-    });
-  // Emulators report a generic model; their AVD name is what users recognize.
-  const avd = selected.id.startsWith("emulator-")
-    ? yield* command("adb", ["-s", selected.id, "emu", "avd", "name"]).pipe(
-        Effect.map((output) => output.split("\n")[0]?.trim()),
-        Effect.orElseSucceed(() => undefined),
-      )
-    : undefined;
-  return { id: selected.id, label: avd || selected.label };
+  return { id: simulator.udid, label: simulator.label };
 });
 
 export const installedBinary = Effect.fn("installedBinary")(function* (
@@ -343,68 +286,14 @@ export const installedBinary = Effect.fn("installedBinary")(function* (
   device: string,
   run: typeof command = command,
 ) {
-  if (platform === "ios") {
-    const apps = yield* run("xcrun", ["simctl", "listapps", device]);
-    if (!apps.includes(`"${bundleId}"`)) return null;
-    return yield* hashBundle(
-      yield* run("xcrun", ["simctl", "get_app_container", device, bundleId, "app"]),
-    );
-  }
-  const installed = yield* run("adb", ["-s", device, "shell", "pm", "list", "packages", bundleId]);
-  if (!installed.split("\n").some((line) => line.trim() === `package:${bundleId}`)) return null;
-  const packages = yield* run("adb", ["-s", device, "shell", "pm", "path", bundleId]);
-  const apks = packages
-    .split("\n")
-    .filter((line) => line.startsWith("package:"))
-    .map((line) => line.slice(8).trim())
-    .sort();
-  if (apks.length === 0) return null;
-  const hashes = yield* Effect.forEach(apks, (apk) =>
-    Effect.gen(function* () {
-      if (!/^\/[\w/+=.~-]+\.apk$/.test(apk))
-        return yield* new NativeClientError({ message: "Unexpected installed APK path." });
-      const hash = (yield* run("adb", ["-s", device, "shell", "sha256sum", apk])).split(/\s/)[0];
-      if (!hash || !/^[a-f0-9]{64}$/.test(hash))
-        return yield* new NativeClientError({ message: "Could not hash installed APK." });
-      return hash;
-    }),
-  );
-  return yield* digest(hashes.sort().join("\n"));
-});
-
-/** Preserve input-invalidated Gradle/.cxx caches; exclude app/build because its tasks omit inputs. Ignore cache failures. */
-export const prebuildAndroid = Effect.fn("nativeClient.prebuildAndroid")(function* <E, R>(
-  mobile: string,
-  prebuild: Effect.Effect<void, E, R>,
-) {
-  const fs = yield* FileSystem.FileSystem;
-  const path = yield* Path.Path;
-  const android = path.join(mobile, "android");
-  // Sibling renames stay on one filesystem; interrupted runs leave this gitignored cache for next-run cleanup.
-  const saved = path.join(mobile, ".android-cache");
-  const caches = [".gradle", "app/.cxx"];
-  const clear = fs.remove(saved, { recursive: true, force: true }).pipe(Effect.ignore);
-  const move = (from: string, to: string) =>
-    Effect.forEach(
-      caches,
-      (cache) =>
-        Effect.gen(function* () {
-          const source = path.join(from, cache);
-          const target = path.join(to, cache);
-          if (!(yield* fs.exists(source)) || (yield* fs.exists(target))) return;
-          yield* fs.makeDirectory(path.dirname(target), { recursive: true });
-          yield* fs.rename(source, target);
-        }).pipe(Effect.ignore),
-      { discard: true },
-    );
-  yield* Effect.acquireUseRelease(
-    clear.pipe(Effect.andThen(move(android, saved))),
-    () => prebuild,
-    () => move(saved, android).pipe(Effect.andThen(clear)),
+  const apps = yield* run("xcrun", ["simctl", "listapps", device]);
+  if (!apps.includes(`"${bundleId}"`)) return null;
+  return yield* hashBundle(
+    yield* run("xcrun", ["simctl", "get_app_container", device, bundleId, "app"]),
   );
 });
 
-const artifactNames = { ios: "FabDev.app", android: "app-debug.apk" } as const;
+const artifactName = "FabDev.app";
 // R2 requires equal-sized parts and Workers cap request bodies at 100 MB.
 const partSize = 64 * 1024 * 1024;
 const RemoteCredentials = Schema.fromJsonString(
@@ -530,16 +419,12 @@ const download = Effect.fn("nativeClient.download")(function* (
     prefix: ".download-",
   });
   return yield* Effect.gen(function* () {
-    if (platform === "ios") {
-      const archive = `${staging}.tgz`;
-      yield* response.stream.pipe(
-        Stream.run(fs.sink(archive)),
-        Effect.andThen(command("tar", ["-xzf", archive, "-C", staging])),
-        Effect.ensuring(fs.remove(archive, { force: true }).pipe(Effect.ignore)),
-      );
-    } else {
-      yield* response.stream.pipe(Stream.run(fs.sink(path.join(staging, artifactNames.android))));
-    }
+    const archive = `${staging}.tgz`;
+    yield* response.stream.pipe(
+      Stream.run(fs.sink(archive)),
+      Effect.andThen(command("tar", ["-xzf", archive, "-C", staging])),
+      Effect.ensuring(fs.remove(archive, { force: true }).pipe(Effect.ignore)),
+    );
     if ((yield* hashBundle(staging)) !== expected)
       return yield* new NativeClientError({ message: "Cached native client failed verification." });
     yield* publish(staging, target);
@@ -577,12 +462,8 @@ const upload = Effect.fn("nativeClient.upload")(function* (
   yield* Console.error(`Uploading native client ${key} to the shared cache...`);
   yield* Effect.gen(function* () {
     const directory = yield* fs.makeTempDirectoryScoped({ prefix: "fab-native-upload-" });
-    const file =
-      platform === "ios"
-        ? path.join(directory, "client.tgz")
-        : path.join(artifact, artifactNames.android);
-    if (platform === "ios")
-      yield* command("tar", ["-czf", file, "-C", artifact, artifactNames.ios]);
+    const file = path.join(directory, "client.tgz");
+    yield* command("tar", ["-czf", file, "-C", artifact, artifactName]);
     const handle = yield* fs.open(file);
     const parts: Array<{ partNumber: number; etag: string }> = [];
     for (let partNumber = 1; ; partNumber++) {
@@ -674,13 +555,12 @@ const buildIosOnEas = Effect.fn("nativeClient.buildIosOnEas")(function* (staging
   yield* fs.remove(archive);
   const app = (yield* fs.readDirectory(staging)).find((name) => name.endsWith(".app"));
   if (!app) return yield* new NativeClientError({ message: "The EAS build archive has no .app." });
-  if (app !== artifactNames.ios)
-    yield* fs.rename(path.join(staging, app), path.join(staging, artifactNames.ios));
+  if (app !== artifactName)
+    yield* fs.rename(path.join(staging, app), path.join(staging, artifactName));
 });
 
 const build = Effect.fn("nativeClient.build")(function* (
   platform: NativePlatform,
-  abi: string | null,
   target: string,
   expected: string,
 ) {
@@ -697,9 +577,8 @@ const build = Effect.fn("nativeClient.build")(function* (
     ["exec", "expo", "prebuild", "--clean", "--platform", platform, "--no-install"],
     true,
   ).pipe(Effect.asVoid);
-  const onEas = platform === "ios" && !(yield* hasXcode);
-  if (platform === "android") yield* prebuildAndroid(mobile, prebuild);
-  else if (!onEas) yield* prebuild;
+  const onEas = !(yield* hasXcode);
+  if (!onEas) yield* prebuild;
   const staging = yield* fs.makeTempDirectory({
     directory: path.dirname(target),
     prefix: ".build-",
@@ -707,7 +586,7 @@ const build = Effect.fn("nativeClient.build")(function* (
   yield* Effect.gen(function* () {
     if (onEas) {
       yield* buildIosOnEas(staging);
-    } else if (platform === "ios") {
+    } else {
       const output = yield* fs.makeTempDirectoryScoped({ prefix: "fab-native-client-" });
       yield* command("pod", ["install"], true, path.join(mobile, "ios"));
       // One device-independent arm64 simulator build installs on every iPhone and iPad simulator.
@@ -732,21 +611,9 @@ const build = Effect.fn("nativeClient.build")(function* (
         true,
       );
       yield* command("ditto", [
-        path.join(output, "Build/Products/Debug-iphonesimulator", artifactNames.ios),
-        path.join(staging, artifactNames.ios),
+        path.join(output, "Build/Products/Debug-iphonesimulator", artifactName),
+        path.join(staging, artifactName),
       ]);
-    } else {
-      const android = path.join(mobile, "android");
-      yield* command(
-        path.join(android, (yield* HostProcess.Platform) === "win32" ? "gradlew.bat" : "gradlew"),
-        ["app:assembleDebug", `-PreactNativeArchitectures=${abi}`],
-        true,
-        android,
-      );
-      yield* fs.copyFile(
-        path.join(android, "app/build/outputs/apk/debug", artifactNames.android),
-        path.join(staging, artifactNames.android),
-      );
     }
     // Native edits during the build would publish this binary under a fingerprint it doesn't match.
     if ((yield* fingerprint(platform)) !== expected)
@@ -797,14 +664,13 @@ const prune = Effect.fn("nativeClient.prune")(
 export const resolveArtifact = Effect.fn("nativeClient.resolveArtifact")(function* (
   home: string,
   platform: NativePlatform,
-  abi: string | null,
   fingerprint: string,
 ) {
   const fs = yield* FileSystem.FileSystem;
   const path = yield* Path.Path;
-  const key = `${platform}/${abi ? `development-${abi}` : "development"}/${fingerprint}`;
+  const key = `${platform}/development/${fingerprint}`;
   const directory = path.join(home, ".cache/fab/native-clients/artifacts", key);
-  const artifact = { directory, file: path.join(directory, artifactNames[platform]) };
+  const artifact = { directory, file: path.join(directory, artifactName) };
   if (yield* fs.exists(artifact.file)) {
     yield* Console.error(`Using cached client ${key}.`);
     // Pruning keeps the most recently used, so a client another checkout is installing stays.
@@ -832,7 +698,7 @@ export const resolveArtifact = Effect.fn("nativeClient.resolveArtifact")(functio
     `No cached client for ${key}. Building it once for every machine (5-15 min)${log ? `. Log: ${log}` : ""}`,
   );
   const started = yield* Clock.currentTimeMillis;
-  yield* build(platform, abi, directory, fingerprint);
+  yield* build(platform, directory, fingerprint);
   yield* writeBuildMs(directory, (yield* Clock.currentTimeMillis) - started);
   yield* prune(path.dirname(directory), fingerprint);
   if (remote && (yield* HostProcess.Environment).FAB_NATIVE_CLIENT_CACHE !== "read") {
@@ -856,25 +722,7 @@ const install = Effect.fn("nativeClient.install")(function* (
   device: string,
   file: string,
 ) {
-  if (platform === "ios") {
-    yield* command("xcrun", ["simctl", "install", device, file], true);
-    return;
-  }
-  yield* command("adb", ["-s", device, "install", "-r", "-d", file]).pipe(
-    Effect.catchTags({
-      NativeClientError: (error) =>
-        Effect.fail(
-          error.message.includes("INSTALL_FAILED_UPDATE_INCOMPATIBLE")
-            ? new NativeClientError({
-                message: `The installed client has a different signature. Remove it with adb -s ${device} uninstall ${bundleId} (this clears its pairings), then run ensure again.`,
-              })
-            : error,
-        ),
-    }),
-  );
-  // Emulators reach Metro through 10.0.2.2; a phone on USB needs the port forwarded.
-  if ((yield* command("adb", ["-s", device, "shell", "getprop", "ro.kernel.qemu"])) !== "1")
-    yield* command("adb", ["-s", device, "reverse", "tcp:8081", "tcp:8081"]).pipe(Effect.ignore);
+  yield* command("xcrun", ["simctl", "install", device, file], true);
 });
 
 const reportTelemetry = Effect.fn("nativeClient.reportTelemetry")(
@@ -928,7 +776,6 @@ const installIntoSession = Effect.fn("nativeClient.installIntoSession")(function
   home: string,
   platform: NativePlatform,
   session: string,
-  abi: string,
   metro: string | undefined,
 ) {
   const started = yield* Clock.currentTimeMillis;
@@ -940,12 +787,11 @@ const installIntoSession = Effect.fn("nativeClient.installIntoSession")(function
   );
   // agent-device scopes session ownership to the workspace (working directory) it runs in.
   const workspace = yield* HostProcess.WorkingDirectory;
-  const deviceAbi = platform === "android" ? abi : null;
-  const task = deviceAbi ? `native-client:android-${deviceAbi}` : `native-client:${platform}`;
+  const task = `native-client:${platform}`;
   const current = yield* fingerprint(platform);
-  const key = `${platform}/${deviceAbi ? `development-${deviceAbi}` : "development"}/${current}`;
+  const key = `${platform}/development/${current}`;
   const source = yield* sharedSource(home, key);
-  // The session's host downloads the client itself; uploading a 166 MB APK through a
+  // The session's host downloads the client itself; uploading a large client through a
   // gateway from here takes minutes and can outlast the remote install timeout.
   const downloadOnDevice = source
     ? command(
@@ -974,7 +820,7 @@ const installIntoSession = Effect.fn("nativeClient.installIntoSession")(function
   const artifact = fetched
     ? { source: "remote" as const, buildMs: 0 }
     : yield* Effect.gen(function* () {
-        const local = yield* resolveArtifact(home, platform, deviceAbi, current).pipe(
+        const local = yield* resolveArtifact(home, platform, current).pipe(
           Effect.tapError(() => reportTelemetry(home, task, "failed", 0)),
         );
         // A build just shared the client, so the device can fetch it now too.
@@ -1029,7 +875,7 @@ const main = Command.make(
   "mobile-native-client",
   {
     mode: Argument.Literals("mode", ["check", "ensure"]),
-    platform: Argument.Literals("platform", ["ios", "android"]),
+    platform: Argument.Literals("platform", ["ios"]),
     device: Argument.String("device").pipe(Argument.optional),
     session: Flag.String("session").pipe(
       Flag.withDescription(
@@ -1037,17 +883,13 @@ const main = Command.make(
       ),
       Flag.optional,
     ),
-    abi: Flag.Literals("abi", ["x86_64", "arm64-v8a"]).pipe(
-      Flag.withDescription("Android ABI of the session's device (default x86_64)."),
-      Flag.withDefault("x86_64" as const),
-    ),
     metro: Flag.String("metro").pipe(
       Flag.withDescription("With --session, open the dev client against this Metro URL."),
       Flag.optional,
     ),
     prepare: Flag.Boolean("prepare").pipe(
       Flag.withDescription(
-        "Fetch or build the client for this checkout without a device (Android: for --abi). Run it before leasing a device: a build can outlast the lease.",
+        "Fetch or build the client for this checkout without a device. Run it before leasing a device: a build can outlast the lease.",
       ),
       Flag.withDefault(false),
     ),
@@ -1057,7 +899,6 @@ const main = Command.make(
     platform,
     device: requested,
     session,
-    abi: sessionAbi,
     metro,
     prepare,
   }) {
@@ -1072,12 +913,7 @@ const main = Command.make(
       if (!home)
         return yield* new NativeClientError({ message: "HOME or USERPROFILE must be set." });
       const current = yield* fingerprint(platform);
-      const artifact = yield* resolveArtifact(
-        home,
-        platform,
-        platform === "android" ? sessionAbi : null,
-        current,
-      );
+      const artifact = yield* resolveArtifact(home, platform, current);
       yield* Console.error(
         `Client ready for ${platform} (${artifact.source}); lease a device and install.`,
       );
@@ -1099,7 +935,6 @@ const main = Command.make(
         home,
         platform,
         session.value,
-        sessionAbi,
         Option.getOrUndefined(metro),
       );
     }
@@ -1116,15 +951,7 @@ const main = Command.make(
       });
     const cache = path.join(home, ".cache/fab/native-clients");
     const recordPath = path.join(cache, platform, `${yield* digest(device)}.json`);
-    // An iOS simulator build is arm64 for every device; an APK carries only the device's own ABI.
-    const abi = Effect.gen(function* () {
-      if (platform === "ios") return null;
-      const value = yield* command("adb", ["-s", device, "shell", "getprop", "ro.product.cpu.abi"]);
-      if (value !== "x86_64" && value !== "arm64-v8a")
-        return yield* new NativeClientError({ message: `Unsupported Android ABI ${value}.` });
-      return value;
-    });
-    let task = `native-client:${platform}`;
+    const task = `native-client:${platform}`;
     let savedMs = 0;
     const operations = {
       fingerprint: fingerprint(platform),
@@ -1138,9 +965,7 @@ const main = Command.make(
         ),
       ),
       install: Effect.fn(function* (fingerprint: string) {
-        const deviceAbi = yield* abi;
-        if (deviceAbi) task = `native-client:android-${deviceAbi}`;
-        const artifact = yield* resolveArtifact(home, platform, deviceAbi, fingerprint);
+        const artifact = yield* resolveArtifact(home, platform, fingerprint);
         savedMs = artifact.buildMs;
         yield* Console.error(`Installing on ${target.label}...`);
         yield* install(platform, device, artifact.file);

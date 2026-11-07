@@ -96,8 +96,6 @@ export class Device {
         pose.platform,
         "--device",
         pose.device,
-        // A real keyboard, so the layout under it is what people see.
-        ...(pose.platform === "android" ? ["--no-test-ime"] : []),
       ],
       { timeoutMs: 420_000 },
     );
@@ -173,8 +171,6 @@ export class Device {
         "open",
         BUNDLE_ID,
         `fab-dev://expo-development-client/?url=${url}&disableOnboarding=1&disableFab=1&disableAutoLaunch=1`,
-        // A real keyboard, so the layout under it is what people see.
-        ...(this.pose.platform === "android" ? ["--no-test-ime"] : []),
       ],
       { timeoutMs: 180_000 },
     );
@@ -204,7 +200,6 @@ export class Device {
 
   /** iOS asks before another app opens a custom scheme, and agent-device does not always answer. */
   private async acceptOpenPrompt() {
-    if (this.pose.platform !== "ios") return;
     await delay(1_500);
     await this.agent(["alert", "accept"]).catch(() => undefined);
   }
@@ -225,11 +220,7 @@ export class Device {
 
   async screenshot(path: string) {
     // iOS defaults to 1x points, too coarse for anyone reviewing the screenshot.
-    await this.agent([
-      "screenshot",
-      path,
-      ...(this.pose.platform === "ios" ? ["--pixel-density", "2"] : []),
-    ]);
+    await this.agent(["screenshot", path, "--pixel-density", "2"]);
   }
 
   /** Runs an action while recording, so transitions can be checked frame by frame. */

@@ -34,7 +34,6 @@ describe("uploadSourceMap", () => {
       NodePath.join(dist, "metadata.json"),
       JSON.stringify({
         fileMetadata: {
-          android: { bundle: "_expo/static/js/android/index-abc.hbc" },
           ios: { bundle: "_expo/static/js/ios/index-def.hbc" },
         },
       }),
@@ -43,28 +42,22 @@ describe("uploadSourceMap", () => {
       NodePath.join(dist, "eas-update-metadata.json"),
       JSON.stringify({
         updates: [
-          { id: "update-android", platform: "android" },
           { id: "update-ios", platform: "ios" },
           { id: "update-web", platform: "web" },
         ],
       }),
     );
-    for (const platform of ["android", "ios"]) {
-      writeFile(
-        NodePath.join(
-          dist,
-          `_expo/static/js/${platform}/index-${platform === "ios" ? "def" : "abc"}.hbc.map`,
-        ),
-        JSON.stringify({
-          version: 3,
-          sources: [`${platform}.ts`],
-          sourcesContent: ["secret"],
-          names: ["render"],
-          x_facebook_sources: [[null]],
-          mappings: "",
-        }),
-      );
-    }
+    writeFile(
+      NodePath.join(dist, "_expo/static/js/ios/index-def.hbc.map"),
+      JSON.stringify({
+        version: 3,
+        sources: ["ios.ts"],
+        sourcesContent: ["secret"],
+        names: ["render"],
+        x_facebook_sources: [[null]],
+        mappings: "",
+      }),
+    );
 
     const requests: Array<{ method?: string; url?: string; auth?: string; body: string }> = [];
     const server = NodeHttp.createServer((request, response) => {
@@ -92,14 +85,14 @@ describe("uploadSourceMap", () => {
       for (const upload of otaSourceMapUploads(dist)) {
         await uploadSourceMap(credentials, upload);
       }
-      expect(requests).toEqual(
-        ["android", "ios"].map((platform) => ({
+      expect(requests).toEqual([
+        {
           method: "PUT",
-          url: `/maps/${platform}/ota/update-${platform}.map`,
+          url: "/maps/ios/ota/update-ios.map",
           auth: expect.stringMatching(/^AWS4-HMAC-SHA256 Credential=key-id\/\d{8}\/auto\/s3\//),
-          body: JSON.stringify({ version: 3, sources: [`${platform}.ts`], mappings: "" }),
-        })),
-      );
+          body: JSON.stringify({ version: 3, sources: ["ios.ts"], mappings: "" }),
+        },
+      ]);
     } finally {
       server.close();
     }
@@ -108,20 +101,12 @@ describe("uploadSourceMap", () => {
 
 describe("buildSourceMapUpload", () => {
   it("names the EAS build's embedded bundle map under its build id", () => {
-    const project = tempDir();
-    const androidMap = NodePath.join(
-      project,
-      "android/app/build/generated/sourcemaps/react/release/index.android.bundle.map",
-    );
-    writeFile(androidMap, "{}");
     expect(
-      buildSourceMapUpload({ EAS_BUILD_PLATFORM: "android", EAS_BUILD_ID: "build-1" }, project),
-    ).toEqual({ key: "android/build/build-1.map", path: androidMap });
-    expect(
-      buildSourceMapUpload(
-        { EAS_BUILD_PLATFORM: "ios", EAS_BUILD_ID: "build-2", SOURCEMAP_FILE: "/tmp/main.map" },
-        project,
-      ),
+      buildSourceMapUpload({
+        EAS_BUILD_PLATFORM: "ios",
+        EAS_BUILD_ID: "build-2",
+        SOURCEMAP_FILE: "/tmp/main.map",
+      }),
     ).toEqual({ key: "ios/build/build-2.map", path: "/tmp/main.map" });
   });
 

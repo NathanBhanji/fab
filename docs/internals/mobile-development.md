@@ -26,7 +26,7 @@ app. The fingerprint is recorded only after initialization succeeds.
 The native modules under `apps/mobile/modules/` are `file:` dependencies, and pnpm
 copies those into its virtual store instead of linking them. Metro bundles the copy,
 so an edit to a module's TypeScript is invisible to a running dev client until
-`vp i` re-syncs it, while Gradle and CocoaPods compile the worktree directory
+`vp i` re-syncs it, while CocoaPods compiles the worktree directory
 directly. A JavaScript change that "has no effect" on device is usually this.
 
 ## Measuring renders
@@ -40,7 +40,7 @@ renders that never happened, because bailed-out fibers keep flags from older com
 
 [`measure-renders.mts`](../../apps/mobile/scripts/measure-renders.mts) drives a measurement from
 outside the app. It evaluates the counter's globals through Metro's Hermes inspector proxy, which
-works the same for iOS simulators and Android emulators and needs no taps, `simctl`, or `adb`. It
+works on any iOS simulator and needs no taps or `simctl`. It
 starts a real provider turn through the server, opens the thread with an app link, records a window
 mid-stream, and prints the median renders, commits, top components and top causes. Expo drops inspector sockets whose `Origin` is not the URL Metro advertises, so
 pass that URL (the LAN address with `--lan`) as `--metro`.

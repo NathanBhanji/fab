@@ -997,8 +997,8 @@ public final class FabComposerEditorView: ExpoView, UITextViewDelegate, UITextDr
     let padding: CGFloat = 5
     let height = ceil(font.ascender - font.descender)
     // A long path would otherwise draw a chip wider than the composer and clip. Cap the label
-    // to the text the editor can actually show and truncate inside it, as Android's
-    // `maximumWidth` does, so the chip always fits the line it sits on.
+    // to the text the editor can actually show and truncate inside it, so the chip always fits
+    // the line it sits on.
     let availableWidth = textView.textContainer.size.width > 0
       ? textView.textContainer.size.width - textView.textContainer.lineFragmentPadding * 2
       : (textView.window?.bounds.width ?? bounds.width)

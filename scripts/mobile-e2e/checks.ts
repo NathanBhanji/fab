@@ -5,7 +5,7 @@ export interface Rect {
   readonly height: number;
 }
 
-/** One node of an agent-device `snapshot --json`, on iOS or Android. */
+/** One node of an agent-device `snapshot --json`, on iOS. */
 export interface SnapshotNode {
   readonly index: number;
   readonly parentIndex?: number;

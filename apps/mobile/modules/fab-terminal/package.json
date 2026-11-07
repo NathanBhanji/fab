@@ -7,11 +7,6 @@
       "modules": [
         "FabTerminalModule"
       ]
-    },
-    "android": {
-      "modules": [
-        "expo.modules.fabterminal.FabTerminalModule"
-      ]
     }
   }
 }

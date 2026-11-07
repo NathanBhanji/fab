@@ -29,7 +29,7 @@ async function main() {
   if (mode === "ota" && distDir) {
     uploads = otaSourceMapUploads(distDir);
   } else if (mode === "build") {
-    uploads = [buildSourceMapUpload(process.env, process.cwd())];
+    uploads = [buildSourceMapUpload(process.env)];
   } else {
     throw new Error("Usage: upload-sourcemaps.mts ota <dist-dir> | build");
   }

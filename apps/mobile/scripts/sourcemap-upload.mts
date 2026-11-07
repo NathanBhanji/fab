@@ -1,6 +1,6 @@
 import * as NodeFS from "node:fs";
 import * as NodePath from "node:path";
-import { mobileSourceMapKey, type MobilePlatform } from "@fab/shared/mobileSourceMaps";
+import { mobileSourceMapKey } from "@fab/shared/mobileSourceMaps";
 import { AwsClient } from "aws4fetch";
 
 export interface SourceMapUpload {
@@ -16,8 +16,7 @@ interface UploadCredentials {
   readonly secretAccessKey: string;
 }
 
-const isPlatform = (value: unknown): value is MobilePlatform =>
-  value === "ios" || value === "android";
+const isPlatform = (value: unknown): value is "ios" => value === "ios";
 
 const readJson = (path: string): unknown => JSON.parse(NodeFS.readFileSync(path, "utf8"));
 
@@ -73,29 +72,17 @@ export function otaSourceMapUploads(distDir: string): ReadonlyArray<SourceMapUpl
   });
 }
 
-/** Android's Gradle plugin writes the map under the release variant; iOS to `SOURCEMAP_FILE` (eas.json). */
+/** iOS builds write the map to `SOURCEMAP_FILE` (eas.json). */
 export function buildSourceMapUpload(
   env: Readonly<Record<string, string | undefined>>,
-  projectDir: string,
 ): SourceMapUpload {
   const platform = env.EAS_BUILD_PLATFORM;
   const buildId = env.EAS_BUILD_ID;
   if (!isPlatform(platform) || !buildId) {
     throw new Error("EAS_BUILD_PLATFORM and EAS_BUILD_ID are only set on EAS Build.");
   }
-  if (platform === "ios") {
-    if (!env.SOURCEMAP_FILE) throw new Error("SOURCEMAP_FILE is not set for this iOS build.");
-    return { key: mobileSourceMapKey("ios", "build", buildId), path: env.SOURCEMAP_FILE };
-  }
-  const variantsDir = NodePath.join(projectDir, "android/app/build/generated/sourcemaps/react");
-  const variant = NodeFS.existsSync(variantsDir)
-    ? NodeFS.readdirSync(variantsDir).find((name) => /release$/iu.test(name))
-    : undefined;
-  if (!variant) throw new Error(`No release source map under ${variantsDir}.`);
-  return {
-    key: mobileSourceMapKey("android", "build", buildId),
-    path: NodePath.join(variantsDir, variant, "index.android.bundle.map"),
-  };
+  if (!env.SOURCEMAP_FILE) throw new Error("SOURCEMAP_FILE is not set for this iOS build.");
+  return { key: mobileSourceMapKey("ios", "build", buildId), path: env.SOURCEMAP_FILE };
 }
 
 /**

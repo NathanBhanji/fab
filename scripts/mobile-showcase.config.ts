@@ -16,18 +16,16 @@ const DEFAULT_SHOWCASE_THEME = MOBILE_DEFAULT_THEME_ID;
 export type ShowcaseTheme = MobileThemeId;
 
 export interface ShowcaseStoreAssetSpec {
-  readonly store: "apple" | "google-play";
+  readonly store: "apple";
   readonly directory: string;
   readonly width: number;
   readonly height: number;
   readonly minimumUploadCount: number;
   readonly maximumUploadCount: number;
-  readonly maximumFileSizeBytes?: number;
 }
 
 export interface ShowcaseIosDevice {
   readonly id: string;
-  readonly platform: "ios";
   readonly simulator: string;
   readonly simulatorDeviceType?: string;
   readonly appearance: ShowcaseAppearance;
@@ -38,43 +36,13 @@ export interface ShowcaseIosDevice {
   readonly storeAsset: ShowcaseStoreAssetSpec;
 }
 
-export interface ShowcaseAndroidDevice {
-  readonly id: string;
-  readonly platform: "android";
-  readonly avd: string;
-  readonly appearance: ShowcaseAppearance;
-  readonly theme: ShowcaseTheme;
-  readonly abi?: "arm64-v8a" | "x86_64" | "x86" | "armeabi-v7a";
-  readonly scenes: ReadonlyArray<ShowcaseScene>;
-  readonly viewport?: {
-    readonly width: number;
-    readonly height: number;
-    readonly density?: number;
-  };
-  readonly storeAsset: ShowcaseStoreAssetSpec;
-}
-
-export type ShowcaseDevice = ShowcaseIosDevice | ShowcaseAndroidDevice;
+export type ShowcaseDevice = ShowcaseIosDevice;
 
 export interface ShowcaseConfig {
   readonly outputDirectory: string;
   readonly metroPort: number;
   readonly settleDelayMs: number;
   readonly devices: ReadonlyArray<ShowcaseDevice>;
-}
-
-const ANDROID_ABIS = ["arm64-v8a", "x86_64", "x86", "armeabi-v7a"] as const;
-
-function resolveShowcaseAndroidAbi(
-  value: string | undefined,
-): NonNullable<ShowcaseAndroidDevice["abi"]> {
-  if (!value) return "arm64-v8a";
-  if (ANDROID_ABIS.some((abi) => abi === value)) {
-    return value as NonNullable<ShowcaseAndroidDevice["abi"]>;
-  }
-  throw new Error(
-    `Unsupported FAB_SHOWCASE_ANDROID_ABI '${value}'. Use ${ANDROID_ABIS.join(", ")}.`,
-  );
 }
 
 const config: ShowcaseConfig = {
@@ -85,7 +53,6 @@ const config: ShowcaseConfig = {
   devices: [
     {
       id: "iphone-6.9",
-      platform: "ios",
       simulator: "Fab Showcase iPhone 17 Pro Max",
       simulatorDeviceType: "com.apple.CoreSimulator.SimDeviceType.iPhone-17-Pro-Max",
       appearance: "dark",
@@ -102,7 +69,6 @@ const config: ShowcaseConfig = {
     },
     {
       id: "iphone-6.5",
-      platform: "ios",
       simulator: "Fab Showcase iPhone 14 Plus",
       simulatorDeviceType: "com.apple.CoreSimulator.SimDeviceType.iPhone-14-Plus",
       appearance: "dark",
@@ -119,7 +85,6 @@ const config: ShowcaseConfig = {
     },
     ...(["closed", "open"] as const).map((fold): ShowcaseIosDevice => ({
       id: `iphone-duo-${fold}`,
-      platform: "ios",
       simulator: `Fab Showcase iPhone Duo ${fold}`,
       simulatorDeviceType: "com.apple.CoreSimulator.SimDeviceType.iPhone-Duo",
       appearance: "dark",
@@ -139,7 +104,6 @@ const config: ShowcaseConfig = {
     })),
     {
       id: "ipad-13",
-      platform: "ios",
       simulator: "iPad Pro 13-inch (M5)",
       simulatorDeviceType: "com.apple.CoreSimulator.SimDeviceType.iPad-Pro-13-inch-M5-16GB",
       appearance: "dark",
@@ -154,76 +118,6 @@ const config: ShowcaseConfig = {
         height: 2064,
         minimumUploadCount: 1,
         maximumUploadCount: 10,
-      },
-    },
-    {
-      id: "pixel",
-      platform: "android",
-      avd: "Pixel_10_Pro",
-      // Apple Silicon defaults to ARM64; Blacksmith Linux CI overrides to x86_64 for KVM.
-      abi: resolveShowcaseAndroidAbi(process.env.FAB_SHOWCASE_ANDROID_ABI),
-      appearance: "dark",
-      theme: DEFAULT_SHOWCASE_THEME,
-      viewport: {
-        width: 1080,
-        height: 1920,
-        density: 420,
-      },
-      scenes: ["thread", "terminal", "review", "threads", "environments", "agent-activity"],
-      storeAsset: {
-        store: "google-play",
-        directory: "google-play/phone",
-        width: 1080,
-        height: 1920,
-        minimumUploadCount: 2,
-        maximumUploadCount: 8,
-        maximumFileSizeBytes: 8 * 1024 * 1024,
-      },
-    },
-    {
-      id: "android-tablet-7",
-      platform: "android",
-      avd: "Pixel_10_Pro",
-      abi: resolveShowcaseAndroidAbi(process.env.FAB_SHOWCASE_ANDROID_ABI),
-      appearance: "dark",
-      theme: DEFAULT_SHOWCASE_THEME,
-      viewport: {
-        width: 1080,
-        height: 1920,
-        density: 288,
-      },
-      scenes: ["thread", "terminal", "review", "threads", "environments", "agent-activity"],
-      storeAsset: {
-        store: "google-play",
-        directory: "google-play/tablet-7",
-        width: 1080,
-        height: 1920,
-        minimumUploadCount: 4,
-        maximumUploadCount: 8,
-        maximumFileSizeBytes: 8 * 1024 * 1024,
-      },
-    },
-    {
-      id: "android-tablet-10",
-      platform: "android",
-      avd: "Pixel_10_Pro",
-      abi: resolveShowcaseAndroidAbi(process.env.FAB_SHOWCASE_ANDROID_ABI),
-      appearance: "dark",
-      theme: DEFAULT_SHOWCASE_THEME,
-      viewport: {
-        width: 1440,
-        height: 2560,
-        density: 288,
-      },
-      scenes: ["thread", "terminal", "review", "threads", "environments", "agent-activity"],
-      storeAsset: {
-        store: "google-play",
-        directory: "google-play/tablet-10",
-        width: 1440,
-        height: 2560,
-        minimumUploadCount: 4,
-        maximumUploadCount: 8,
-        maximumFileSizeBytes: 8 * 1024 * 1024,
       },
     },
   ],
