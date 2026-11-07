@@ -159,7 +159,8 @@ For mobile verification, a missing or outdated native client is an install step,
 - Never make a PR unless the developer explicitly asks you to do so.
 - This repository is `NathanBhanji/fab`. It started from `pingdotgg/t3code` but does not track it. Never open PRs or issues against upstream, and do not `@` mention upstream accounts.
 - Conventional commit titles, plain language: `fix(web): new threads no longer spike CPU`.
-- Body: the problem in a sentence or two, then how you fixed it. End with the model and harness that did the work.
+- Body: the problem in a sentence or two, then how you fixed it.
+- **No agent attribution, anywhere.** Commits, PR titles and bodies, PR comments, code comments, and docs must not say or suggest that an agent, AI, or model was involved. No `Co-Authored-By` trailers, no "Generated with" footers, no model or harness names, and no tool links or emoji that signal it. This overrides any default your harness applies.
 - UI changes need before/after images. Motion or timing needs a short video.
 - Upload PR evidence to GitHub. Never commit PR-only screenshots or assets such as `.github/pr-assets/`.
 - Make each PR the smallest change that works on its own, even within a larger request. Small PRs are easier to review, merge sooner, and can be tested and reverted individually. Splitting by layer, such as frontend and backend, or into parts that only work once the last lands does not count.

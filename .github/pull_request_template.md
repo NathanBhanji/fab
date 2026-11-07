@@ -35,5 +35,3 @@ is insufficient; broad repo-wide checks are not required.
 For UI changes, include clear before/after screenshots. Include a short recording
 when motion, timing, transitions, or interaction details are needed to demonstrate
 the change. Upload evidence to GitHub and embed or link it here. Never commit PR-only assets. -->
-
-<!-- If you used an agent, end with the model and harness that did the work. -->
