@@ -1,7 +1,4 @@
-import {
-  capitalizeTerm,
-  sourceControlClients,
-} from "@fab/client-runtime/source-control-clients";
+import { capitalizeTerm, sourceControlClients } from "@fab/client-runtime/source-control-clients";
 import type { CodeViewItem, DiffLineAnnotation, SelectedLineRange } from "@pierre/diffs";
 import type { CodeViewAnnotationArgs, CodeViewDiffItem } from "@pierre/diffs/react";
 import type {

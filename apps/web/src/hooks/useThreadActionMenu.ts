@@ -8,11 +8,7 @@ import {
   squashAtomCommandFailure,
 } from "@fab/client-runtime/state/runtime";
 import { canSnooze, effectiveSnoozed } from "@fab/client-runtime/state/thread-settled";
-import {
-  AuthOrchestrationOperateScope,
-  type ScopedThreadRef,
-  type ThreadId,
-} from "@fab/contracts";
+import { AuthOrchestrationOperateScope, type ScopedThreadRef, type ThreadId } from "@fab/contracts";
 import { useRouter } from "@tanstack/react-router";
 
 import { pickSnoozePreset, resolveSnoozePresets } from "../components/Sidebar.snooze";

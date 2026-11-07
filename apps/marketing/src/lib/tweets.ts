@@ -18,8 +18,7 @@ export const tweets = [
     handle: "dhh",
     content:
       "Omarchy is going to ship with an installer for Fab because it's a cool project that a lot of people enjoy. Squashing beefs in the process is just bonus.",
-    excerpt:
-      "Omarchy is going to ship with an installer for Fab because it's a cool project...",
+    excerpt: "Omarchy is going to ship with an installer for Fab because it's a cool project...",
     link: "https://x.com/dhh/status/2090332565966123041",
   },
   {
@@ -87,14 +86,14 @@ export const tweets = [
   {
     handle: "ryanrhughes",
     content:
-      "I think I've finally found the one AI harness to steal me away from the terminal — @fabdotcodes.",
+      "I think I've finally found the one AI harness to steal me away from the terminal — @t3dotcodes.",
     excerpt: "I think I've finally found the one AI harness to steal me away from the terminal",
     link: "https://x.com/ryanrhughes/status/2093051703616573769",
   },
   {
     handle: "PavolRusnak",
     content:
-      "Super pleasantly surprised with @fabdotcodes\n\nSpent countless hours trying to get OpenClaw or Hermes Agent working for my use cases to no avail\n\nBut with fab everything just works as expected and on my first try!",
+      "Super pleasantly surprised with @t3dotcodes\n\nSpent countless hours trying to get OpenClaw or Hermes Agent working for my use cases to no avail\n\nBut with fab everything just works as expected and on my first try!",
     excerpt: "...with fab everything just works as expected and on my first try!",
     link: "https://x.com/PavolRusnak/status/2114844388136267873",
   },

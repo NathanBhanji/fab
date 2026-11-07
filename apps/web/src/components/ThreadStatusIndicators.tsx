@@ -1,9 +1,5 @@
 import { pipe } from "effect/Function";
-import {
-  scopeProjectRef,
-  scopedThreadKey,
-  scopeThreadRef,
-} from "@fab/client-runtime/environment";
+import { scopeProjectRef, scopedThreadKey, scopeThreadRef } from "@fab/client-runtime/environment";
 import { useSupportsMultiplePullRequests } from "~/hooks/useSupportsMultiplePullRequests";
 import { useStableCallback } from "~/hooks/useStableCallback";
 

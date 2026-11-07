@@ -8,11 +8,7 @@ import * as Layer from "effect/Layer";
 import { HttpRouter, HttpServer } from "effect/http";
 import * as Socket from "effect/socket/Socket";
 import * as NodeHttpServer from "@effect/platform-node/NodeHttpServer";
-import {
-  AuthOrchestrationOperateScope,
-  AuthSessionId,
-  LOCAL_DEVICE_HOST_ID,
-} from "@fab/contracts";
+import { AuthOrchestrationOperateScope, AuthSessionId, LOCAL_DEVICE_HOST_ID } from "@fab/contracts";
 import * as EnvironmentAuth from "../auth/EnvironmentAuth.ts";
 import * as DeviceService from "./DeviceService.ts";
 import * as DeviceHubProxy from "./DeviceHubProxy.ts";

@@ -1,7 +1,4 @@
-import {
-  getPromptControlledTraits,
-  getTraitSelectChange,
-} from "@fab/client-runtime/model-traits";
+import { getPromptControlledTraits, getTraitSelectChange } from "@fab/client-runtime/model-traits";
 import { SheetHeader } from "../../components/ui/SheetHeader";
 import { Toolbar } from "../../components/ui/Toolbar";
 import * as Dialog from "../../components/ui/Dialog";

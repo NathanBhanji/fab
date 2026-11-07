@@ -1,7 +1,4 @@
-import {
-  presentThreadShell,
-  type EnvironmentThreadShell,
-} from "@fab/client-runtime/state/shell";
+import { presentThreadShell, type EnvironmentThreadShell } from "@fab/client-runtime/state/shell";
 import type { LocalThreadMessage } from "../lib/threadActivity";
 import { DEFAULT_PROVIDER_INTERACTION_MODE, DEFAULT_RUNTIME_MODE } from "@fab/contracts";
 import { Atom } from "effect/reactivity";

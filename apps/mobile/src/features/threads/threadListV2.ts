@@ -11,10 +11,7 @@ import {
 import type { SnoozePreset } from "@fab/client-runtime/state/thread-settled";
 import type { EnvironmentThreadShell } from "@fab/client-runtime/state/shell";
 import { resolveThreadProviderStack } from "@fab/client-runtime/state/models";
-import {
-  threadSearchMatchKey,
-  threadSearchSubject,
-} from "@fab/client-runtime/state/thread-search";
+import { threadSearchMatchKey, threadSearchSubject } from "@fab/client-runtime/state/thread-search";
 import { foldSearchQuery, rankSearchItems, scoreThreadSearch } from "@fab/shared/paletteSearch";
 import {
   createInboxReturnTracker,

@@ -37,13 +37,7 @@ const TEST_ONLY_DEPS = {
   // Evals import the server's source to test its real model-facing text.
   "@fab/evals": ["fab"],
   "@fab/provider-pi": ["@fab/client-runtime"],
-  "@fab/scripts": [
-    "@fab/desktop",
-    "@fab/mobile",
-    "@fab/web",
-    "fab",
-    "@fab/provider-cursor",
-  ],
+  "@fab/scripts": ["@fab/desktop", "@fab/mobile", "@fab/web", "fab", "@fab/provider-cursor"],
 };
 // The server bundles the web build without importing it.
 const BUILD_ONLY_DEPS = { fab: ["@fab/web"] };

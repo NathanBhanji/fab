@@ -52,10 +52,7 @@ import { managedInstanceLocks, useManagedPolicy } from "../../state/managedPolic
 import { disallowedProviderMessage, isManagedDriverAllowed } from "@fab/contracts";
 import { stackedThreadToast, toastManager } from "../ui/toast";
 import { Tooltip, TooltipPopup, TooltipTrigger } from "../ui/tooltip";
-import type {
-  ProviderClientDefinition,
-  ProviderEnvironmentField,
-} from "@fab/provider-core/client";
+import type { ProviderClientDefinition, ProviderEnvironmentField } from "@fab/provider-core/client";
 import {
   deriveProviderSettingsFields,
   ProviderSettingsForm,

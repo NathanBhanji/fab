@@ -2,10 +2,7 @@ import { settlePromise, squashAtomCommandFailure } from "@fab/client-runtime/sta
 import * as Dialog from "../components/ui/Dialog";
 import type { MediaActionsSource } from "../lib/mediaActionsSource";
 import { useNavigation } from "@react-navigation/native";
-import {
-  formatFilePathForClipboard,
-  type MediaActionId,
-} from "@fab/client-runtime/media-actions";
+import { formatFilePathForClipboard, type MediaActionId } from "@fab/client-runtime/media-actions";
 import {
   AuthFilesystemReadScope,
   type EnvironmentId,

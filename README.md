@@ -41,7 +41,7 @@ To try it once without installing, run `npx fab@latest` instead.
 
 ### Desktop app
 
-Install the latest version of the desktop app from [GitHub Releases](https://github.com/NathanBhanji/fab/releases), or from your favorite package registry:
+Install the latest version of the desktop app from [GitHub Releases](https://github.com/nathanbhanji/fab/releases), or from your favorite package registry:
 
 #### Windows (`winget`)
 
@@ -63,7 +63,7 @@ brew install --cask fab
 
 #### Debian, Ubuntu (`.deb`)
 
-Download the `.deb` from [GitHub Releases](https://github.com/NathanBhanji/fab/releases), then:
+Download the `.deb` from [GitHub Releases](https://github.com/nathanbhanji/fab/releases), then:
 
 ```bash
 sudo apt install ./Fab-*.deb
@@ -148,6 +148,6 @@ vp i
 
 Read [CONTRIBUTING.md](./CONTRIBUTING.md) before reporting a bug or opening a PR.
 
-Have a feature request? Start an [Ideas discussion](https://github.com/NathanBhanji/fab/discussions/categories/ideas).
+Have a feature request? Start an [Ideas discussion](https://github.com/nathanbhanji/fab/discussions/categories/ideas).
 
 Need support? Join the [Discord](https://discord.gg/jn4EGJjrvv).

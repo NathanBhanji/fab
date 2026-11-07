@@ -197,10 +197,7 @@ import {
 import * as McpProviderSession from "@fab/provider-core/server/mcpSession";
 import * as McpProviderSessions from "@fab/provider-core/server/McpProviderSessions";
 import * as IdAllocator from "@fab/provider-core/server/IdAllocator";
-import {
-  makeProviderFailure,
-  makeProviderRetryTurnItem,
-} from "@fab/provider-core/server/failure";
+import { makeProviderFailure, makeProviderRetryTurnItem } from "@fab/provider-core/server/failure";
 import { turnScopedSelectionTransition } from "@fab/provider-core/server/selectionTransition";
 import { providerMessageTextWithAttachmentPaths } from "@fab/provider-core/server/attachmentPrompt";
 import * as ProviderAdapter from "@fab/provider-core/server/ProviderAdapter";
@@ -1656,9 +1653,7 @@ export function makeClaudeQueryOptions(input: {
             ? ""
             : FAB_ORCHESTRATION_INSTRUCTIONS +
               CLAUDE_BACKGROUND_WAIT_INSTRUCTIONS +
-              (deviceInstructions
-                ? `\n${FAB_DEVICE_TOOL_INSTRUCTIONS_WITH_TOOL_SEARCH}\n`
-                : "")),
+              (deviceInstructions ? `\n${FAB_DEVICE_TOOL_INSTRUCTIONS_WITH_TOOL_SEARCH}\n` : "")),
         ...launchAppendSystemPrompt,
       ].join("\n\n"),
     },
@@ -1794,7 +1789,7 @@ export function claudeMcpQueryOverrides(input: {
   return {
     allowedTools: Array.from(new Set([...(input.allowedTools ?? []), ...mcpAllowedTools])),
     mcpServers: {
-      "fab": {
+      fab: {
         type: "http",
         url: session.endpoint,
         headers: {

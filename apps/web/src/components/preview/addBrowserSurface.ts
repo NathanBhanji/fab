@@ -1,7 +1,4 @@
-import {
-  mapAtomCommandResult,
-  type AtomCommandResult,
-} from "@fab/client-runtime/state/runtime";
+import { mapAtomCommandResult, type AtomCommandResult } from "@fab/client-runtime/state/runtime";
 import type { ScopedThreadRef } from "@fab/contracts";
 
 import type { BrowserSettingsReadError, OpenPreviewMutation } from "~/browser/openFileInPreview";

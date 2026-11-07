@@ -1,7 +1,4 @@
-import {
-  ConnectionBlockedError,
-  ConnectionTransientError,
-} from "@fab/client-runtime/connection";
+import { ConnectionBlockedError, ConnectionTransientError } from "@fab/client-runtime/connection";
 import { EnvironmentRpcUnavailableError } from "@fab/client-runtime/rpc";
 import * as Cause from "effect/Cause";
 import * as Schema from "effect/Schema";

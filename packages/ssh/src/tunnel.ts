@@ -1,7 +1,4 @@
-import type {
-  DesktopSshEnvironmentBootstrap,
-  DesktopSshEnvironmentTarget,
-} from "@fab/contracts";
+import type { DesktopSshEnvironmentBootstrap, DesktopSshEnvironmentTarget } from "@fab/contracts";
 import { waitForHttpReady as waitForHttpReadyShared } from "@fab/shared/httpReadiness";
 import { cliReleaseDownloadBaseUrl } from "@fab/shared/cliRelease";
 import * as KeyedLock from "@fab/shared/KeyedLock";

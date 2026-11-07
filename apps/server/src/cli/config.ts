@@ -1,9 +1,5 @@
 import * as NetService from "@fab/shared/Net";
-import {
-  OtlpHeadersFromString,
-  OtlpProtocol,
-  type SignalExport,
-} from "@fab/shared/observability";
+import { OtlpHeadersFromString, OtlpProtocol, type SignalExport } from "@fab/shared/observability";
 import * as OtelEnvironment from "@fab/shared/otelEnvironment";
 import { parsePersistedServerObservabilitySettings } from "@fab/shared/serverSettings";
 import { DesktopBackendBootstrap, PortSchema } from "@fab/contracts";
@@ -96,9 +92,7 @@ export const traceFileConfig = Config.String("FAB_TRACE_FILE").pipe(
   Config.option,
   Config.map(Option.getOrUndefined),
 );
-export const traceMaxFilesConfig = Config.Int("FAB_TRACE_MAX_FILES").pipe(
-  Config.withDefault(10),
-);
+export const traceMaxFilesConfig = Config.Int("FAB_TRACE_MAX_FILES").pipe(Config.withDefault(10));
 
 const EnvServerConfig = Config.all({
   logLevel: Config.LogLevel("FAB_LOG_LEVEL").pipe(Config.withDefault("Info")),
@@ -120,9 +114,7 @@ const EnvServerConfig = Config.all({
     Config.option,
     Config.map(Option.getOrUndefined),
   ),
-  otlpExportIntervalMs: Config.Int("FAB_OTLP_EXPORT_INTERVAL_MS").pipe(
-    Config.withDefault(10_000),
-  ),
+  otlpExportIntervalMs: Config.Int("FAB_OTLP_EXPORT_INTERVAL_MS").pipe(Config.withDefault(10_000)),
   otlpHeaders: Config.schema(OtlpHeadersFromString, "FAB_OTLP_HEADERS").pipe(
     Config.option,
     Config.map(Option.getOrUndefined),

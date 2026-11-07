@@ -1,9 +1,5 @@
 import { useAtomCommand } from "~/state/use-atom-command";
-import type {
-  EnvironmentId,
-  PullRequestRef,
-  PullRequestReviewerCandidate,
-} from "@fab/contracts";
+import type { EnvironmentId, PullRequestRef, PullRequestReviewerCandidate } from "@fab/contracts";
 import { CheckIcon, UserPlusIcon } from "lucide-react";
 import { useState } from "react";
 

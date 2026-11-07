@@ -37,11 +37,7 @@ const decodeCache = Schema.decodeUnknownEffect(cacheCodec);
 
 function envOutput(values: Readonly<Record<string, string>>): string {
   return Object.entries(values)
-    .flatMap(([name, value]) => [
-      `__FAB_ENV_${name}_START__`,
-      value,
-      `__FAB_ENV_${name}_END__`,
-    ])
+    .flatMap(([name, value]) => [`__FAB_ENV_${name}_START__`, value, `__FAB_ENV_${name}_END__`])
     .join("\n");
 }
 

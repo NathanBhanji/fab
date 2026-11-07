@@ -1,7 +1,4 @@
-import {
-  createVcsActionManager,
-  createVcsEnvironmentAtoms,
-} from "@fab/client-runtime/state/vcs";
+import { createVcsActionManager, createVcsEnvironmentAtoms } from "@fab/client-runtime/state/vcs";
 
 import { connectionAtomRuntime } from "../connection/runtime";
 

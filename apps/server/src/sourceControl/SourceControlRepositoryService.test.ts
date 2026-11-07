@@ -89,7 +89,9 @@ function layer(input: {
     Layer.provide(
       ServerConfig.layerTest(
         process.cwd(),
-        input.fileSystem ? "/tmp/fab-source-control-repos" : { prefix: "fab-source-control-repos-" },
+        input.fileSystem
+          ? "/tmp/fab-source-control-repos"
+          : { prefix: "fab-source-control-repos-" },
       ),
     ),
   );

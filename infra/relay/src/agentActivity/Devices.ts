@@ -1,7 +1,4 @@
-import type {
-  RelayClientDeviceRecord,
-  RelayDeviceRegistrationRequest,
-} from "@fab/contracts/relay";
+import type { RelayClientDeviceRecord, RelayDeviceRegistrationRequest } from "@fab/contracts/relay";
 import * as Context from "effect/Context";
 import * as DateTime from "effect/DateTime";
 import * as Effect from "effect/Effect";

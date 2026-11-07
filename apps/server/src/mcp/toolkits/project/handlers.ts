@@ -1,10 +1,4 @@
-import {
-  CommandId,
-  MessageId,
-  ThreadId,
-  OrchestratorMcpFailure,
-  ProjectId,
-} from "@fab/contracts";
+import { CommandId, MessageId, ThreadId, OrchestratorMcpFailure, ProjectId } from "@fab/contracts";
 import * as Digest from "effect/crypto/Digest";
 import * as Effect from "effect/Effect";
 import * as Hex from "effect/encoding/Hex";

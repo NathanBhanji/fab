@@ -1,12 +1,5 @@
-import {
-  getPromptControlledTraits,
-  getTraitSelectChange,
-} from "@fab/client-runtime/model-traits";
-import type {
-  ManagedPolicySummary,
-  ProviderOptionDescriptor,
-  RuntimeMode,
-} from "@fab/contracts";
+import { getPromptControlledTraits, getTraitSelectChange } from "@fab/client-runtime/model-traits";
+import type { ManagedPolicySummary, ProviderOptionDescriptor, RuntimeMode } from "@fab/contracts";
 import { describe, expect, it } from "vite-plus/test";
 
 import {

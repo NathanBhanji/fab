@@ -177,11 +177,9 @@ describe("readEnvironmentFromLoginShell", () => {
         options: { encoding: "utf8"; timeout: number },
       ) => string
     >(() =>
-      [
-        "__FAB_ENV_CUSTOM_VAR_START__",
-        "  first\nsecond  ",
-        "__FAB_ENV_CUSTOM_VAR_END__",
-      ].join("\n"),
+      ["__FAB_ENV_CUSTOM_VAR_START__", "  first\nsecond  ", "__FAB_ENV_CUSTOM_VAR_END__"].join(
+        "\n",
+      ),
     );
 
     expect(readEnvironmentFromLoginShell("/bin/zsh", ["CUSTOM_VAR"], execFile)).toEqual({

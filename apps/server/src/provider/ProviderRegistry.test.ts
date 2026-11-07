@@ -65,10 +65,7 @@ import {
   writeProviderStatusCache,
 } from "./providerStatusCache.ts";
 import { COMPACT_SLASH_COMMAND } from "@fab/provider-core/server/snapshotProbe";
-import type {
-  ProviderInstance,
-  ProviderWorkspaceSnapshot,
-} from "@fab/provider-core/server/driver";
+import type { ProviderInstance, ProviderWorkspaceSnapshot } from "@fab/provider-core/server/driver";
 import * as ProviderInstanceRegistry from "./ProviderInstanceRegistry.ts";
 import * as ProviderInstanceRegistryMutator from "./ProviderInstanceRegistryMutator.ts";
 import * as ProviderRegistry from "./ProviderRegistry.ts";

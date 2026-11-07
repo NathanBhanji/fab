@@ -9,10 +9,7 @@ import {
   useAppearancePreferences,
   useAndroidFloatingTabs,
 } from "../settings/appearance/AppearancePreferencesProvider";
-import type {
-  EnvironmentProject,
-  EnvironmentThreadShell,
-} from "@fab/client-runtime/state/shell";
+import type { EnvironmentProject, EnvironmentThreadShell } from "@fab/client-runtime/state/shell";
 import { threadSearchMatchKey } from "@fab/client-runtime/state/thread-search";
 import { AnimatedLegendList } from "@legendapp/list/reanimated";
 import { THREAD_SIDEBAR_ROW_LAYOUT } from "./threadListAnimations";

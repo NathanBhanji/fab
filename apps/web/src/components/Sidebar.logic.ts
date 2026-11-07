@@ -25,10 +25,7 @@ import {
 } from "@fab/contracts";
 import type { SidebarProjectSortOrder, SidebarThreadSortOrder } from "@fab/contracts/settings";
 import type { AsyncResult } from "effect/reactivity";
-import {
-  effectiveSnoozed,
-  type ThreadSnoozeShell,
-} from "@fab/client-runtime/state/thread-settled";
+import { effectiveSnoozed, type ThreadSnoozeShell } from "@fab/client-runtime/state/thread-settled";
 import {
   getThreadSortTimestamp,
   planPinnedReorder,

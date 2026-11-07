@@ -2,11 +2,7 @@ import { createContext, useContext, useState } from "react";
 import { pullRequestMediaSource, pullRequestImageSource } from "./pullRequestMediaSource";
 import { useFilePreviewGallery } from "../../components/FilePreviewGallery";
 import { sourceControlClients } from "@fab/client-runtime/source-control-clients";
-import {
-  SOURCE_CONTROL_MEDIA_ASSET,
-  type AssetResource,
-  type EnvironmentId,
-} from "@fab/contracts";
+import { SOURCE_CONTROL_MEDIA_ASSET, type AssetResource, type EnvironmentId } from "@fab/contracts";
 import { videoMimeType } from "@fab/shared/video";
 import { Pressable, View } from "react-native";
 import { Image } from "expo-image";

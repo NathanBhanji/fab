@@ -2,10 +2,7 @@ import {
   classifyMarkdownImageSource,
   markdownImageSourceFragment,
 } from "@fab/client-runtime/markdown-images";
-import {
-  audioMimeTypeFromExtension,
-  mediaMimeTypeFromExtension,
-} from "@fab/shared/mediaPreview";
+import { audioMimeTypeFromExtension, mediaMimeTypeFromExtension } from "@fab/shared/mediaPreview";
 import { splitFilePathPosition } from "@fab/shared/fileLinks";
 import { parseMarkdownFileLink } from "@fab/shared/markdownLinks";
 import {

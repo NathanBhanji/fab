@@ -151,10 +151,10 @@ it.layer(NodeServices.layer)("build-npm-launcher", (it) => {
         });
         assert.equal(first.stdout.trim(), `stub serve a b launcher=${launcher}`, first.stderr);
         assert.equal(first.exitCode, 7);
-        assert.deepStrictEqual(
-          (yield* fs.readFileString(env.FAB_TEST_CALLS)).trim().split("\n"),
-          ["--version|", `serve a b|${launcher}`],
-        );
+        assert.deepStrictEqual((yield* fs.readFileString(env.FAB_TEST_CALLS)).trim().split("\n"), [
+          "--version|",
+          `serve a b|${launcher}`,
+        ]);
         const versionDir = path.join(home, "runtime/versions", VERSION);
         assert.equal(
           (yield* fs.readFileString(path.join(versionDir, ".install-complete"))).trim(),
@@ -170,10 +170,11 @@ it.layer(NodeServices.layer)("build-npm-launcher", (it) => {
         const second = yield* run(process.execPath, [launcher, "--version"], { cwd: root, env });
         assert.equal(second.exitCode, 0);
         assert.equal(release.requests.length, requestsAfterFirst);
-        assert.deepStrictEqual(
-          (yield* fs.readFileString(env.FAB_TEST_CALLS)).trim().split("\n"),
-          ["--version|", `serve a b|${launcher}`, `--version|${launcher}`],
-        );
+        assert.deepStrictEqual((yield* fs.readFileString(env.FAB_TEST_CALLS)).trim().split("\n"), [
+          "--version|",
+          `serve a b|${launcher}`,
+          `--version|${launcher}`,
+        ]);
 
         yield* fs.writeFileString(path.join(versionDir, "fab"), "#!/fab-test-missing-loader\n");
         for (const _attempt of [1, 2]) {

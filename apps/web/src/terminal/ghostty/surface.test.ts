@@ -749,7 +749,9 @@ describe("terminalLinkAtPositionWithRange", () => {
       isWrapContinuation: false,
       wrapsToNext: false,
     };
-    expect(terminalLinkAtPositionWithRange([unwrittenTail], 0, 8)?.text).toBe("https://fab.invalid");
+    expect(terminalLinkAtPositionWithRange([unwrittenTail], 0, 8)?.text).toBe(
+      "https://fab.invalid",
+    );
   });
 });
 

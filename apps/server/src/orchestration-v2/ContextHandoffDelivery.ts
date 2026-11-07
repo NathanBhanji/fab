@@ -1,16 +1,9 @@
-import type {
-  OrchestrationV2ContextHandoff,
-  OrchestrationV2ProviderThread,
-} from "@fab/contracts";
+import type { OrchestrationV2ContextHandoff, OrchestrationV2ProviderThread } from "@fab/contracts";
 import type * as ProviderAdapter from "@fab/provider-core/server/ProviderAdapter";
 import { ContextHandoffBudgetError } from "@fab/provider-core/server/failure";
 import * as Effect from "effect/Effect";
 import * as Schema from "effect/Schema";
-import {
-  historyCost,
-  renderHistory,
-  selectHistory,
-} from "@fab/provider-core/server/handoffBudget";
+import { historyCost, renderHistory, selectHistory } from "@fab/provider-core/server/handoffBudget";
 
 /** The provider prompt for a turn that carries inline context ahead of the user's text. */
 export const withInlineContext = (context: string, userText: string): string =>

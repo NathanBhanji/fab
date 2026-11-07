@@ -166,9 +166,9 @@ describe("collectComposerInlineTokens", () => {
     expect(
       collectComposerInlineTokens("see [checkout.png](fab-context://v1/image/ctx_abc) ok"),
     ).toEqual([]);
-    expect(collectComposerInlineTokens("see ![ctx_abc](fab-context://v1/image/ctx_abc) ok")).toEqual(
-      [],
-    );
+    expect(
+      collectComposerInlineTokens("see ![ctx_abc](fab-context://v1/image/ctx_abc) ok"),
+    ).toEqual([]);
   });
 
   it("keeps skill and mention sources inside TeX out of the context chip list", () => {

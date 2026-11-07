@@ -31,10 +31,7 @@ import {
   type ImageDimensions,
 } from "@fab/shared/imageDimensions";
 import { MCP_APP_MAX_HTML_BYTES } from "@fab/shared/mcpApp";
-import {
-  isProjectFaviconPath,
-  PROJECT_FAVICON_FALLBACK_MARKER,
-} from "@fab/shared/projectFavicon";
+import { isProjectFaviconPath, PROJECT_FAVICON_FALLBACK_MARKER } from "@fab/shared/projectFavicon";
 import { isNetworkPath } from "@fab/shared/path";
 import { MAX_TOOL_OUTPUT_IMAGE_BASE64_LENGTH, toolOutputImages } from "@fab/shared/toolOutput";
 import * as Clock from "effect/Clock";

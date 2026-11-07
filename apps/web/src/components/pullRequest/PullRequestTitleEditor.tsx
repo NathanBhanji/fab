@@ -1,10 +1,7 @@
 import { squashAtomCommandFailure } from "@fab/client-runtime/state/runtime";
 import type { EnvironmentId, PullRequestDetail, PullRequestRef } from "@fab/contracts";
 import { useState } from "react";
-import {
-  capitalizeTerm,
-  sourceControlClients,
-} from "@fab/client-runtime/source-control-clients";
+import { capitalizeTerm, sourceControlClients } from "@fab/client-runtime/source-control-clients";
 
 import { pullRequestEnvironment } from "~/state/pullRequests";
 import { useAtomCommand } from "~/state/use-atom-command";

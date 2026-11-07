@@ -1,8 +1,4 @@
-import type {
-  OtlpEndpointCheckInput,
-  OtlpEndpointCheckResult,
-  OtlpSignal,
-} from "@fab/contracts";
+import type { OtlpEndpointCheckInput, OtlpEndpointCheckResult, OtlpSignal } from "@fab/contracts";
 import { layerOtlpSerialization } from "@fab/shared/observability";
 import * as Clock from "effect/Clock";
 import * as Context from "effect/Context";

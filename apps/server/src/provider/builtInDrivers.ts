@@ -1,7 +1,4 @@
-import {
-  AcpRegistryDriver,
-  type AcpRegistryDriverEnv,
-} from "@fab/provider-acp-registry/server";
+import { AcpRegistryDriver, type AcpRegistryDriverEnv } from "@fab/provider-acp-registry/server";
 import { AntigravityDriver, type AntigravityDriverEnv } from "./Drivers/AntigravityDriver.ts";
 import { ClaudeDriver, type ClaudeDriverEnv } from "./Drivers/ClaudeDriver.ts";
 import { CodexDriver, type CodexDriverEnv } from "./Drivers/CodexDriver.ts";
@@ -11,10 +8,7 @@ import { GrokDriver, type GrokDriverEnv } from "@fab/provider-grok/server";
 import { OpenCodeDriver, type OpenCodeDriverEnv } from "@fab/provider-opencode/server";
 import { MuseDriver, type MuseDriverEnv } from "@fab/provider-muse/server";
 import { PiDriver, type PiDriverEnv } from "@fab/provider-pi/server";
-import type {
-  AnyProviderDriver,
-  ProviderUsageReaderEnv,
-} from "@fab/provider-core/server/driver";
+import type { AnyProviderDriver, ProviderUsageReaderEnv } from "@fab/provider-core/server/driver";
 import { KiroDriver, type KiroDriverEnv } from "@fab/provider-kiro/server";
 
 export type BuiltInDriversEnv =

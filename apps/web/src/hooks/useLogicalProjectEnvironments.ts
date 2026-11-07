@@ -1,11 +1,7 @@
 import { availableScratchWorkspaceRoot } from "@fab/client-runtime/operations/projects";
 import { isScratchProject } from "@fab/client-runtime/state/projects";
 import type { EnvironmentProject } from "@fab/client-runtime/state/shell";
-import {
-  type EnvironmentId,
-  type ProjectId,
-  resolveEnvironmentMachineKind,
-} from "@fab/contracts";
+import { type EnvironmentId, type ProjectId, resolveEnvironmentMachineKind } from "@fab/contracts";
 
 import type { EnvironmentOption } from "../components/BranchToolbar.logic";
 import {

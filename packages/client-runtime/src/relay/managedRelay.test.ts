@@ -1,8 +1,5 @@
 import { EnvironmentId } from "@fab/contracts";
-import {
-  RelayEnvironmentConnectScope,
-  RelayEnvironmentStatusScope,
-} from "@fab/contracts/relay";
+import { RelayEnvironmentConnectScope, RelayEnvironmentStatusScope } from "@fab/contracts/relay";
 import { describe, expect, it } from "@effect/vitest";
 import * as Effect from "effect/Effect";
 import * as Fiber from "effect/Fiber";

@@ -12,11 +12,7 @@ import {
   type EnvironmentThreadStatus,
   type ThreadHistoryMeta,
 } from "@fab/client-runtime/state/threads";
-import {
-  arrayElementsEqual,
-  parseThreadKey,
-  threadKey,
-} from "@fab/client-runtime/state/entities";
+import { arrayElementsEqual, parseThreadKey, threadKey } from "@fab/client-runtime/state/entities";
 import type { ScopedProjectRef, ScopedThreadRef } from "@fab/contracts";
 import type {
   EnvironmentId,

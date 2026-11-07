@@ -8,10 +8,7 @@ import {
   type ServerSettings,
   type ServerSettingsPatch,
 } from "@fab/contracts";
-import {
-  clearProjectSettingsOverrides,
-  resolveProjectSettings,
-} from "@fab/shared/projectSettings";
+import { clearProjectSettingsOverrides, resolveProjectSettings } from "@fab/shared/projectSettings";
 
 import type { SettingsTarget } from "./settings-environment-filter";
 

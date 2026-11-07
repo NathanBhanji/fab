@@ -1,10 +1,7 @@
 import type { FilesystemEntryMetadata } from "@fab/contracts";
 import { filePreviewDelimiter } from "@fab/shared/delimitedPreview";
 import { joinPath, resolvePathLinkTarget } from "@fab/shared/fileLinks";
-import {
-  isWorkspaceAudioPreviewPath,
-  isWorkspaceVideoPreviewPath,
-} from "@fab/shared/filePreview";
+import { isWorkspaceAudioPreviewPath, isWorkspaceVideoPreviewPath } from "@fab/shared/filePreview";
 
 function isWindowsAbsolutePath(value: string): boolean {
   return /^[A-Za-z]:[\\/]/.test(value) || value.startsWith("\\\\");

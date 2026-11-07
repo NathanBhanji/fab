@@ -260,10 +260,7 @@ describe("buildThreadActionItems", () => {
         ],
       }).map((group) => [group.label, group.items.map((item) => item.title)]);
 
-    expect(search("new thread in fab", false)[0]).toEqual([
-      "Suggestions",
-      ["New thread in fab"],
-    ]);
+    expect(search("new thread in fab", false)[0]).toEqual(["Suggestions", ["New thread in fab"]]);
     expect(search("new thread", false).map(([label]) => label)).not.toContain("Suggestions");
     expect(search("fab", true)).toEqual([["Projects", ["fab"]]]);
     expect(search("add project", true)).toEqual([["Actions", ["Add project"]]]);

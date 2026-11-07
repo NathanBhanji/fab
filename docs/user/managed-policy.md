@@ -46,11 +46,11 @@ Every user on the machine can read the policy, so do not put credentials in it.
 
 Use one of these per machine:
 
-| OS      | Native policy                                                                                        | Policy file                                       |
-| ------- | ---------------------------------------------------------------------------------------------------- | ------------------------------------------------- |
-| macOS   | Configuration profile for `dev.bhanji.fab`                                                       | `/Library/Application Support/Fab/policy.json` |
+| OS      | Native policy                                                                                 | Policy file                                    |
+| ------- | --------------------------------------------------------------------------------------------- | ---------------------------------------------- |
+| macOS   | Configuration profile for `dev.bhanji.fab`                                                    | `/Library/Application Support/Fab/policy.json` |
 | Windows | Group Policy template, or a `Policy` JSON value (both under `HKLM\SOFTWARE\Policies\Fab\Fab`) | `C:\Program Files\Fab\policy.json`             |
-| Linux   |                                                                                                      | `/etc/fab/policy.json`                         |
+| Linux   |                                                                                               | `/etc/fab/policy.json`                         |
 
 Fab does not merge sources. If a machine has both a native policy and a policy file, Fab
 refuses to start until you remove one.

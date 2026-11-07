@@ -16,10 +16,7 @@ import { threadEnvironment } from "../../state/threads";
 import { useAtomCommand } from "../../state/use-atom-command";
 import { useVisibleSecondClock } from "./use-visible-second-clock";
 import type { ThreadMoveDestination } from "./threadOrder";
-import type {
-  EnvironmentProject,
-  EnvironmentThreadShell,
-} from "@fab/client-runtime/state/shell";
+import type { EnvironmentProject, EnvironmentThreadShell } from "@fab/client-runtime/state/shell";
 import type { EnvironmentThreadSearchMatch } from "@fab/client-runtime/state/thread-search";
 import {
   formatWorkingDurationLabel,

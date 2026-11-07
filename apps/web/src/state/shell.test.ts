@@ -1,7 +1,4 @@
-import {
-  BearerConnectionTarget,
-  PrimaryConnectionTarget,
-} from "@fab/client-runtime/connection";
+import { BearerConnectionTarget, PrimaryConnectionTarget } from "@fab/client-runtime/connection";
 import type { EnvironmentCatalogState } from "@fab/client-runtime/state/connections";
 import { EMPTY_SHELL_STATE, type EnvironmentShellState } from "@fab/client-runtime/state/shell";
 import { EnvironmentId } from "@fab/contracts";

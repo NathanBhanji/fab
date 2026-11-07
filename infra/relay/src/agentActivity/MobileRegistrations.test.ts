@@ -1,7 +1,4 @@
-import type {
-  RelayAgentActivityState,
-  RelayDeviceRegistrationRequest,
-} from "@fab/contracts/relay";
+import type { RelayAgentActivityState, RelayDeviceRegistrationRequest } from "@fab/contracts/relay";
 import type { SignedApnsDeliveryJob } from "./apnsDeliveryJobs.ts";
 import * as NodeCryptoLayer from "@effect/platform-node/NodeCrypto";
 import { describe, expect, it } from "@effect/vitest";

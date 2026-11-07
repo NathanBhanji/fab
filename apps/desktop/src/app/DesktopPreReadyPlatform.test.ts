@@ -157,10 +157,7 @@ describe("DesktopPreReadyPlatform", () => {
         assert.include(identity.desktopEntry ?? "", "Exec=/Applications/current.AppImage %U");
         assert.include(identity.desktopEntry ?? "", "Name=Fab (Beta)");
         assert.include(identity.desktopEntry ?? "", "MimeType=x-scheme-handler/fab;");
-        assert.include(
-          identity.desktopEntry ?? "",
-          "Icon=/xdg/icons/dev.bhanji.Fab.desktop.png",
-        );
+        assert.include(identity.desktopEntry ?? "", "Icon=/xdg/icons/dev.bhanji.Fab.desktop.png");
         assert.isTrue(identity.iconInstalled);
       }),
     ).pipe(Effect.ensuring(Effect.sync(() => vi.unstubAllEnvs())));

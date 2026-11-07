@@ -1837,7 +1837,7 @@ export const makeMuseAdapterV2 = Effect.fn("makeMuseAdapterV2")(function* (
             ? {
                 mcpServers: {
                   // Muse's required default fails runs if Fab tools are unreachable; make them optional.
-                  "fab": {
+                  fab: {
                     transport: "streamableHttp",
                     mode: "optional",
                     url: mcpSession.endpoint,

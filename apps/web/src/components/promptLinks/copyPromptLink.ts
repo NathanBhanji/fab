@@ -1,10 +1,6 @@
 import type { EnvironmentProject } from "@fab/client-runtime/state/shell";
 import { isAttachmentOnlyBootstrapPrompt } from "@fab/shared/composerContextReferences";
-import {
-  type ModelSelection,
-  repositoryGroupingKeyOf,
-  type ServerProvider,
-} from "@fab/contracts";
+import { type ModelSelection, repositoryGroupingKeyOf, type ServerProvider } from "@fab/contracts";
 import {
   buildNewThreadLink,
   parsePromptLinkRepository,

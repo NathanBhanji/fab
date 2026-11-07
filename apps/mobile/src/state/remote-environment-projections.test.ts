@@ -1,7 +1,4 @@
-import type {
-  EnvironmentPresentation,
-  PreparedConnection,
-} from "@fab/client-runtime/connection";
+import type { EnvironmentPresentation, PreparedConnection } from "@fab/client-runtime/connection";
 import { PrimaryConnectionTarget } from "@fab/client-runtime/connection";
 import type { ServerConfig } from "@fab/contracts";
 import { EnvironmentId } from "@fab/contracts";

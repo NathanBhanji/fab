@@ -1515,8 +1515,7 @@ describe("PiAdapterV2", () => {
         Effect.scoped,
         Effect.provideService(AgentScope, {
           ...AgentScope.defaultValue(),
-          wrap: ({ command, args }) =>
-            Effect.succeed({ command, args, unit: "fab-pi-test.scope" }),
+          wrap: ({ command, args }) => Effect.succeed({ command, args, unit: "fab-pi-test.scope" }),
           stop: (unit) =>
             Effect.sync(() => void stopped.push({ unit, processReleased })).pipe(
               Effect.andThen(Deferred.succeed(scopeStopped, undefined)),

@@ -1,10 +1,6 @@
 import { AuthFilesystemReadScope, type EnvironmentId } from "@fab/contracts";
 import { resolvePathLinkTarget, splitFilePathPosition } from "@fab/shared/fileLinks";
-import {
-  isAbsolutePath,
-  isNetworkPath,
-  normalizeProjectPathForComparison,
-} from "@fab/shared/path";
+import { isAbsolutePath, isNetworkPath, normalizeProjectPathForComparison } from "@fab/shared/path";
 import { useContext } from "react";
 
 import { useEnvironmentScope } from "../state/session";

@@ -1,8 +1,5 @@
 import { useAtomValue } from "@effect/atom-react";
-import {
-  RelayConnectionRegistration,
-  RelayConnectionTarget,
-} from "@fab/client-runtime/connection";
+import { RelayConnectionRegistration, RelayConnectionTarget } from "@fab/client-runtime/connection";
 import type { EnvironmentId } from "@fab/contracts";
 import type {
   RelayClientEnvironmentRecord,

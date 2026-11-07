@@ -1,8 +1,5 @@
 import { classifyMarkdownImageSource } from "@fab/client-runtime/markdown-images";
-import {
-  resolveMediaSource,
-  type ResolveMediaSourceInput,
-} from "@fab/client-runtime/media-source";
+import { resolveMediaSource, type ResolveMediaSourceInput } from "@fab/client-runtime/media-source";
 
 export function resolveMobileMarkdownMediaSource(href: string, input: ResolveMediaSourceInput) {
   const media = resolveMediaSource(href, input);

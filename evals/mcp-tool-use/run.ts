@@ -442,7 +442,7 @@ const claudeQueryOptions = (model: Model, device = true) => {
     nativeThreadId: "mcp-tool-use-eval",
     resume: false,
     cwd: null,
-    mcpServers: { "fab": { type: "http", url: "http://127.0.0.1/mcp" } },
+    mcpServers: { fab: { type: "http", url: "http://127.0.0.1/mcp" } },
     deviceToolsAvailable: device,
   };
   return makeClaudeQueryOptions(input);
@@ -627,8 +627,7 @@ const buildCodexBase = (
       ? item.content.map((block: Block) => valueText(block.text)).join("\n")
       : valueText(item.content);
   const joined = template.input.map(contentText).join("\n");
-  if (!joined.includes("<fab_runtime>"))
-    throw new Error("Codex template needs full Fab context.");
+  if (!joined.includes("<fab_runtime>")) throw new Error("Codex template needs full Fab context.");
   const cwd = /<cwd>(.*?)<\/cwd>/.exec(joined)?.[1] ?? "/home/user/app";
   const home = /^\/(?:home|Users)\/[^/]+/.exec(cwd)?.[0];
   const clean = (s: string) => (home ? s.replaceAll(home, home.replace(/[^/]+$/, "user")) : s);

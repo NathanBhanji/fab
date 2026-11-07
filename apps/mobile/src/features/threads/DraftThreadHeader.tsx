@@ -4,10 +4,7 @@ import { useNavigation } from "@react-navigation/native";
 import { AsyncResult } from "effect/reactivity";
 import * as Cause from "effect/Cause";
 import { AuthFilesystemReadScope, AuthSourceControlWriteScope } from "@fab/contracts";
-import type {
-  EnvironmentProject,
-  EnvironmentThreadShell,
-} from "@fab/client-runtime/state/shell";
+import type { EnvironmentProject, EnvironmentThreadShell } from "@fab/client-runtime/state/shell";
 import { NATIVE_LIQUID_GLASS_SUPPORTED } from "../../native/native-glass";
 import { useAppearancePreferences } from "../settings/appearance/AppearancePreferencesProvider";
 import { useEnvironmentQuery } from "../../state/query";

@@ -11,10 +11,7 @@ import * as Effect from "effect/Effect";
 import * as Fiber from "effect/Fiber";
 import { afterEach, vi } from "vite-plus/test";
 import { ClientCapabilities } from "@fab/client-runtime/platform";
-import {
-  ConnectionBlockedError,
-  ConnectionTransientError,
-} from "@fab/client-runtime/connection";
+import { ConnectionBlockedError, ConnectionTransientError } from "@fab/client-runtime/connection";
 
 import {
   canRetainCachedPlatformRegistrationAfterRefreshFailure,

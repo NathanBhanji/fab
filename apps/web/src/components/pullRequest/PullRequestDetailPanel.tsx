@@ -2,11 +2,7 @@ import { projectChangeRequestUrl } from "@fab/client-runtime/change-request-link
 import { normalizeThreadPullRequestKey } from "@fab/client-runtime/thread-pull-requests";
 import { useAtomValue } from "@effect/atom-react";
 import { usePullRequestStack } from "~/state/usePullRequestStack";
-import {
-  scopedThreadKey,
-  scopeProjectRef,
-  scopeThreadRef,
-} from "@fab/client-runtime/environment";
+import { scopedThreadKey, scopeProjectRef, scopeThreadRef } from "@fab/client-runtime/environment";
 import {
   isAtomCommandInterrupted,
   squashAtomCommandFailure,
@@ -67,10 +63,7 @@ import { pullRequestEnvironment, usePullRequestTurnRefresh } from "~/state/pullR
 import { useAtomCommand } from "~/state/use-atom-command";
 import { PullRequestStackMenu } from "./PullRequestStackMenu";
 import { PullRequestChangeBreakdownStat } from "./PullRequestChangeBreakdownStat";
-import {
-  capitalizeTerm,
-  sourceControlClients,
-} from "@fab/client-runtime/source-control-clients";
+import { capitalizeTerm, sourceControlClients } from "@fab/client-runtime/source-control-clients";
 import { PullRequestThreadLinks } from "./PullRequestThreadLinks";
 import { vcsEnvironment } from "~/state/vcs";
 import { RelativeTime } from "~/components/RelativeTime";

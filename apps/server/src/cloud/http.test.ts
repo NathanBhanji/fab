@@ -8,10 +8,7 @@ import {
   EnvironmentHttpApi,
   EnvironmentId,
 } from "@fab/contracts";
-import {
-  RelayEnvironmentLinkProofPayload,
-  type RelayLinkProofRequest,
-} from "@fab/contracts/relay";
+import { RelayEnvironmentLinkProofPayload, type RelayLinkProofRequest } from "@fab/contracts/relay";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
 import * as Schema from "effect/Schema";

@@ -1,8 +1,4 @@
-import type {
-  ModelSelection,
-  OrchestrationV2ThreadShell,
-  ServerProvider,
-} from "@fab/contracts";
+import type { ModelSelection, OrchestrationV2ThreadShell, ServerProvider } from "@fab/contracts";
 
 import { BUNDLED_MODEL_MANIFEST } from "../provider/ModelManifest.ts";
 

@@ -1,9 +1,4 @@
-import type {
-  EnvironmentId,
-  ProjectId,
-  PullRequestRef,
-  RepositoryIdentity,
-} from "@fab/contracts";
+import type { EnvironmentId, ProjectId, PullRequestRef, RepositoryIdentity } from "@fab/contracts";
 import type { ChangeRequestLink } from "@fab/source-control-core/shared/definition";
 
 import { sourceControlClients } from "./sourceControlClients.ts";

@@ -1,11 +1,7 @@
 import * as NodeCrypto from "@effect/platform-node/NodeCrypto";
 import * as NodeServices from "@effect/platform-node/NodeServices";
 import { describe, expect, it } from "@effect/vitest";
-import {
-  DEFAULT_SERVER_SETTINGS,
-  ProviderDriverKind,
-  ProviderInstanceId,
-} from "@fab/contracts";
+import { DEFAULT_SERVER_SETTINGS, ProviderDriverKind, ProviderInstanceId } from "@fab/contracts";
 import { AcpRegistrySettings } from "../settings.ts";
 import * as HostProcess from "@fab/shared/HostProcess";
 import { SpawnExecutableResolution } from "@fab/shared/shell";

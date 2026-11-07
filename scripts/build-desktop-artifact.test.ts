@@ -532,7 +532,7 @@ it.layer(NodeServices.layer)("build-desktop-artifact", (it) => {
       assert.deepStrictEqual(release.publish, [
         {
           provider: "github",
-          owner: "pingdotgg",
+          owner: "nathanbhanji",
           repo: "fab",
           releaseType: "release",
         },
@@ -1485,7 +1485,7 @@ it.layer(NodeServices.layer)("build-desktop-artifact", (it) => {
     );
     assert.match(
       entitlements,
-      /<key>keychain-access-groups<\/key>\s*<array>\s*<string>ABC1234567\.com\.fab\.fab\.webauthn<\/string>\s*<\/array>/u,
+      /<key>keychain-access-groups<\/key>\s*<array>\s*<string>ABC1234567\.dev\.bhanji\.fab\.webauthn<\/string>\s*<\/array>/u,
     );
     assert.match(
       entitlements,

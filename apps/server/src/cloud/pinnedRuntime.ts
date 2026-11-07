@@ -206,7 +206,8 @@ const installFromArchive = Effect.fn("cloud.pinned_runtime.install_archive")(fun
     .writeFile(archivePath, archive)
     .pipe(
       Effect.mapError(
-        (cause) => new PinnedRuntimeInstallError({ step: "writing the fab release archive", cause }),
+        (cause) =>
+          new PinnedRuntimeInstallError({ step: "writing the fab release archive", cause }),
       ),
     );
   input.onProgress?.({ stage: "extract" });

@@ -15,10 +15,7 @@ import {
   sanitizeAntigravityToolPayload,
   makeAntigravityReadRepair,
 } from "./AntigravityProtocol.ts";
-import {
-  mergeToolCallState,
-  parseSessionUpdateEvent,
-} from "@fab/provider-acp/server/runtimeModel";
+import { mergeToolCallState, parseSessionUpdateEvent } from "@fab/provider-acp/server/runtimeModel";
 import { acpToolCallDiffPatch } from "@fab/provider-acp/server/adapter";
 
 const isSessionNotification = Schema.is(AcpWireSchema.SessionNotification);

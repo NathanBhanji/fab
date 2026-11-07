@@ -1,8 +1,4 @@
-import type {
-  PreviewCloseInput,
-  PreviewSessionSnapshot,
-  ScopedThreadRef,
-} from "@fab/contracts";
+import type { PreviewCloseInput, PreviewSessionSnapshot, ScopedThreadRef } from "@fab/contracts";
 import { AsyncResult } from "effect/reactivity";
 import { beforeEach, describe, expect, it, vi } from "vite-plus/test";
 

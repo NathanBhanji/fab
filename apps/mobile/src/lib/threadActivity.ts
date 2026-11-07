@@ -12,10 +12,7 @@ import {
   turnItemHasDetail,
   turnItemNeedsDetailFetch,
 } from "@fab/client-runtime/work-log/item-detail";
-import {
-  commandDisplayText,
-  commandProgramName,
-} from "@fab/client-runtime/work-log/command-label";
+import { commandDisplayText, commandProgramName } from "@fab/client-runtime/work-log/command-label";
 import {
   contextCompactionLabel,
   liveThoughtLine,
@@ -72,10 +69,7 @@ import {
   mcpAppFromToolItem,
 } from "@fab/shared/toolOutput";
 import * as DateTime from "effect/DateTime";
-import {
-  IDLE_COMPACTION_TITLES,
-  IDLE_COMPACTING_LABELS,
-} from "@fab/client-runtime/user-message";
+import { IDLE_COMPACTION_TITLES, IDLE_COMPACTING_LABELS } from "@fab/client-runtime/user-message";
 
 export type PendingApproval = ThreadPendingApproval;
 export type PendingUserInput = ThreadPendingUserInput;

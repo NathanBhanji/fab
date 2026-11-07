@@ -263,10 +263,7 @@ import { failEnvironmentAuthInvalid, failEnvironmentInternal } from "./auth/http
 import { isNetworkPath } from "@fab/shared/path";
 import * as RelayClient from "@fab/shared/relayClient";
 import { isTelemetryIdHash } from "@fab/shared/telemetryId";
-import {
-  sameUsageLimitCommandCoverage,
-  withUsageLimitsCommands,
-} from "@fab/shared/usageLimits";
+import { sameUsageLimitCommandCoverage, withUsageLimitsCommands } from "@fab/shared/usageLimits";
 import * as AgentSessionScanner from "./project/AgentSessionScanner.ts";
 import * as AgentSessionImporter from "./project/AgentSessionImporter.ts";
 import * as UsageLimitSources from "./usage/UsageLimitSources.ts";

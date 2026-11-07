@@ -25,10 +25,7 @@ import * as HttpClient from "effect/http/HttpClient";
 import * as HttpClientResponse from "effect/http/HttpClientResponse";
 import * as Deferred from "effect/Deferred";
 
-import {
-  DEFAULT_HANDOFF_TOKEN_CAP,
-  handoffBudget,
-} from "@fab/provider-core/server/handoffBudget";
+import { DEFAULT_HANDOFF_TOKEN_CAP, handoffBudget } from "@fab/provider-core/server/handoffBudget";
 import * as ProviderEventLoggers from "@fab/provider-core/server/ProviderEventLoggers";
 import * as TestProviderHost from "@fab/provider-testing/TestProviderHost";
 import { CursorDriver } from "./driver.ts";

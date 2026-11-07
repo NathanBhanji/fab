@@ -1,8 +1,4 @@
-import {
-  AuthOrchestrationOperateScope,
-  type EditorId,
-  type EnvironmentId,
-} from "@fab/contracts";
+import { AuthOrchestrationOperateScope, type EditorId, type EnvironmentId } from "@fab/contracts";
 import { squashAtomCommandFailure } from "@fab/client-runtime/state/runtime";
 
 import { useOpenInPreferredEditor } from "../editorPreferences";

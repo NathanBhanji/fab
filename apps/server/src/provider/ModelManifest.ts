@@ -1,8 +1,4 @@
-import {
-  ModelCapabilities,
-  TrimmedNonEmptyString,
-  type ProviderDriverKind,
-} from "@fab/contracts";
+import { ModelCapabilities, TrimmedNonEmptyString, type ProviderDriverKind } from "@fab/contracts";
 import * as Clock from "effect/Clock";
 import * as Context from "effect/Context";
 import * as DateTime from "effect/DateTime";
@@ -23,7 +19,7 @@ import { ProviderCompatibilityPolicy } from "./providerCompatibility.ts";
 import * as ModelCatalog from "@fab/provider-core/server/ModelCatalog";
 
 const MODEL_MANIFEST_URL =
-  "https://raw.githubusercontent.com/NathanBhanji/fab/main/apps/server/src/provider/model-manifest.json";
+  "https://raw.githubusercontent.com/nathanbhanji/fab/main/apps/server/src/provider/model-manifest.json";
 
 const MANIFEST_TTL_MS = 60 * 60 * 1000;
 

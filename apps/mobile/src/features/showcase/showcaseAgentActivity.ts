@@ -1,7 +1,4 @@
-import type {
-  EnvironmentProject,
-  EnvironmentThreadShell,
-} from "@fab/client-runtime/state/shell";
+import type { EnvironmentProject, EnvironmentThreadShell } from "@fab/client-runtime/state/shell";
 
 import type {
   AgentActivityPhase,

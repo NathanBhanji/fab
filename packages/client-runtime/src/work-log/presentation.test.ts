@@ -114,7 +114,7 @@ describe("resolveWorkEntryToolPresentation", () => {
       id: "clone",
       createdAt: "2026-09-19T00:00:00.000Z",
       tone: "tool",
-      label: "Fab-code.fab_project_clone",
+      label: "Fab.fab_project_clone",
       toolLifecycleStatus: "inProgress",
       itemType: "dynamic_tool",
       toolData: { output: { isError: true } },
@@ -125,7 +125,7 @@ describe("resolveWorkEntryToolPresentation", () => {
     expect(workEntryDisplayIndicatesToolFailure(entry)).toBe(true);
     const childFailure = {
       ...entry,
-      label: "Fab-code.task_status",
+      label: "Fab.task_status",
       toolLifecycleStatus: "completed" as const,
       toolData: { output: { taskId: "child", status: "failed", summary: "command not found" } },
     };
@@ -133,9 +133,7 @@ describe("resolveWorkEntryToolPresentation", () => {
   });
   it.each([
     "mcp__fab__preview_click",
-    "mcp__fab__preview_click",
-    "mcp__fab__preview_click",
-    "Fab-code.preview_click",
+    "Fab.preview_click",
     "fab · preview_click completed",
     "fab/preview_click",
     "preview_click",
@@ -157,7 +155,7 @@ describe("resolveWorkEntryToolPresentation", () => {
   });
 
   it("uses the summary's state only when the provider omitted a lifecycle status", () => {
-    const entry = { label: "Fab-code.preview_click" };
+    const entry = { label: "Fab.preview_click" };
     expect(resolveWorkEntryToolPresentation(entry, "inProgress")?.displayName).toBe(
       "Clicking in the preview browser",
     );
@@ -180,7 +178,7 @@ describe("resolveWorkEntryToolPresentation", () => {
   ])("names a linked change request with its host's term (%s)", (url, target) => {
     expect(
       resolveWorkEntryToolPresentation({
-        label: "Fab-code.link_pull_request",
+        label: "Fab.link_pull_request",
         toolLifecycleStatus: "completed",
         toolData: { arguments: { url } },
       })?.displayName,

@@ -78,10 +78,7 @@ const startBesideBootService = Effect.fn("test.startBesideBootService")(function
           path.join(root, "Library", "LaunchAgents", "dev.bhanji.fab.service.plist"),
           renderBootServicePlist(plan, { homeDir: root, environmentPath: "" }),
         ]
-      : [
-          path.join(root, ".config", "systemd", "user", "fab.service"),
-          renderBootServiceUnit(plan),
-        ];
+      : [path.join(root, ".config", "systemd", "user", "fab.service"), renderBootServiceUnit(plan)];
   yield* fs.makeDirectory(path.dirname(unitPath), { recursive: true });
   yield* fs.writeFileString(unitPath, unit);
 

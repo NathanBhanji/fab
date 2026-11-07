@@ -12,11 +12,7 @@ import {
   type ScopedProjectRef,
   resolveEnvironmentMachineKind,
 } from "@fab/contracts";
-import {
-  type CloneProtocol,
-  cloneUrlForProtocol,
-  cloneUrlProtocol,
-} from "@fab/shared/cloneUrl";
+import { type CloneProtocol, cloneUrlForProtocol, cloneUrlProtocol } from "@fab/shared/cloneUrl";
 import { ArrowRightIcon } from "lucide-react";
 import { useId, useState } from "react";
 import { create } from "zustand";

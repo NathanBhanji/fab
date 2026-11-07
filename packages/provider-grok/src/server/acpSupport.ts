@@ -1,10 +1,6 @@
 import type * as EffectAcpSchema from "effect-acp/compat";
 import * as NodeServices from "@effect/platform-node/NodeServices";
-import {
-  type ProviderApprovalOption,
-  ProviderDriverKind,
-  type RuntimeMode,
-} from "@fab/contracts";
+import { type ProviderApprovalOption, ProviderDriverKind, type RuntimeMode } from "@fab/contracts";
 import type { GrokSettings } from "../settings.ts";
 import * as SecureRandom from "effect/crypto/SecureRandom";
 import * as Effect from "effect/Effect";

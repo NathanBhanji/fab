@@ -107,7 +107,7 @@ export const SHOWCASE_PROJECTS = [
     id: "fab",
     title: "Fab",
     directory: "fab",
-    repositoryUrl: "https://github.com/NathanBhanji/fab.git",
+    repositoryUrl: "https://github.com/nathanbhanji/fab.git",
     favicon: PROJECT_FAVICONS.fab,
   },
   {
@@ -291,7 +291,7 @@ async function seedFabWorkspace(workspaceRoot: string): Promise<void> {
   );
   await initializeRepository({
     workspaceRoot,
-    repositoryUrl: "https://github.com/NathanBhanji/fab.git",
+    repositoryUrl: "https://github.com/nathanbhanji/fab.git",
     commitMessage: "Show connected environments",
   });
   await runGit(workspaceRoot, ["checkout", "-b", "feat/remote-command-center"]);

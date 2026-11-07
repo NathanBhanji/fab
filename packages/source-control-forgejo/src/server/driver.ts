@@ -1,7 +1,4 @@
-import {
-  defineSourceControlDriver,
-  withOwnServices,
-} from "@fab/source-control-core/server/driver";
+import { defineSourceControlDriver, withOwnServices } from "@fab/source-control-core/server/driver";
 import * as Effect from "effect/Effect";
 
 import { definition } from "../shared/definition.ts";

@@ -49,7 +49,9 @@ export function useNewTaskProjectDefaults(project: EnvironmentProject | null) {
   );
   const fabProjectFileData = fabProjectFileQuery.data as ProjectReadFileResult | null;
   const fabProjectFile =
-    fabProjectFileData === null || fabProjectFileData.exists === false || fabProjectFileData.truncated
+    fabProjectFileData === null ||
+    fabProjectFileData.exists === false ||
+    fabProjectFileData.truncated
       ? null
       : parseFabProjectFile(fabProjectFileData.contents);
   const projectSettings = resolveProjectSettings(

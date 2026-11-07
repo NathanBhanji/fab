@@ -11,7 +11,9 @@ import * as Result from "effect/Result";
 
 export const WORKTREE_BRANCH_PREFIX = "fab";
 const TEMP_WORKTREE_HEX_TOKEN = "[0-9a-f]{8}";
-const TEMP_WORKTREE_BRANCH_PATTERN = new RegExp(`^${WORKTREE_BRANCH_PREFIX}[-/]${TEMP_WORKTREE_HEX_TOKEN}$`);
+const TEMP_WORKTREE_BRANCH_PATTERN = new RegExp(
+  `^${WORKTREE_BRANCH_PREFIX}[-/]${TEMP_WORKTREE_HEX_TOKEN}$`,
+);
 
 export function sanitizeBranchFragment(raw: string): string {
   const normalized = raw

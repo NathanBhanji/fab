@@ -1800,7 +1800,8 @@ const make = Effect.gen(function* () {
         }
         for (let index = 0; index < stopped.count; index += 1) {
           const chunk = await recording.encoder.evaluate(
-            (chunkIndex) => (globalThis as unknown as EncoderWindow).__fabRecorder.chunk(chunkIndex),
+            (chunkIndex) =>
+              (globalThis as unknown as EncoderWindow).__fabRecorder.chunk(chunkIndex),
             index,
           );
           chunks.push(Buffer.from(chunk, "base64"));

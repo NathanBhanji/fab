@@ -199,10 +199,7 @@ describe("DesktopLinuxUrlHandler", () => {
           recorded.files[0]?.path,
           "/home/alice/.local/share/applications/dev.bhanji.Fab.desktop",
         );
-        assert.include(
-          recorded.files[0]?.content,
-          "Exec=/home/alice/Applications/Fab.AppImage %U",
-        );
+        assert.include(recorded.files[0]?.content, "Exec=/home/alice/Applications/Fab.AppImage %U");
         assert.include(recorded.files[0]?.content, "MimeType=x-scheme-handler/fab;");
         assert.deepEqual(recorded.commands, [
           {

@@ -17,7 +17,7 @@ Prefer a container? See [Dev container](../internals/devcontainer.md) for VS Cod
 
 ## GitCafe mirror (optional)
 
-GitHub is the source of truth. [git.cafe/NathanBhanji/fab](https://git.cafe/NathanBhanji/fab) is a
+GitHub is the source of truth. [git.cafe/nathanbhanji/fab](https://git.cafe/nathanbhanji/fab) is a
 two-way synced mirror with much higher API rate limits, which helps when many agents work at once.
 You never need it to contribute.
 
@@ -26,9 +26,9 @@ about a minute, and PR and issue numbers match. CI runs on GitHub, and its check
 GitCafe.
 
 ```sh
-git remote set-url origin https://git.cafe/NathanBhanji/fab.git
-git remote add github https://github.com/NathanBhanji/fab.git
-gh repo set-default NathanBhanji/fab   # `gh` is still used for merging
+git remote set-url origin https://git.cafe/nathanbhanji/fab.git
+git remote add github https://github.com/nathanbhanji/fab.git
+gh repo set-default nathanbhanji/fab   # `gh` is still used for merging
 bun install -g @gitcafe/cli@latest   # `cafe` needs Bun 1.2 or newer
 cafe auth login && cafe auth http setup
 cafe skills install --global  # optional: cafe-* skills for coding agents
@@ -41,7 +41,7 @@ With `origin` on git.cafe, work through GitCafe and leave GitHub's API alone:
   github.com one, wherever a tool tracks the PR, so polling stays on GitCafe.
 - Read checks with `cafe pr status <n>`, and GitHub Actions logs with `cafe ci logs <run>` (run ids
   from `cafe ci list --pr <n>`). `cafe ci rerun <run>` reruns one. These need `cafe` 0.11 or newer.
-- Write closing references as `Fixes NathanBhanji/fab#<n>`. GitCafe turns a bare `#<n>` in text it
+- Write closing references as `Fixes nathanbhanji/fab#<n>`. GitCafe turns a bare `#<n>` in text it
   syncs to GitHub into a git.cafe link, and GitHub does not close issues from those.
 - Merge with `gh pr merge <n> --match-head-commit <sha>`, because `cafe pr merge` cannot pin the
   commit you reviewed.

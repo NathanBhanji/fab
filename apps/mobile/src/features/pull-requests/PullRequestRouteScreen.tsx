@@ -126,10 +126,7 @@ import { PullRequestStackCard } from "./PullRequestStackCard";
 import { usePullRequestStack, type PullRequestStackState } from "./usePullRequestStack";
 import { usePullRequestEnvironmentFallback } from "./usePullRequestEnvironmentFallback";
 import { pullRequestFileJumpScope, subscribePullRequestFileJump } from "./pullRequestFileJump";
-import {
-  capitalizeTerm,
-  sourceControlClients,
-} from "@fab/client-runtime/source-control-clients";
+import { capitalizeTerm, sourceControlClients } from "@fab/client-runtime/source-control-clients";
 
 const EMPTY_IDS: readonly string[] = [];
 

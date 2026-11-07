@@ -134,13 +134,13 @@ This app needs a newer Fab on the host. Update Fab on the host. See
 
 ## Fab Connect returned an error
 
-| Error                                                     | Fix                                                                                                                                         |
-| --------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
-| `environment_link_limit_exceeded` or managed tunnel limit | Remove an unused environment or link a paid T3 Chat account, then restart Fab on the host.                                              |
+| Error                                                     | Fix                                                                                                                                            |
+| --------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| `environment_link_limit_exceeded` or managed tunnel limit | Remove an unused environment or link a paid T3 Chat account, then restart Fab on the host.                                                     |
 | `auth_invalid` or `invalid_bearer`                        | Run `fab connect login`. If credentials were revoked, run `fab connect logout`, then `fab connect` again. Restart the server after signing in. |
-| Expired or invalid link proof                             | Check the host's date and time, update Fab, then restart it.                                                                            |
-| HTTP 403 without a recognized error                       | Check relay access, proxies, and firewall rules. Keep any Cloudflare Ray ID for a bug report.                                               |
-| HTTP 408, 429, or 5xx                                     | Wait a few minutes. Fab retries temporary failures on its own.                                                                          |
+| Expired or invalid link proof                             | Check the host's date and time, update Fab, then restart it.                                                                                   |
+| HTTP 403 without a recognized error                       | Check relay access, proxies, and firewall rules. Keep any Cloudflare Ray ID for a bug report.                                                  |
+| HTTP 408, 429, or 5xx                                     | Wait a few minutes. Fab retries temporary failures on its own.                                                                                 |
 
 After you fix a permanent rejection, restart the host's server with
 `fab service restart`. For a foreground server, stop it and run `fab serve` again.
@@ -151,7 +151,7 @@ If Fab on the host disappears when SSH closes, see
 ## Report a problem
 
 If none of this helps, open an issue on
-[GitHub](https://github.com/NathanBhanji/fab/issues). Include:
+[GitHub](https://github.com/nathanbhanji/fab/issues). Include:
 
 - The text from **Copy diagnostics** in the environment's **Details**.
 - The output of `fab connect status` on the host.

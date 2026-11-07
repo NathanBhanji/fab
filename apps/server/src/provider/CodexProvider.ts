@@ -29,11 +29,7 @@ import type {
 } from "@fab/contracts";
 import { PREFERRED_DEFAULT_CODEX_MODELS, ServerSettingsError } from "@fab/contracts";
 
-import {
-  codexModelFamily,
-  createModelCapabilities,
-  formatCodexModelName,
-} from "@fab/shared/model";
+import { codexModelFamily, createModelCapabilities, formatCodexModelName } from "@fab/shared/model";
 import { resolveSpawnCommand } from "@fab/shared/shell";
 import { codexAppServerArgs, resolveCodexLaunchArgs } from "./codexLaunchArgs.ts";
 import {

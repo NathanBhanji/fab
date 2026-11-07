@@ -5,11 +5,7 @@ import {
   isAtomCommandInterrupted,
   squashAtomCommandFailure,
 } from "@fab/client-runtime/state/runtime";
-import {
-  AuthFilesystemWriteScope,
-  type EnvironmentId,
-  type ScopedThreadRef,
-} from "@fab/contracts";
+import { AuthFilesystemWriteScope, type EnvironmentId, type ScopedThreadRef } from "@fab/contracts";
 import {
   buildCollapsedProposedPlanPreviewMarkdown,
   buildProposedPlanMarkdownFilename,

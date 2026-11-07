@@ -111,13 +111,7 @@ it.effect("lists the fetch and push URLs of a partial clone remote", () =>
     const driver = yield* GitVcsDriver.makeVcsDriverShape();
     yield* runGit(cwd, ["init"]);
     yield* runGit(cwd, ["remote", "add", "origin", "https://github.com/nathanbhanji/fab.git"]);
-    yield* runGit(cwd, [
-      "remote",
-      "set-url",
-      "--push",
-      "origin",
-      "git@github.com:octocat/fab.git",
-    ]);
+    yield* runGit(cwd, ["remote", "set-url", "--push", "origin", "git@github.com:octocat/fab.git"]);
     yield* runGit(cwd, ["config", "remote.origin.promisor", "true"]);
     yield* runGit(cwd, ["config", "remote.origin.partialclonefilter", "blob:none"]);
 
@@ -996,7 +990,9 @@ it.effect.each(["committed", "unborn"] as const)(
       const fileSystem = yield* FileSystem.FileSystem;
       const path = yield* Path.Path;
       const driver = yield* GitVcsDriver.makeVcsDriverShape();
-      const cwd = yield* fileSystem.makeTempDirectoryScoped({ prefix: "fab-checkpoint-processes-" });
+      const cwd = yield* fileSystem.makeTempDirectoryScoped({
+        prefix: "fab-checkpoint-processes-",
+      });
       const git = (args: ReadonlyArray<string>) =>
         driver.execute({ operation: "checkpoint-test", cwd, args });
       const checkpointRef = CheckpointRef.make("refs/fab/checkpoints/test");
@@ -1059,7 +1055,9 @@ it.effect.skipIf(HostProcess.Platform.defaultValue() === "win32")(
       const fileSystem = yield* FileSystem.FileSystem;
       const path = yield* Path.Path;
       const driver = yield* GitVcsDriver.makeVcsDriverShape();
-      const cwd = yield* fileSystem.makeTempDirectoryScoped({ prefix: "fab-checkpoint-new\nline-" });
+      const cwd = yield* fileSystem.makeTempDirectoryScoped({
+        prefix: "fab-checkpoint-new\nline-",
+      });
       const { git, checkpointRef } = yield* makeCheckpointFixture(driver, cwd);
       const originalIndex = yield* fileSystem.readFile(path.join(cwd, ".git", "index"));
 

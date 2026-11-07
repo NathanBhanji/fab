@@ -295,9 +295,7 @@ const serviceUninstallCommand = Command.make("uninstall", projectLocationFlags).
           return;
         }
         const removed = yield* service.uninstall;
-        yield* Console.log(
-          removed ? "Removed the Fab service." : "Fab service is not installed.",
-        );
+        yield* Console.log(removed ? "Removed the Fab service." : "Fab service is not installed.");
       }),
     ),
   ),

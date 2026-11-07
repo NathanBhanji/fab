@@ -3,7 +3,7 @@ import * as Schema from "effect/Schema";
 
 import { compareSemverVersions } from "./semver.ts";
 
-const CLI_RELEASE_REPOSITORY = "NathanBhanji/fab";
+const CLI_RELEASE_REPOSITORY = "nathanbhanji/fab";
 export const CLI_RELEASES_PAGE_URL = `https://github.com/${CLI_RELEASE_REPOSITORY}/releases`;
 export const CLI_RELEASE_CHECKSUMS_FILE = "SHA256SUMS";
 export const CLI_RELEASE_BASE_URL_ENV = "FAB_RELEASE_BASE_URL";
@@ -159,6 +159,5 @@ const decodeNpmReleaseMigrationManifest = Schema.decodeUnknownOption(NpmReleaseM
 
 /** Highest database migration a release's server knows, from its npm `fab` manifest. */
 export function npmReleaseDatabaseMigration(manifest: unknown): number | undefined {
-  return Option.getOrUndefined(decodeNpmReleaseMigrationManifest(manifest))?.fab
-    .databaseMigration;
+  return Option.getOrUndefined(decodeNpmReleaseMigrationManifest(manifest))?.fab.databaseMigration;
 }

@@ -2,20 +2,14 @@ import {
   pullRequestLinkProject,
   resolveLinkPullRequestInput,
 } from "@fab/client-runtime/pull-request-link-input";
-import type {
-  EnvironmentProject,
-  EnvironmentThreadShell,
-} from "@fab/client-runtime/state/shell";
+import type { EnvironmentProject, EnvironmentThreadShell } from "@fab/client-runtime/state/shell";
 import {
   isAtomCommandInterrupted,
   squashAtomCommandFailure,
   type AtomCommandResult,
 } from "@fab/client-runtime/state/runtime";
 import { planThreadPullRequestMutation } from "@fab/client-runtime/thread-pull-request-compatibility";
-import {
-  capitalizeTerm,
-  sourceControlClients,
-} from "@fab/client-runtime/source-control-clients";
+import { capitalizeTerm, sourceControlClients } from "@fab/client-runtime/source-control-clients";
 import { AuthOrchestrationOperateScope, type ThreadPullRequestLink } from "@fab/contracts";
 import * as Clipboard from "expo-clipboard";
 

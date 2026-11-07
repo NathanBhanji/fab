@@ -1,7 +1,4 @@
-import type {
-  ProviderConsumeResetCreditOutcome,
-  ServerProviderResetCredits,
-} from "@fab/contracts";
+import type { ProviderConsumeResetCreditOutcome, ServerProviderResetCredits } from "@fab/contracts";
 import * as HostProcess from "@fab/shared/HostProcess";
 import * as DateTime from "effect/DateTime";
 import * as Effect from "effect/Effect";

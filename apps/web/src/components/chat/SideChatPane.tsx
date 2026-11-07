@@ -6,11 +6,7 @@ import {
   settlePromise,
   squashAtomCommandFailure,
 } from "@fab/client-runtime/state/runtime";
-import {
-  AuthOrchestrationOperateScope,
-  type ScopedThreadRef,
-  type ThreadId,
-} from "@fab/contracts";
+import { AuthOrchestrationOperateScope, type ScopedThreadRef, type ThreadId } from "@fab/contracts";
 import { Trash2Icon, XIcon } from "lucide-react";
 import { useEffect, useState } from "react";
 

@@ -1951,7 +1951,10 @@ describe("AcpAdapterV2", () => {
     {
       // Without a `mode` category, Fab derives no mode state and only the config option switches.
       modeIds: "Copilot URL collaboration_mode",
-      environment: { FAB_ACP_COPILOT_MODES: "1", FAB_ACP_MODE_OPTION_CATEGORY: "collaboration_mode" },
+      environment: {
+        FAB_ACP_COPILOT_MODES: "1",
+        FAB_ACP_MODE_OPTION_CATEGORY: "collaboration_mode",
+      },
       planModeId: "https://agentclientprotocol.com/protocol/session-modes#plan",
       buildModeId: "https://agentclientprotocol.com/protocol/session-modes#agent",
     },

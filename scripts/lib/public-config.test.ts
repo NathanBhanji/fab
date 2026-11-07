@@ -26,9 +26,7 @@ describe("loadRepoEnv", () => {
       "FAB_CLERK_PUBLISHABLE_KEY=pk_local\nFAB_CLERK_JWT_TEMPLATE=template_local\nFAB_CLERK_CLI_OAUTH_CLIENT_ID=oauth_local\nFAB_RELAY_URL=https://local.example.test\n",
     );
 
-    expect(loadRepoEnv({ baseEnv: {}, repoRoot }).FAB_RELAY_URL).toBe(
-      "https://local.example.test",
-    );
+    expect(loadRepoEnv({ baseEnv: {}, repoRoot }).FAB_RELAY_URL).toBe("https://local.example.test");
     expect(
       loadRepoEnv({
         baseEnv: {

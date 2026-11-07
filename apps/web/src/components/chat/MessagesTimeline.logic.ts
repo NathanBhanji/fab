@@ -3,22 +3,13 @@ import { resolveUserMessagePresentation } from "@fab/client-runtime/user-message
 import { isLiveSubagentTurnItem } from "@fab/client-runtime/state/subagentRuntime";
 import * as DateTime from "effect/DateTime";
 import * as Equal from "effect/Equal";
-import {
-  assistantCitationLabel,
-  collectAssistantCitations,
-} from "@fab/shared/assistantCitations";
+import { assistantCitationLabel, collectAssistantCitations } from "@fab/shared/assistantCitations";
 import { shallow } from "zustand/vanilla/shallow";
 import { claudeResumeCompactionAge } from "@fab/shared/claudeCompaction";
-import {
-  IDLE_COMPACTING_LABELS,
-  IDLE_COMPACTION_TITLES,
-} from "@fab/client-runtime/user-message";
+import { IDLE_COMPACTING_LABELS, IDLE_COMPACTION_TITLES } from "@fab/client-runtime/user-message";
 import type { HandoffTimelineRun } from "@fab/client-runtime/handoff";
 import { renderCodexDirectivesForCopy } from "@fab/shared/codexMarkdownDirectives";
-import {
-  commandDisplayText,
-  commandProgramName,
-} from "@fab/client-runtime/work-log/command-label";
+import { commandDisplayText, commandProgramName } from "@fab/client-runtime/work-log/command-label";
 import {
   liveActivityToolStatus,
   normalizeCompactToolLabel,

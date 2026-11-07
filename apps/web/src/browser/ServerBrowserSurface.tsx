@@ -14,11 +14,7 @@ import {
   type PreviewStreamViewport,
   previewStreamHostSetupMessage,
 } from "@fab/client-runtime/preview/server-browser-stream";
-import type {
-  EnvironmentId,
-  PreviewStreamHostSetup,
-  PreviewViewportSetting,
-} from "@fab/contracts";
+import type { EnvironmentId, PreviewStreamHostSetup, PreviewViewportSetting } from "@fab/contracts";
 import {
   type ClipboardEvent,
   type FormEvent,

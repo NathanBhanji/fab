@@ -9,10 +9,7 @@ import {
   type ProviderInteractionMode,
   type RuntimeMode,
 } from "@fab/contracts";
-import {
-  deriveThreadTitleSeed,
-  threadTitleTextFromPrompt,
-} from "@fab/client-runtime/operations";
+import { deriveThreadTitleSeed, threadTitleTextFromPrompt } from "@fab/client-runtime/operations";
 
 import type { UploadedMobileAttachment } from "./attachmentUpload";
 

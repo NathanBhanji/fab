@@ -113,13 +113,7 @@ export const THREAD_DISCLOSURE_TRANSITION_MS = 180;
 const WORK_LOG_LAYOUT_TRANSITION = LinearTransition.duration(THREAD_DISCLOSURE_TRANSITION_MS);
 const WORK_LOG_DETAIL_ENTER_TRANSITION = FadeIn.duration(140);
 const WORK_LOG_DETAIL_EXIT_TRANSITION = FadeOut.duration(120);
-type WorkContentIcon =
-  | AppSymbolName
-  | "browser"
-  | "computer"
-  | "device"
-  | "fab"
-  | "pull-request";
+type WorkContentIcon = AppSymbolName | "browser" | "computer" | "device" | "fab" | "pull-request";
 
 function WorkLogIcon(props: {
   readonly icon: WorkContentIcon;
@@ -130,7 +124,10 @@ function WorkLogIcon(props: {
   const colorClassName = props.highlighted ? "accent-foreground" : props.colorClassName;
   if (props.icon === "fab") {
     return (
-      <FabWordmark height={10} {...(colorClassName ? { colorClassName } : { color: props.color })} />
+      <FabWordmark
+        height={10}
+        {...(colorClassName ? { colorClassName } : { color: props.color })}
+      />
     );
   }
   if (props.icon === "computer") {

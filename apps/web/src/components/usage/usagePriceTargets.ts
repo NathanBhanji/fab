@@ -1,8 +1,4 @@
-import type {
-  EnvironmentId,
-  ServerSettingsPatch,
-  UsageModelPriceOverride,
-} from "@fab/contracts";
+import type { EnvironmentId, ServerSettingsPatch, UsageModelPriceOverride } from "@fab/contracts";
 
 export interface UsagePriceTarget {
   readonly environmentId: EnvironmentId;

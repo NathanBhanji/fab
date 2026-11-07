@@ -3,11 +3,7 @@ import {
   isAtomCommandInterrupted,
   runAtomCommand,
 } from "@fab/client-runtime/state/runtime";
-import type {
-  EnvironmentId,
-  PullRequestFilesViewedResult,
-  PullRequestRef,
-} from "@fab/contracts";
+import type { EnvironmentId, PullRequestFilesViewedResult, PullRequestRef } from "@fab/contracts";
 import { AsyncResult } from "effect/reactivity";
 
 import { appAtomRegistry } from "~/rpc/atomRegistry";

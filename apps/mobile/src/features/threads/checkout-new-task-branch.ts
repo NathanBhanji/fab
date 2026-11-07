@@ -1,9 +1,6 @@
 import type { EnvironmentProject } from "@fab/client-runtime/state/shell";
 import type { VcsRef } from "@fab/client-runtime/state/vcs";
-import {
-  type AtomCommandResult,
-  mapAtomCommandResult,
-} from "@fab/client-runtime/state/runtime";
+import { type AtomCommandResult, mapAtomCommandResult } from "@fab/client-runtime/state/runtime";
 import type {
   VcsListRefsInput,
   VcsListRefsResult,

@@ -4,11 +4,7 @@ import { usePrimaryEnvironmentId, usePrimaryEnvironment } from "../../state/envi
 import { useEnvironmentScope, useEnvironmentsWithScope } from "../../state/session";
 import { useServerConfigs } from "../../state/entities";
 import { InfoIcon, Undo2Icon } from "lucide-react";
-import {
-  DEFAULT_SERVER_SETTINGS,
-  isManagedSettingPath,
-  type ServerSettings,
-} from "@fab/contracts";
+import { DEFAULT_SERVER_SETTINGS, isManagedSettingPath, type ServerSettings } from "@fab/contracts";
 import * as Equal from "effect/Equal";
 import { useLocation, useNavigate } from "@tanstack/react-router";
 import { createContext, type ComponentPropsWithoutRef, type ReactNode, useContext } from "react";

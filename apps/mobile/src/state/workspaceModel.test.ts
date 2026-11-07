@@ -1,8 +1,5 @@
 import type { EnvironmentShellSummary } from "@fab/client-runtime/state/shell";
-import {
-  BearerConnectionProfile,
-  BearerConnectionTarget,
-} from "@fab/client-runtime/connection";
+import { BearerConnectionProfile, BearerConnectionTarget } from "@fab/client-runtime/connection";
 import { EnvironmentId } from "@fab/contracts";
 import { describe, expect, it } from "@effect/vitest";
 import * as Option from "effect/Option";

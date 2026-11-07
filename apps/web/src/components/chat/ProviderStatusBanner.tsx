@@ -1,8 +1,4 @@
-import {
-  type EnvironmentId,
-  type ProviderInstanceId,
-  type ServerProvider,
-} from "@fab/contracts";
+import { type EnvironmentId, type ProviderInstanceId, type ServerProvider } from "@fab/contracts";
 import { useAtomValue } from "@effect/atom-react";
 import { memo, useRef, useState } from "react";
 import { InfoIcon, XIcon } from "lucide-react";

@@ -173,7 +173,7 @@ describe("Pi MCP tool exposure", () => {
     const prompt = await start!({ systemPrompt: "Pi system prompt" }, discoveryContext);
     assert.include(prompt?.systemPrompt ?? "", "orchestrator_capabilities");
     assert.equal(bridge.servers.length, 0);
-    assert.equal(bridge.tools.length, 8);
+    assert.equal(bridge.tools.length, 4);
     assert.deepEqual(bridge.getActiveTools(), ["read", "tool_search"]);
     assert.deepEqual(
       bridge.tools
@@ -184,15 +184,6 @@ describe("Pi MCP tool exposure", () => {
         ["mcp__fab__delegate_task", "direct"],
         ["mcp__fab__task_status", "direct"],
         ["mcp__fab__preview_snapshot", "deferred"],
-      ],
-    );
-    assert.deepEqual(
-      bridge.tools.filter((tool) => tool.exposure === "hidden").map((tool) => tool.name),
-      [
-        "mcp__fab__orchestrator_capabilities",
-        "mcp__fab__delegate_task",
-        "mcp__fab__task_status",
-        "mcp__fab__preview_snapshot",
       ],
     );
     const result = await bridge.tools
@@ -311,7 +302,7 @@ describe("Pi tool discovery permissions", () => {
           },
         },
       };
-      for (const prefix of ["mcp__fab__", "mcp__fab__"]) {
+      for (const prefix of ["mcp__fab__"]) {
         assert.isUndefined(
           await hook({ toolName: prefix + "orchestrator_capabilities", input: {} }, ctx),
         );
@@ -324,18 +315,17 @@ describe("Pi tool discovery permissions", () => {
           true,
         );
       }
-      assert.equal(confirmations.length, 4);
+      assert.equal(confirmations.length, 2);
       bridge.setBridgeSourcePath("/user/extensions/replacement.ts");
       assert.equal(
-        (await hook({ toolName: "mcp__fab__orchestrator_capabilities", input: {} }, ctx))
-          ?.block,
+        (await hook({ toolName: "mcp__fab__orchestrator_capabilities", input: {} }, ctx))?.block,
         true,
       );
       assert.equal(
         (await hook({ toolName: "mcp__other__orchestrator_capabilities", input: {} }, ctx))?.block,
         true,
       );
-      assert.equal(confirmations.length, 6);
+      assert.equal(confirmations.length, 4);
     },
   );
 

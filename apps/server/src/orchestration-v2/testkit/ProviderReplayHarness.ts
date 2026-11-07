@@ -70,10 +70,7 @@ import {
   type OrchestratorV2Scenario,
   type OrchestratorV2ScenarioResult,
 } from "./OrchestratorScenario.ts";
-import {
-  makeProviderReplayGate,
-  type ProviderReplayGate,
-} from "@fab/provider-testing/replayGate";
+import { makeProviderReplayGate, type ProviderReplayGate } from "@fab/provider-testing/replayGate";
 
 export function makeReplayServerConfig(
   scenario: string,

@@ -4,7 +4,7 @@ import { serializeComposerFileLink } from "@fab/shared/composerTrigger";
 
 export const TRIAGE_PLAYBOOK = `# Fab triage playbook
 
-You are a support engineer for Fab (https://github.com/NathanBhanji/fab), working
+You are a support engineer for Fab (https://github.com/nathanbhanji/fab), working
 inside a coding-agent session on the machine of a user whose install is misbehaving:
 crashes, auth failures, broken setups, slow launches, or anything else. Your job is to
 find out what went wrong, unblock the user if you can, and turn what you learned into
@@ -34,7 +34,7 @@ gives the local server's version when the server recorded one.
 
 ## 3. Check for a newer playbook
 
-Fetch https://raw.githubusercontent.com/NathanBhanji/fab/main/.github/triage/PLAYBOOK.md.
+Fetch https://raw.githubusercontent.com/nathanbhanji/fab/main/.github/triage/PLAYBOOK.md.
 If it is reachable and its content differs from this text, follow that version
 instead of this one. The user may be on an old release with an old copy.
 
@@ -52,7 +52,7 @@ such as \`v0.0.42\`), into the source cache directory named in the context file,
 one subdirectory per commit hash:
 
     git clone --depth 1 --filter=blob:none --branch <release-tag> \\
-      https://github.com/NathanBhanji/fab <source-cache-dir>/<hash>
+      https://github.com/nathanbhanji/fab <source-cache-dir>/<hash>
 
 If the tag does not exist (nightly builds), clone \`main\` instead, and treat file
 and line references as approximate: the user's build may not match \`main\`
@@ -98,7 +98,7 @@ comes from this repo's \`main\` branch.
 
 ## 6. Check upstream
 
-Search existing issues in NathanBhanji/fab (use \`gh\`, or the public GitHub search
+Search existing issues in nathanbhanji/fab (use \`gh\`, or the public GitHub search
 API if \`gh\` is missing or not logged in). Then check whether the problem is already
 fixed in a release newer than the version the bug happened on: compare versions,
 read release notes and recent commits touching the relevant code.
@@ -129,10 +129,10 @@ of \`main\` for that work, never the tag-pinned diagnosis clone.
 - Show the user the complete final issue text and get an explicit yes before
   posting. Never post without it.
 - Note at the end of the issue which model and agent produced it.
-- Post with \`gh issue create --repo NathanBhanji/fab --label via-triage\` only
-  if \`gh api repos/NathanBhanji/fab --jq .permissions.triage\` prints \`true\`.
+- Post with \`gh issue create --repo nathanbhanji/fab --label via-triage\` only
+  if \`gh api repos/nathanbhanji/fab --jq .permissions.triage\` prints \`true\`.
 - Otherwise, or if \`gh\` is not authenticated, build a prefilled
-  https://github.com/NathanBhanji/fab/issues/new?template=via-triage.yml URL.
+  https://github.com/nathanbhanji/fab/issues/new?template=via-triage.yml URL.
   The form applies the label whoever submits it. Add \`title\` plus one
   URL-encoded query parameter per form field id: \`what-happened\`, \`diagnosis\`,
   \`steps\`, \`version\`, \`environment\`, \`evidence\`, \`related\`, \`workaround\` and
@@ -293,7 +293,7 @@ ${entry.before}
 - OS: ${input.os}
 - Node: ${input.nodeVersion}
 ${entry.after === undefined ? "" : `${entry.after}\n`}- Server process: ${input.server}
-- Repo: https://github.com/NathanBhanji/fab
+- Repo: https://github.com/nathanbhanji/fab
 ${input.entry.kind === "app" ? IN_APP_SECTION : ""}${input.sourceClone === undefined ? "" : sourceSection(input.sourceClone)}
 ## Paths
 

@@ -324,7 +324,10 @@ const FAB_MCP_TOOLS: Readonly<Record<string, FabMcpToolDefinition>> = {
   fab_thread_search: tool(["Search", "Searching", "Searched", "thread content"], "thread-search"),
   fab_thread_transfers: tool(["Read", "Reading", "Read", "thread transfers"], "thread-transfers"),
   fab_thread_organize: tool(["Organize", "Organizing", "Organized", "a thread"], "thread-organize"),
-  fab_thread_update: tool(["Update", "Updating", "Updated", "Fab thread metadata"], "thread-update"),
+  fab_thread_update: tool(
+    ["Update", "Updating", "Updated", "Fab thread metadata"],
+    "thread-update",
+  ),
   fab_worktree_list: tool(["List", "Listing", "Listed", "workspace branches"], "worktree-list"),
   fab_preview_list: tool(["List", "Listing", "Listed", "preview tabs"], "browser", "browser"),
   fab_preview_close: tool(["Close", "Closing", "Closed", "a preview tab"], "browser", "browser"),
@@ -351,7 +354,10 @@ const FAB_MCP_TOOLS: Readonly<Record<string, FabMcpToolDefinition>> = {
   fab_thread_launch: tool(["Launch", "Launching", "Launched", "a project thread"], "thread-create"),
   fab_project_list: tool(["List", "Listing", "Listed", "projects"], "project-list"),
   fab_project_read: tool(["Read", "Reading", "Read", "a project"], "project-read"),
-  fab_project_create: tool(["Register", "Registering", "Registered", "a project"], "project-create"),
+  fab_project_create: tool(
+    ["Register", "Registering", "Registered", "a project"],
+    "project-create",
+  ),
   fab_project_update: tool(["Update", "Updating", "Updated", "a project"], "project-update"),
   fab_project_delete: tool(["Delete", "Deleting", "Deleted", "a project"], "project-delete"),
   fab_project_clone: tool(["Clone", "Cloning", "Cloned", "a repository"], "project-clone"),
@@ -403,10 +409,7 @@ function parseFabMcpToolName(value: string): string | null {
       : null;
   }
 
-  const namespaceMatch =
-    /^(?<server>fab[-_]direct|fab)(?:[.:/]|\s*·\s*)(?<tool>.+)$/i.exec(
-      label,
-    );
+  const namespaceMatch = /^(?<server>fab[-_]direct|fab)(?:[.:/]|\s*·\s*)(?<tool>.+)$/i.exec(label);
   if (namespaceMatch?.groups) {
     return namespaceMatch.groups.tool ?? null;
   }
@@ -440,9 +443,11 @@ const ACTION_TOOLS: Readonly<Record<string, (action: string) => string | undefin
   fab_queue: (action) => `fab_queue_${action}`,
   fab_pending_request: (action) => `fab_pending_request_${action}`,
   fab_thread_transfer: (action) =>
-    ({ fork: "fab_thread_fork", merge_back: "fab_thread_merge_back", status: "fab_thread_transfers" })[
-      action
-    ],
+    ({
+      fork: "fab_thread_fork",
+      merge_back: "fab_thread_merge_back",
+      status: "fab_thread_transfers",
+    })[action],
 };
 
 /** Pass the call's input so an action tool resolves to the labels and summary of its action. */

@@ -18,9 +18,7 @@ describe("Azure DevOps change request URLs", () => {
       number: 17,
       repositoryUrl: "https://dev.azure.com/acme/platform/_git/fab",
     });
-    expect(
-      parse("https://acme.visualstudio.com/platform/_git/fab/pullrequest/17"),
-    ).toMatchObject({
+    expect(parse("https://acme.visualstudio.com/platform/_git/fab/pullrequest/17")).toMatchObject({
       host: "acme.visualstudio.com",
       repository: "platform/_git/fab",
       number: 17,
@@ -139,11 +137,11 @@ describe("Azure DevOps repository keys", () => {
 
   it("keeps the organization in the host for the legacy visualstudio.com remotes", () => {
     for (const remote of [
-      "Fab@vs-ssh.visualstudio.com:v3/Fab/Platform/Fab",
+      "Bhanji@vs-ssh.visualstudio.com:v3/Bhanji/Platform/Fab",
       "https://Bhanji.visualstudio.com/Platform/_git/Fab",
     ]) {
       expect(registry.repositoryKeyFromRemote(remote), remote).toBe(
-        "fab.visualstudio.com/platform/_git/fab",
+        "bhanji.visualstudio.com/platform/_git/fab",
       );
     }
   });

@@ -1,10 +1,7 @@
 // @effect-diagnostics-next-line nodeBuiltinImport:off -- Effect's Crypto has no createHmac or timingSafeEqual.
 import * as NodeCrypto from "node:crypto";
 
-import {
-  RelayAgentActivityAggregateState,
-  RelayAgentAwarenessPhase,
-} from "@fab/contracts/relay";
+import { RelayAgentActivityAggregateState, RelayAgentAwarenessPhase } from "@fab/contracts/relay";
 import { stableStringify } from "@fab/shared/relaySigning";
 import * as DateTime from "effect/DateTime";
 import * as Option from "effect/Option";

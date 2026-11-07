@@ -217,10 +217,9 @@ it.effect("does not charge authenticated budgets for anonymous or malformed requ
       { waitUntil: () => {} },
     );
     yield* cache.handle(
-      new Request(
-        "https://cache.example/projects/fab/blob/12345678-1234-1234-1234-123456789abc",
-        { headers },
-      ),
+      new Request("https://cache.example/projects/fab/blob/12345678-1234-1234-1234-123456789abc", {
+        headers,
+      }),
       { waitUntil: () => {} },
     );
     expect(limit.mock.calls).toEqual([[{ key: "fab:telemetry" }], [{ key: "fab:blob" }]]);

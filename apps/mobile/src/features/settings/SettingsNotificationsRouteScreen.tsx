@@ -1,9 +1,5 @@
 import * as Dialog from "../../components/ui/Dialog";
-import {
-  AuthRelayWriteScope,
-  managedCapabilityDenial,
-  type EnvironmentId,
-} from "@fab/contracts";
+import { AuthRelayWriteScope, managedCapabilityDenial, type EnvironmentId } from "@fab/contracts";
 import { readEnvironmentScope } from "../../state/session";
 import { appAtomRegistry } from "../../state/atom-registry";
 import { serverEnvironment } from "../../state/server";

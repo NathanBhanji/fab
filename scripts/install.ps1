@@ -16,7 +16,7 @@
 $ErrorActionPreference = "Stop"
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 
-$repo = "NathanBhanji/fab"
+$repo = "nathanbhanji/fab"
 $baseUrl = if ($env:FAB_RELEASE_BASE_URL) { $env:FAB_RELEASE_BASE_URL.TrimEnd("/") } else { "https://github.com/$repo/releases/download" }
 $fabHome = if ($env:FAB_HOME) { $env:FAB_HOME } else { Join-Path $HOME ".fab" }
 $binDir = if ($env:FAB_INSTALL_BIN_DIR) { $env:FAB_INSTALL_BIN_DIR } else { Join-Path $HOME ".local\bin" }

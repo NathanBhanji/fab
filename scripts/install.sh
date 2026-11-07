@@ -17,7 +17,7 @@
 # instead of fetching the release again.
 set -eu
 
-repo="NathanBhanji/fab"
+repo="nathanbhanji/fab"
 base_url="${FAB_RELEASE_BASE_URL:-https://github.com/${repo}/releases/download}"
 fab_home="${FAB_HOME:-$HOME/.fab}"
 case "$fab_home" in

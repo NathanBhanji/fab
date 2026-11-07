@@ -156,9 +156,9 @@ describe("thread links", () => {
         return match;
       });
     });
-    expect(threadLinkRefs("<fab-thread://v2/local/t1> [a](fab-thread://v2/there/t2)", local)).toEqual(
-      [ref("local", "t1"), ref("there", "t2")],
-    );
+    expect(
+      threadLinkRefs("<fab-thread://v2/local/t1> [a](fab-thread://v2/there/t2)", local),
+    ).toEqual([ref("local", "t1"), ref("there", "t2")]);
   });
 
   it("writes a titleless autolink that opens that exact thread", () => {
@@ -192,7 +192,9 @@ describe("hosted thread links", () => {
     expect(parseThreadLinkHref("https://app.fab.invalid/threads/env-1/thread-1")).toEqual(
       ref("env-1", "thread-1"),
     );
-    expect(parseThreadLinkHref("https://app.fab.invalid/threads/env-1/thread-1?prompt=go")).toBeNull();
+    expect(
+      parseThreadLinkHref("https://app.fab.invalid/threads/env-1/thread-1?prompt=go"),
+    ).toBeNull();
     expect(parseThreadLinkHref("https://app.fab.invalid/threads/env-1/thread-1/extra")).toBeNull();
     expect(parseThreadLinkHref("https://app.fab.invalid/threads/env-1")).toBeNull();
     expect(parseThreadLinkHref("https://app.fab.invalid/env-1/thread-1")).toBeNull();
@@ -203,7 +205,9 @@ describe("hosted thread links", () => {
     expect(formatHostedThreadLink(ref("e", "t1"), "Fix [ci]")).toBe(
       "[Fix ci](https://app.fab.invalid/threads/e/t1)",
     );
-    expect(formatHostedThreadLink(ref("e", "t1"), " ")).toBe("https://app.fab.invalid/threads/e/t1");
+    expect(formatHostedThreadLink(ref("e", "t1"), " ")).toBe(
+      "https://app.fab.invalid/threads/e/t1",
+    );
   });
 
   it("titles hosted links in every Markdown form and writes them as v2 links", () => {

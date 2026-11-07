@@ -27,6 +27,6 @@
     <category>Development</category>
   </categories>
   <url type="homepage">https://fab.invalid</url>
-  <url type="bugtracker">https://github.com/NathanBhanji/fab/issues</url>
-  <url type="vcs-browser">https://github.com/NathanBhanji/fab</url>
+  <url type="bugtracker">https://github.com/nathanbhanji/fab/issues</url>
+  <url type="vcs-browser">https://github.com/nathanbhanji/fab</url>
 </component>

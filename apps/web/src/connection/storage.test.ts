@@ -1,7 +1,4 @@
-import {
-  ConnectionTransientError,
-  PrimaryConnectionTarget,
-} from "@fab/client-runtime/connection";
+import { ConnectionTransientError, PrimaryConnectionTarget } from "@fab/client-runtime/connection";
 import { EnvironmentId, ThreadId } from "@fab/contracts";
 import { ConnectionCatalogDocument, Persistence } from "@fab/client-runtime/platform";
 import { describe, expect, it } from "@effect/vitest";

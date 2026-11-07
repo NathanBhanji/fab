@@ -19,9 +19,9 @@ const captureError = (run: () => unknown): unknown => {
 
 describe("Clerk relay auth", () => {
   it("derives a custom Frontend API hostname from a Clerk publishable key", () => {
-    expect(clerkFrontendApiHostnameFromPublishableKey(clerkPublishableKey("clerk.fab.invalid"))).toBe(
-      "clerk.fab.invalid",
-    );
+    expect(
+      clerkFrontendApiHostnameFromPublishableKey(clerkPublishableKey("clerk.fab.invalid")),
+    ).toBe("clerk.fab.invalid");
     expect(clerkFrontendApiUrlFromPublishableKey(clerkPublishableKey("clerk.fab.invalid"))).toBe(
       "https://clerk.fab.invalid",
     );

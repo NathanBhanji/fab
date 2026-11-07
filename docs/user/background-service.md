@@ -8,8 +8,8 @@ to keep a terminal open.
 Install the `fab` CLI first ([Install Fab](./install.md#command-line)), then
 run these commands on the machine that will host Fab:
 
-| Task                                  | Command                |
-| ------------------------------------- | ---------------------- |
+| Task                                  | Command                 |
+| ------------------------------------- | ----------------------- |
 | Set up access from your other devices | `fab up`                |
 | See how your other devices reach it   | `fab status`            |
 | Install and start                     | `fab service install`   |
@@ -147,8 +147,8 @@ that session open.
 | --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
 | `linger-unavailable`                    | Run `loginctl show-user "$(id -un)" --property=Linger` and check that systemd-logind is available.                             |
 | `user-manager-unavailable`              | Run `systemctl --user status` in a login session for the service user; check your distribution's systemd user-session support. |
-| `service-disabled` or `service-stopped` | Read the log and `systemctl --user status fab.service`, then use the repair command printed by Fab.                     |
-| `restart-pending`                       | A newer version is installed but the service still runs the previous one. Run `fab service restart`.                            |
+| `service-disabled` or `service-stopped` | Read the log and `systemctl --user status fab.service`, then use the repair command printed by Fab.                            |
+| `restart-pending`                       | A newer version is installed but the service still runs the previous one. Run `fab service restart`.                           |
 
 On macOS, check **System Settings → General → Login Items** if the service no
 longer starts at login. If agent work cannot access Desktop, Documents, or

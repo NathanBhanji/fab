@@ -1,8 +1,4 @@
-import {
-  AuthOrchestrationOperateScope,
-  type EnvironmentId,
-  type ThreadId,
-} from "@fab/contracts";
+import { AuthOrchestrationOperateScope, type EnvironmentId, type ThreadId } from "@fab/contracts";
 import {
   isAtomCommandInterrupted,
   squashAtomCommandFailure,

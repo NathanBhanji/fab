@@ -33,10 +33,14 @@ describe("connectAuth", () => {
       readConnectAuthorizeRequest(new URL("https://app.fab.invalid/connect#state=abc&port=34338")),
     ).toBeNull();
     expect(
-      readConnectAuthorizeRequest(new URL("https://app.fab.invalid/connect#challenge=abc&port=34338")),
+      readConnectAuthorizeRequest(
+        new URL("https://app.fab.invalid/connect#challenge=abc&port=34338"),
+      ),
     ).toBeNull();
     expect(
-      readConnectAuthorizeRequest(new URL("https://app.fab.invalid/connect#state=abc&challenge=abc")),
+      readConnectAuthorizeRequest(
+        new URL("https://app.fab.invalid/connect#state=abc&challenge=abc"),
+      ),
     ).toBeNull();
   });
 

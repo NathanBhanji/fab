@@ -14,10 +14,7 @@ import {
   EnvironmentAuthorizationError,
   type GitRunStackedActionResult,
 } from "@fab/contracts";
-import {
-  dedupeRemoteBranchesWithLocalMatches,
-  sanitizeFeatureBranchName,
-} from "@fab/shared/git";
+import { dedupeRemoteBranchesWithLocalMatches, sanitizeFeatureBranchName } from "@fab/shared/git";
 import * as Cause from "effect/Cause";
 import { AsyncResult } from "effect/reactivity";
 

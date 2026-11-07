@@ -75,10 +75,7 @@ import {
   type BackgroundWorkReport,
 } from "@fab/provider-core/server/notification";
 import * as ProviderContinuationRequests from "@fab/provider-core/server/ProviderContinuationRequests";
-import {
-  makeProviderFailure,
-  makeProviderRetryTurnItem,
-} from "@fab/provider-core/server/failure";
+import { makeProviderFailure, makeProviderRetryTurnItem } from "@fab/provider-core/server/failure";
 import {
   makeSubagentChildThread,
   makeSubagentConversationArtifacts,
@@ -2611,8 +2608,7 @@ export const make = Effect.fn("OpenCode2Adapter.make")(function* (instanceId: Pr
               ? {
                   status: "failed",
                   failure: makeProviderFailure({
-                    message:
-                      "OpenCode ended the turn with an error while Fab was reconnecting.",
+                    message: "OpenCode ended the turn with an error while Fab was reconnecting.",
                     class: "provider_error",
                   }),
                 }
@@ -3124,7 +3120,10 @@ export const make = Effect.fn("OpenCode2Adapter.make")(function* (instanceId: Pr
       }
       const instructions = [
         buildRuntimeInstructions({ harness: "OpenCode", model: turnInput.modelSelection.model }),
-        fabOrchestrationSystemPrompt(mcpAvailable, mcpSession?.capabilities?.has("device") === true),
+        fabOrchestrationSystemPrompt(
+          mcpAvailable,
+          mcpSession?.capabilities?.has("device") === true,
+        ),
       ]
         .filter((part) => part !== undefined && part.length > 0)
         .join("\n\n");

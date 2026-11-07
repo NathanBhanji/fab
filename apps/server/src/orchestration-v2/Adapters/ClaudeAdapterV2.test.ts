@@ -501,7 +501,7 @@ describe("ClaudeAdapterV2 runtime query policy", () => {
 
 describe("ClaudeAdapterV2 MCP query overrides", () => {
   const FAB_MCP_SERVERS = {
-    "fab": {
+    fab: {
       type: "http",
       url: "http://127.0.0.1:43123/mcp",
       headers: {
@@ -610,7 +610,7 @@ describe("ClaudeAdapterV2 native protocol logging", () => {
     assert.deepEqual(overrides, {
       allowedTools: ["Read", "mcp__fab__*"],
       mcpServers: {
-        "fab": {
+        fab: {
           type: "http",
           url: "http://127.0.0.1:43123/mcp",
           headers: {
@@ -674,7 +674,7 @@ describe("ClaudeAdapterV2 device instructions", () => {
       resume: false,
       cwd: "/workspace",
       ...(input.mcp
-        ? { mcpServers: { "fab": { type: "http" as const, url: "http://127.0.0.1/mcp" } } }
+        ? { mcpServers: { fab: { type: "http" as const, url: "http://127.0.0.1/mcp" } } }
         : {}),
       deviceToolsAvailable: input.deviceToolsAvailable,
       environment: {},
@@ -2651,7 +2651,7 @@ describe("ClaudeAdapterV2 MCP credential channel", () => {
             resume: false,
             cwd: null,
             environment: { PATH: "/usr/bin" },
-            mcpServers: { "fab": fabMcpServer },
+            mcpServers: { fab: fabMcpServer },
           }),
           pathToClaudeCodeExecutable: "/opt/claude/cli.js",
           spawnClaudeCodeProcess: cli.spawn,
@@ -2700,7 +2700,7 @@ describe("ClaudeAdapterV2 MCP credential channel", () => {
 
       assert.deepInclude(cli.controlRequests, {
         subtype: "mcp_set_servers",
-        servers: { "fab": fabMcpServer },
+        servers: { fab: fabMcpServer },
       });
       assert.deepInclude(
         cli.controlRequests.find((request) => Reflect.get(request, "subtype") === "initialize"),
@@ -4439,7 +4439,9 @@ describe("ClaudeAdapterV2 background wake turns", () => {
         assert.isUndefined(yield* openedToolSearch(userAuto, path.join(repo, "packages", "app")));
 
         // Project settings beat user settings, and the process env applies only when no file sets it.
-        const project = yield* fileSystem.makeTempDirectoryScoped({ prefix: "fab-claude-project-" });
+        const project = yield* fileSystem.makeTempDirectoryScoped({
+          prefix: "fab-claude-project-",
+        });
         yield* fileSystem.makeDirectory(path.join(project, ".claude"));
         yield* fileSystem.writeFileString(
           path.join(project, ".claude", "settings.json"),
@@ -4697,7 +4699,9 @@ describe("ClaudeAdapterV2 background wake turns", () => {
       Effect.gen(function* () {
         const fs = yield* FileSystem.FileSystem;
         const path = yield* Path.Path;
-        const homePath = yield* fs.makeTempDirectoryScoped({ prefix: "fab-claude-skill-dispatch-" });
+        const homePath = yield* fs.makeTempDirectoryScoped({
+          prefix: "fab-claude-skill-dispatch-",
+        });
         for (const [name, userOnly] of [
           ["interrogate", true],
           ["implement", true],

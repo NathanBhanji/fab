@@ -1,12 +1,6 @@
 import { buildProjectGroups } from "@fab/client-runtime/state/project-grouping";
-import type {
-  EnvironmentProject,
-  EnvironmentThreadShell,
-} from "@fab/client-runtime/state/shell";
-import {
-  getThreadSortTimestamp,
-  toSortableTimestamp,
-} from "@fab/client-runtime/state/thread-sort";
+import type { EnvironmentProject, EnvironmentThreadShell } from "@fab/client-runtime/state/shell";
+import { getThreadSortTimestamp, toSortableTimestamp } from "@fab/client-runtime/state/thread-sort";
 import type {
   EnvironmentId,
   ScopedProjectRef,

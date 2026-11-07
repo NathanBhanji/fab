@@ -1,8 +1,4 @@
-import {
-  isNetworkPath,
-  isWindowsAbsolutePath,
-  workspaceRelativeFilePath,
-} from "@fab/shared/path";
+import { isNetworkPath, isWindowsAbsolutePath, workspaceRelativeFilePath } from "@fab/shared/path";
 
 import {
   markdownDestinationHostPath,

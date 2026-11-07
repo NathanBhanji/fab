@@ -1,7 +1,4 @@
-import type {
-  EnvironmentPresentation,
-  PreparedConnection,
-} from "@fab/client-runtime/connection";
+import type { EnvironmentPresentation, PreparedConnection } from "@fab/client-runtime/connection";
 import { connectionCatalogDisplayUrl } from "@fab/client-runtime/connection";
 import type { EnvironmentId, ServerConfig } from "@fab/contracts";
 import * as Option from "effect/Option";

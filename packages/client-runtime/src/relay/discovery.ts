@@ -3,10 +3,7 @@ import type {
   RelayEnvironmentStatusResponse,
 } from "@fab/contracts/relay";
 import { decodeRelayJwt } from "@fab/shared/relayJwt";
-import {
-  RelayEnvironmentConnectScope,
-  RelayEnvironmentStatusScope,
-} from "@fab/contracts/relay";
+import { RelayEnvironmentConnectScope, RelayEnvironmentStatusScope } from "@fab/contracts/relay";
 import * as Context from "effect/Context";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";

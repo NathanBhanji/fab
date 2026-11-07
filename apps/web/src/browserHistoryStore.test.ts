@@ -1,12 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test";
 
 import { scopeProjectRef } from "@fab/client-runtime/environment";
-import {
-  EnvironmentId,
-  type PreviewSessionSnapshot,
-  ProjectId,
-  ThreadId,
-} from "@fab/contracts";
+import { EnvironmentId, type PreviewSessionSnapshot, ProjectId, ThreadId } from "@fab/contracts";
 
 const { readPreparedConnection, entities, settingsHydration } = vi.hoisted(() => ({
   readPreparedConnection: vi.fn<() => { httpBaseUrl: string } | null>(() => null),

@@ -25,8 +25,8 @@ afterwards, that directory is not on your `PATH` yet; the installer prints the
 line to add. Set `FAB_CHANNEL=nightly` to install the nightly train, or
 `FAB_VERSION` to pin an exact version.
 
-| Task                                             | Command                                                                 |
-| ------------------------------------------------ | ----------------------------------------------------------------------- |
+| Task                                             | Command                                                                  |
+| ------------------------------------------------ | ------------------------------------------------------------------------ |
 | Start the server and open the web app            | `fab`                                                                    |
 | Start the server without a browser               | `fab serve`                                                              |
 | Use it from your other devices                   | `fab up` ([details](./remote-access.md))                                 |
@@ -50,10 +50,10 @@ Node.js for `npx`).
 
 There is no `fab` executable for Intel Macs (the desktop app is available). To
 run a server there, build it from source with `vp`, which provides the Node version it needs
-([Install vp](https://github.com/NathanBhanji/fab#install-vp)):
+([Install vp](https://github.com/nathanbhanji/fab#install-vp)):
 
 ```bash
-git clone https://github.com/NathanBhanji/fab
+git clone https://github.com/nathanbhanji/fab
 cd fab && vp i && vp run build:desktop
 node apps/server/dist/bin.mjs
 ```
@@ -63,14 +63,14 @@ update it with `git pull` and a rebuild.
 
 ## Desktop app
 
-Download a release from [GitHub Releases](https://github.com/NathanBhanji/fab/releases),
+Download a release from [GitHub Releases](https://github.com/nathanbhanji/fab/releases),
 or use a package manager:
 
-| Platform           | Install                                                      |
-| ------------------ | ------------------------------------------------------------ |
-| Windows            | `winget install Bhanji.Fab`                              |
-| macOS              | `brew install --cask fab`                                |
-| Debian, Ubuntu     | `sudo apt install ./Fab-*.deb`                           |
+| Platform           | Install                                                   |
+| ------------------ | --------------------------------------------------------- |
+| Windows            | `winget install Bhanji.Fab`                               |
+| macOS              | `brew install --cask fab`                                 |
+| Debian, Ubuntu     | `sudo apt install ./Fab-*.deb`                            |
 | Arch Linux         | `yay -S fab-bin`                                          |
 | Arch Linux nightly | `yay -S fab-nightly-bin`                                  |
 | Nix                | `nix profile add github:NixOS/nixpkgs/nixos-unstable#fab` |
@@ -143,7 +143,7 @@ on web and desktop. The store apps work with both stable and Nightly servers. Te
 
 - **iPhone and iPad:** TestFlight is invite-only.
 - **Android:** download an APK from the
-  [Android beta releases](https://github.com/NathanBhanji/fab/releases?q=android-beta-).
+  [Android beta releases](https://github.com/nathanbhanji/fab/releases?q=android-beta-).
 
 If the app crashes during launch, open Settings → Diagnostics on the next launch
 that succeeds. It lists startup crashes from the last 7 days with the error and
@@ -166,7 +166,7 @@ computer.
 | Grok Build  | Install [Grok Build CLI](https://x.ai/cli), then run `grok login`.                                                                                        |
 | Kiro        | Install [Kiro CLI](https://kiro.dev/docs/cli/), then run `kiro-cli login`.                                                                                |
 | OpenCode    | Install [OpenCode](https://opencode.ai), then run `opencode auth login`.                                                                                  |
-| Antigravity | Install and sign in with Google from Fab's provider settings.                                                                                         |
+| Antigravity | Install and sign in with Google from Fab's provider settings.                                                                                             |
 | Pi          | Install [Pi](./providers-pi.md#set-up-pi) with Node.js 22.19 or newer, then run `pi` and `/login`.                                                        |
 | Muse Code   | Install [Muse Code](https://dev.meta.ai/docs/muse-code) on the server, run `muse login`, then enable it in Settings → Providers.                          |
 | fx          | Install [fx](https://fx.sh) with `curl -fsSL https://fx.sh/setup.sh \| bash`, then run `fx login`.                                                        |

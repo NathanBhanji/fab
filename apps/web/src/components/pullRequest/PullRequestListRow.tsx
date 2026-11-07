@@ -1,8 +1,4 @@
-import type {
-  PullRequestActor,
-  PullRequestMergeability,
-  PullRequestState,
-} from "@fab/contracts";
+import type { PullRequestActor, PullRequestMergeability, PullRequestState } from "@fab/contracts";
 import type { ReactNode } from "react";
 
 import { cn } from "~/lib/utils";

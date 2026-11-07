@@ -29,12 +29,9 @@ export const Username = Context.Reference<string | null>("@fab/shared/HostProces
   },
 });
 
-export const HomeDirectory = Context.Reference<string>(
-  "@fab/shared/HostProcess/HomeDirectory",
-  {
-    defaultValue: () => NodeOS.homedir(),
-  },
-);
+export const HomeDirectory = Context.Reference<string>("@fab/shared/HostProcess/HomeDirectory", {
+  defaultValue: () => NodeOS.homedir(),
+});
 
 export const Environment = Context.Reference<NodeJS.ProcessEnv>(
   "@fab/shared/HostProcess/Environment",
@@ -50,12 +47,9 @@ export const WorkingDirectory = Context.Reference<string>(
   },
 );
 
-export const ExecutablePath = Context.Reference<string>(
-  "@fab/shared/HostProcess/ExecutablePath",
-  {
-    defaultValue: () => process.execPath,
-  },
-);
+export const ExecutablePath = Context.Reference<string>("@fab/shared/HostProcess/ExecutablePath", {
+  defaultValue: () => process.execPath,
+});
 
 export const Arguments = Context.Reference<ReadonlyArray<string>>(
   "@fab/shared/HostProcess/Arguments",

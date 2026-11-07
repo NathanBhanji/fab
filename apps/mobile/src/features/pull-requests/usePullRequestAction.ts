@@ -3,11 +3,7 @@ import * as Dialog from "../../components/ui/Dialog";
 import { useAtomRefresh } from "@effect/atom-react";
 import { squashAtomCommandFailure } from "@fab/client-runtime/state/runtime";
 import { sourceControlClients } from "@fab/client-runtime/source-control-clients";
-import type {
-  PullRequestAction,
-  PullRequestDetail,
-  PullRequestUpdateMethod,
-} from "@fab/contracts";
+import type { PullRequestAction, PullRequestDetail, PullRequestUpdateMethod } from "@fab/contracts";
 import { useRef, useState } from "react";
 import { composerPullRequests } from "../../state/pull-requests";
 import { useAtomCommand } from "../../state/use-atom-command";

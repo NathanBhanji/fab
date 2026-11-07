@@ -3,10 +3,7 @@ import {
   fitImageAttachmentSize,
   IMAGE_ATTACHMENT_MAX_EDGE,
 } from "@fab/client-runtime/image-attachment-size";
-import {
-  IMAGE_DIMENSIONS_HEADER_BYTES,
-  readImageDimensions,
-} from "@fab/shared/imageDimensions";
+import { IMAGE_DIMENSIONS_HEADER_BYTES, readImageDimensions } from "@fab/shared/imageDimensions";
 
 const MAX_DIMENSION = IMAGE_ATTACHMENT_MAX_EDGE;
 export const MAX_STASH_IMAGE_DATA_URL_CHARS = 1_300_000;

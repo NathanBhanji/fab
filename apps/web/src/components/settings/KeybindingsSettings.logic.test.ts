@@ -1,9 +1,6 @@
 import { assert, describe, expect, it } from "vite-plus/test";
 import type { ResolvedKeybindingsConfig } from "@fab/contracts";
-import {
-  compileResolvedKeybindingsConfig,
-  parseKeybindingShortcut,
-} from "@fab/shared/keybindings";
+import { compileResolvedKeybindingsConfig, parseKeybindingShortcut } from "@fab/shared/keybindings";
 
 import { resolveShortcutCommand } from "../../keybindings";
 

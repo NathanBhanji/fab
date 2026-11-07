@@ -4,11 +4,7 @@
  *
  * @module managedLimits
  */
-import type {
-  ManagedPolicyClient,
-  ManagedPolicyDocument,
-  ServerAuthPolicy,
-} from "@fab/contracts";
+import type { ManagedPolicyClient, ManagedPolicyDocument, ServerAuthPolicy } from "@fab/contracts";
 import {
   disableTailscaleServe,
   disableTailscaleServeTcp,

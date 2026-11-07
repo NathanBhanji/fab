@@ -30,10 +30,7 @@ import {
   effectiveSnoozed,
   threadWokeAt,
 } from "@fab/client-runtime/state/thread-settled";
-import {
-  createInboxReturnTracker,
-  isThreadWorking,
-} from "@fab/client-runtime/state/thread-inbox";
+import { createInboxReturnTracker, isThreadWorking } from "@fab/client-runtime/state/thread-inbox";
 import { sortSettledThreads } from "@fab/client-runtime/state/thread-sort";
 import {
   nextShownOrder,

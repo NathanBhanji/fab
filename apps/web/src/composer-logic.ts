@@ -1,9 +1,5 @@
 import type { ClientSettings } from "@fab/contracts/settings";
-import type {
-  AssistantCitation,
-  EnvironmentId,
-  ResolvedKeybindingsConfig,
-} from "@fab/contracts";
+import type { AssistantCitation, EnvironmentId, ResolvedKeybindingsConfig } from "@fab/contracts";
 import type { ComposerPathSearchTarget } from "@fab/client-runtime/state/threads";
 import {
   serializeAssistantCitation,

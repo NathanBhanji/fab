@@ -129,8 +129,7 @@ export const make = Effect.gen(function* () {
   const telemetryEnabled = Effect.suspend(() => {
     if (!telemetryConfig.enabled || !policyAllows) return Effect.succeed(false);
     if (!awaitingShellConsent) return Effect.succeed(true);
-    if (hostEnvironment.FAB_DESKTOP_SHELL_DISCOVERY_PENDING === "1")
-      return Effect.succeed(false);
+    if (hostEnvironment.FAB_DESKTOP_SHELL_DISCOVERY_PENDING === "1") return Effect.succeed(false);
     const preference = hostEnvironment.FAB_TELEMETRY_ENABLED;
     return Config.Boolean("FAB_TELEMETRY_ENABLED").pipe(
       Config.withDefault(true),

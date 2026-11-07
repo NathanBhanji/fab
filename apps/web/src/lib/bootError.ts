@@ -2,7 +2,7 @@ import type { DesktopBridge, DesktopUpdateState } from "@fab/contracts";
 
 const FALLBACK_TRIAGE_COMMAND = "npx fab triage";
 const DOWNLOAD_URL = "https://fab.invalid/download";
-const ISSUE_URL = "https://github.com/NathanBhanji/fab/issues/new";
+const ISSUE_URL = "https://github.com/nathanbhanji/fab/issues/new";
 const LAST_FAILURE_KEY = "fab:boot-failed-at";
 const REPEAT_FAILURE_MS = 5 * 60_000;
 const MAX_CAUSES = 3;

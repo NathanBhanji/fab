@@ -525,7 +525,6 @@
     "test": "vp test run"
   },
   "dependencies": {
-    "@pierre/diffs": "catalog:",
     "@fab/contracts": "workspace:*",
     "@fab/provider-acp-registry": "workspace:*",
     "@fab/provider-core": "workspace:*",
@@ -539,6 +538,7 @@
     "@fab/shared": "workspace:*",
     "@fab/source-control-core": "workspace:*",
     "@fab/source-control-definitions": "workspace:*",
+    "@pierre/diffs": "catalog:",
     "effect": "catalog:",
     "jszip": "3.10.1",
     "three": "0.180.0"

@@ -1227,7 +1227,7 @@ const program = Effect.gen(function* () {
                 sources: [
                   { type: "url", url: "https://fab.invalid" },
                   { type: "url", url: "https://fab.invalid" },
-                  { type: "url", url: "https://github.com/NathanBhanji/fab" },
+                  { type: "url", url: "https://github.com/nathanbhanji/fab" },
                 ],
               },
               id: "grok-web-search",

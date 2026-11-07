@@ -6,10 +6,7 @@ import * as Ref from "effect/Ref";
 import * as Schema from "effect/Schema";
 import * as EffectAcpSchema from "effect-acp/compat";
 import * as EffectAcpSchemaV1 from "effect-acp/schema-v1";
-import {
-  deriveToolActivityPresentation,
-  mergeToolActivityData,
-} from "@fab/shared/toolActivity";
+import { deriveToolActivityPresentation, mergeToolActivityData } from "@fab/shared/toolActivity";
 import { FAB_MCP_TOOL_NAMES } from "@fab/shared/fabMcpToolPresentation";
 import type {
   OrchestrationV2ProviderThreadNativeMetadata,
@@ -1069,10 +1066,10 @@ function acpMcpFallbackInput(value: string | undefined): Record<string, unknown>
 
 // Known Fab inventory gates matches, so server-name separators can stay loose. Kiro titles "@fab/<tool>".
 const FAB_MCP_TITLE_CALL =
-  /^(?:@|mcp[-_]{1,2})?fab[-_ ]?code[-_.:/ ]{1,3}(?<tool>[A-Za-z0-9][A-Za-z0-9_.-]*)(?::.*)?$/i;
+  /^(?:@|mcp[-_]{1,2})?fab[-_.:/ ]{1,3}(?<tool>[A-Za-z0-9][A-Za-z0-9_.-]*)(?::.*)?$/i;
 
 const FAB_MCP_TITLE_SUFFIX_CALL =
-  /^(?<tool>[A-Za-z0-9][A-Za-z0-9_.-]*?)(?: \(fab[-_ ]?code MCP Server\)(?::|$)|[-_.]fab[-_ ]?code$)/i;
+  /^(?<tool>[A-Za-z0-9][A-Za-z0-9_.-]*?)(?: \(fab MCP Server\)(?::|$)|[-_.]fab$)/i;
 
 /**
  * glm and Kimi use bare names; Antigravity uses "Running <tool>". Kimi appends
@@ -1115,7 +1112,7 @@ export function extractMcpToolCallIdentity(
     : undefined;
   const metaServerId = typeof meta?.serverId === "string" ? meta.serverId.trim() : "";
   const metaToolName = typeof meta?.toolName === "string" ? meta.toolName.trim() : "";
-  if (/^fab[-_ ]?code$/i.test(metaServerId) && metaToolName.length > 0) {
+  if (/^fab$/i.test(metaServerId) && metaToolName.length > 0) {
     for (const knownTool of FAB_MCP_TOOL_NAMES) {
       const boundary = metaToolName.length - knownTool.length - 1;
       if (
@@ -1131,8 +1128,8 @@ export function extractMcpToolCallIdentity(
   const gooseExtension =
     typeof gooseToolCall?.extensionName === "string" ? gooseToolCall.extensionName.trim() : "";
   const assertsForeignOrigin =
-    (metaServerId.length > 0 && !/^fab[-_ ]?code$/i.test(metaServerId)) ||
-    (gooseExtension.length > 0 && !/^fab[-_ ]?code$/i.test(gooseExtension));
+    (metaServerId.length > 0 && !/^fab$/i.test(metaServerId)) ||
+    (gooseExtension.length > 0 && !/^fab$/i.test(gooseExtension));
   // goose metadata also tags built-ins; retain their command/file projections instead of classifying as MCP.
   if (assertsForeignOrigin) {
     if (metaServerId.length === 0 || metaToolName.length === 0) return undefined;
@@ -1151,15 +1148,18 @@ export function extractMcpToolCallIdentity(
   for (const candidate of candidates) {
     const trimmed = candidate.trim();
     const qualified = /^mcp__(.+?)__(.+)$/i.exec(trimmed);
-    if (qualified?.[1] && qualified[2] && !/^fab[-_ ]?code$/i.test(qualified[1]))
+    if (qualified?.[1] && qualified[2] && !/^fab$/i.test(qualified[1]))
       return { server: qualified[1], tool: qualified[2] };
-    const match =
-      FAB_MCP_TITLE_CALL.exec(trimmed) ??
-      FAB_MCP_TITLE_SUFFIX_CALL.exec(trimmed) ??
-      FAB_MCP_BARE_TITLE_CALL.exec(trimmed);
-    const candidateTool = match?.groups?.tool;
-    if (candidateTool !== undefined && FAB_MCP_TOOL_NAMES.has(candidateTool)) {
-      return { server: "fab", tool: candidateTool };
+    // Tool names share the "fab" server prefix, so try every title shape for a known tool.
+    for (const pattern of [
+      FAB_MCP_TITLE_CALL,
+      FAB_MCP_TITLE_SUFFIX_CALL,
+      FAB_MCP_BARE_TITLE_CALL,
+    ]) {
+      const candidateTool = pattern.exec(trimmed)?.groups?.tool;
+      if (candidateTool !== undefined && FAB_MCP_TOOL_NAMES.has(candidateTool)) {
+        return { server: "fab", tool: candidateTool };
+      }
     }
   }
   const commands = [

@@ -10,10 +10,7 @@ import {
 } from "@fab/contracts";
 import { waitForHttpReady } from "@fab/shared/httpReadiness";
 import * as HostProcess from "@fab/shared/HostProcess";
-import {
-  resolveNodeExecutable,
-  type NodeRuntimeUnavailableError,
-} from "@fab/shared/nodeRuntime";
+import { resolveNodeExecutable, type NodeRuntimeUnavailableError } from "@fab/shared/nodeRuntime";
 import * as NetService from "@fab/shared/Net";
 import { isCommandAvailable } from "@fab/shared/shell";
 import * as Clock from "effect/Clock";

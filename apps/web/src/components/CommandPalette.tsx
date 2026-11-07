@@ -1,11 +1,7 @@
 import { threadPullRequestLinkMode } from "@fab/client-runtime/thread-pull-request-compatibility";
 import { visibleThreadPullRequests } from "@fab/shared/threadPullRequests";
 
-import {
-  scopedThreadKey,
-  scopeProjectRef,
-  scopeThreadRef,
-} from "@fab/client-runtime/environment";
+import { scopedThreadKey, scopeProjectRef, scopeThreadRef } from "@fab/client-runtime/environment";
 import {
   canCreateProjectInEnvironment,
   getCloneDestinationBrowsePath,

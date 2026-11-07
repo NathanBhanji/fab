@@ -1,8 +1,4 @@
-import type {
-  BrowserNavigationTarget,
-  EnvironmentId,
-  PreviewUrlResolution,
-} from "@fab/contracts";
+import type { BrowserNavigationTarget, EnvironmentId, PreviewUrlResolution } from "@fab/contracts";
 import { isLoopbackHost, normalizePreviewUrl } from "@fab/shared/preview";
 import { isLocalLoopbackHost, isPrivateNetworkHost } from "@fab/shared/hostClassification";
 

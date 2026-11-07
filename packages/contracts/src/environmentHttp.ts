@@ -469,11 +469,12 @@ export const FAB_CONNECT_TROUBLESHOOTING_SECTIONS = [
   "the-host-runs-an-older-fab",
   "fab-connect-returned-an-error",
 ] as const;
-export type FabConnectTroubleshootingSection = (typeof FAB_CONNECT_TROUBLESHOOTING_SECTIONS)[number];
+export type FabConnectTroubleshootingSection =
+  (typeof FAB_CONNECT_TROUBLESHOOTING_SECTIONS)[number];
 
 /** Clients, the CLI, and server logs link here as "More info". */
 export function fabConnectTroubleshootingUrl(section: FabConnectTroubleshootingSection): string {
-  return `https://github.com/NathanBhanji/fab/blob/main/docs/user/fab-connect-troubleshooting.md#${section}`;
+  return `https://github.com/nathanbhanji/fab/blob/main/docs/user/fab-connect-troubleshooting.md#${section}`;
 }
 
 const REACHABILITY_SECTION = {

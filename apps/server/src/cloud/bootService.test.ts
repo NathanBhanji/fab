@@ -823,10 +823,7 @@ it.layer(NodeServices.layer)("boot service install", (it) => {
           commands.filter(
             (command) => command.startsWith("systemctl ") && !command.includes("show-environment"),
           ),
-        ).toEqual([
-          "systemctl --user stop fab.service",
-          "systemctl --user restart fab.service",
-        ]);
+        ).toEqual(["systemctl --user stop fab.service", "systemctl --user restart fab.service"]);
       }
     }),
   );

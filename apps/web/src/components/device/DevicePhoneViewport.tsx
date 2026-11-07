@@ -1,9 +1,6 @@
 import { useEffect, useRef } from "react";
 import type { PhoneViewer } from "@fab/client-runtime/device/phone-viewer";
-import type {
-  DeviceAccessorySource,
-  DeviceModelSource,
-} from "@fab/client-runtime/device/model";
+import type { DeviceAccessorySource, DeviceModelSource } from "@fab/client-runtime/device/model";
 import type { DeviceShapeProfile } from "@fab/client-runtime/device/shape-profile";
 import type { createPhoneInteraction } from "@fab/client-runtime/device/phone-interaction";
 import type { DeviceScreenSize, DeviceStreamClient } from "@fab/client-runtime/device/stream";

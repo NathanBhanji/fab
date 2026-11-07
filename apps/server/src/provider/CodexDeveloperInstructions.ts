@@ -15,9 +15,7 @@ export interface FabToolAvailability {
   readonly device: boolean;
 }
 
-const normalizeAvailability = (
-  availability: boolean | FabToolAvailability,
-): FabToolAvailability =>
+const normalizeAvailability = (availability: boolean | FabToolAvailability): FabToolAvailability =>
   typeof availability === "boolean" ? { browser: availability, device: false } : availability;
 
 /** Instructions for unavailable tools would steer the model away from its remaining automation. */

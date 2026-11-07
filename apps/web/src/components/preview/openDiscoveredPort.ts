@@ -1,8 +1,5 @@
 import type { DiscoveredLocalServer, ScopedThreadRef } from "@fab/contracts";
-import {
-  mapAtomCommandResult,
-  type AtomCommandResult,
-} from "@fab/client-runtime/state/runtime";
+import { mapAtomCommandResult, type AtomCommandResult } from "@fab/client-runtime/state/runtime";
 
 import { resolveDiscoveredServerUrl } from "~/browser/browserTargetResolver";
 import type { BrowserSettingsReadError, OpenPreviewMutation } from "~/browser/openFileInPreview";

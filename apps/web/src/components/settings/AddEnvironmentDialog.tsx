@@ -2,14 +2,8 @@ import { pipe } from "effect/Function";
 import { ChevronsLeftRightEllipsisIcon, PlusIcon, TerminalIcon } from "lucide-react";
 import { useAtomValue } from "@effect/atom-react";
 import { type KeyboardEvent, type ReactNode, useEffect, useRef, useState } from "react";
-import {
-  type DesktopDiscoveredSshHost,
-  type DesktopSshEnvironmentTarget,
-} from "@fab/contracts";
-import {
-  RelayConnectionRegistration,
-  RelayConnectionTarget,
-} from "@fab/client-runtime/connection";
+import { type DesktopDiscoveredSshHost, type DesktopSshEnvironmentTarget } from "@fab/contracts";
+import { RelayConnectionRegistration, RelayConnectionTarget } from "@fab/client-runtime/connection";
 import {
   isAtomCommandInterrupted,
   squashAtomCommandFailure,

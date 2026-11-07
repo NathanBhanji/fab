@@ -64,14 +64,7 @@ export const DEFAULT_FAB_HOME = Effect.map(Effect.service(Path.Path), (path) =>
 );
 
 const MODE_ARGS = {
-  dev: [
-    "run",
-    "--filter=@fab/contracts",
-    "--filter=@fab/web",
-    "--filter=fab",
-    "--parallel",
-    "dev",
-  ],
+  dev: ["run", "--filter=@fab/contracts", "--filter=@fab/web", "--filter=fab", "--parallel", "dev"],
   "dev:server": ["run", "--filter=fab", "dev"],
   "dev:web": ["run", "--filter=@fab/web", "dev"],
   "dev:desktop": ["run", "--filter=@fab/desktop", "--filter=@fab/web", "dev"],
@@ -633,7 +626,12 @@ const prepareFirstStart = Effect.fn("dev-runner.prepareFirstStart")(function* (i
         );
       }
     }
-    const source = path.join(yield* HostProcess.HomeDirectory, ".fab", "userdata", "statev2.sqlite");
+    const source = path.join(
+      yield* HostProcess.HomeDirectory,
+      ".fab",
+      "userdata",
+      "statev2.sqlite",
+    );
     // A V1 state.sqlite counts as data too: the server imports it only while
     // statev2.sqlite is missing, so seeding would hide it.
     if (
@@ -826,10 +824,7 @@ export const runDevRunnerWithInput = Effect.fn("dev-runner.runDevRunnerWithInput
         // The app is reached from the tailnet origin. Vite already allows
         // *.ts.net hosts; the backend needs the origin for credentialed
         // requests that bypass the proxy (desktop renderer, direct calls).
-        env.FAB_DEV_ALLOWED_ORIGINS = [
-          env.FAB_DEV_ALLOWED_ORIGINS,
-          new URL(shared.url).origin,
-        ]
+        env.FAB_DEV_ALLOWED_ORIGINS = [env.FAB_DEV_ALLOWED_ORIGINS, new URL(shared.url).origin]
           .filter((entry) => entry && entry.length > 0)
           .join(",");
         if (input.devUrl === undefined) {

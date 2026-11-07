@@ -44,9 +44,9 @@ describe("resolveFabMcpToolDefinition", () => {
     expect(
       resolveFabMcpToolDefinition("mcp__fab__preview_act", { action: "type" })?.labels,
     ).toEqual(resolveFabMcpToolDefinition("preview_type")?.labels);
-    expect(resolveFabMcpToolDefinition("fab_thread_transfer", { action: "fork" })?.displayName).toBe(
-      resolveFabMcpToolDefinition("fab_thread_fork")?.displayName,
-    );
+    expect(
+      resolveFabMcpToolDefinition("fab_thread_transfer", { action: "fork" })?.displayName,
+    ).toBe(resolveFabMcpToolDefinition("fab_thread_fork")?.displayName);
     expect(resolveFabMcpToolDefinition("preview_act", { action: "unknown" })?.labels[2]).toBe(
       "Used",
     );

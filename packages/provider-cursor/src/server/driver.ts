@@ -1,8 +1,4 @@
-import {
-  ProviderDriverKind,
-  ProviderSetupError,
-  type ServerProviderModel,
-} from "@fab/contracts";
+import { ProviderDriverKind, ProviderSetupError, type ServerProviderModel } from "@fab/contracts";
 import { CursorSettings } from "../settings.ts";
 import * as Effect from "effect/Effect";
 import * as SecureRandom from "effect/crypto/SecureRandom";

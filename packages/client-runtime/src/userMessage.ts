@@ -108,11 +108,7 @@ export function resolveUserMessagePresentation(message: {
     // The agent needs words to start a turn; people sent only the attachments.
     text: isAttachmentOnlyBootstrapPrompt(message.text) ? "" : message.text,
     attribution:
-      message.createdBy !== "agent"
-        ? null
-        : message.creationSource === "server"
-          ? "fab"
-          : "agent",
+      message.createdBy !== "agent" ? null : message.creationSource === "server" ? "fab" : "agent",
     scheduledTaskId: undefined,
   };
 }

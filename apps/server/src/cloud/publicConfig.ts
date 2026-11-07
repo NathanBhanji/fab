@@ -91,8 +91,7 @@ export function resolveRelayClientTracingConfig(
   }
 
   const tracesUrl = env.FAB_RELAY_CLIENT_OTLP_TRACES_URL?.trim() || fallback.tracesUrl;
-  const tracesDataset =
-    env.FAB_RELAY_CLIENT_OTLP_TRACES_DATASET?.trim() || fallback.tracesDataset;
+  const tracesDataset = env.FAB_RELAY_CLIENT_OTLP_TRACES_DATASET?.trim() || fallback.tracesDataset;
   const tracesToken = env.FAB_RELAY_CLIENT_OTLP_TRACES_TOKEN?.trim() || fallback.tracesToken;
   const normalizedTracesUrl = normalizeSecureUrl(tracesUrl);
   return normalizedTracesUrl && tracesDataset && tracesToken
@@ -170,10 +169,7 @@ export function makeCloudCliOAuthConfig({
       "FAB_CLERK_PUBLISHABLE_KEY",
       clerkPublishableKeyFallback,
     ),
-    clientId: makePublicValueConfig(
-      "FAB_CLERK_CLI_OAUTH_CLIENT_ID",
-      clerkCliOAuthClientIdFallback,
-    ),
+    clientId: makePublicValueConfig("FAB_CLERK_CLI_OAUTH_CLIENT_ID", clerkCliOAuthClientIdFallback),
   }).pipe(
     Config.mapEffect(({ clerkPublishableKey, clientId }) =>
       Effect.try({

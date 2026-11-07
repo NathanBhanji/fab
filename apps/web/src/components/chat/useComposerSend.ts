@@ -36,11 +36,7 @@ import {
   submitCodexFeedback,
   type CodexFeedbackSubmission,
 } from "@fab/client-runtime/state/threads";
-import {
-  scopedThreadKey,
-  scopeProjectRef,
-  scopeThreadRef,
-} from "@fab/client-runtime/environment";
+import { scopedThreadKey, scopeProjectRef, scopeThreadRef } from "@fab/client-runtime/environment";
 import { createModelSelection } from "@fab/shared/model";
 import { type SetStateAction, useLayoutEffect, useRef } from "react";
 import { flushSync } from "react-dom";
@@ -124,10 +120,7 @@ import {
   prepareTurnAttachments,
   restoreComposerDraft,
 } from "./chatViewSend";
-import type {
-  EnvironmentProject,
-  EnvironmentThreadShell,
-} from "@fab/client-runtime/state/shell";
+import type { EnvironmentProject, EnvironmentThreadShell } from "@fab/client-runtime/state/shell";
 import type { UnifiedSettings } from "@fab/contracts";
 import type { Dispatch } from "react";
 import type { ComposerThreadTarget } from "../../composerDraftStore";

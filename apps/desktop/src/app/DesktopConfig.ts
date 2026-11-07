@@ -48,9 +48,7 @@ export const DesktopConfig = Config.all({
   otlpTracesUrl: trimmedString("FAB_OTLP_TRACES_URL"),
   otlpMetricsUrl: trimmedString("FAB_OTLP_METRICS_URL"),
   otlpLogsUrl: trimmedString("FAB_OTLP_LOGS_URL"),
-  otlpExportIntervalMs: Config.Int("FAB_OTLP_EXPORT_INTERVAL_MS").pipe(
-    Config.withDefault(10_000),
-  ),
+  otlpExportIntervalMs: Config.Int("FAB_OTLP_EXPORT_INTERVAL_MS").pipe(Config.withDefault(10_000)),
   otlpHeaders: Config.schema(OtlpHeadersFromString, "FAB_OTLP_HEADERS").pipe(Config.option),
   otlpProtocol: Config.schema(OtlpProtocol, "FAB_OTLP_PROTOCOL").pipe(
     Config.withDefault("http/json"),

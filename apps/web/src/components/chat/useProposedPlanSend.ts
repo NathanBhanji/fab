@@ -12,10 +12,7 @@ import {
   squashAtomCommandFailure,
   type AtomCommandResult,
 } from "@fab/client-runtime/state/runtime";
-import type {
-  EnvironmentProject,
-  EnvironmentThreadShell,
-} from "@fab/client-runtime/state/shell";
+import type { EnvironmentProject, EnvironmentThreadShell } from "@fab/client-runtime/state/shell";
 import { scopedThreadKey } from "@fab/client-runtime/environment";
 import { truncate } from "@fab/shared/String";
 import { useNavigate } from "@tanstack/react-router";

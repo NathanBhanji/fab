@@ -1,7 +1,4 @@
-export const CLIENT_NAMES = [
-  "dev.bhanji.Fab.SnapShot",
-  "dev.bhanji.Fab.Development.SnapShot",
-];
+export const CLIENT_NAMES = ["dev.bhanji.Fab.SnapShot", "dev.bhanji.Fab.Development.SnapShot"];
 
 export function isWaylandSession(meta) {
   // GNOME 50 removed the X11 compositor and this API. GNOME 45–49 still need the check.

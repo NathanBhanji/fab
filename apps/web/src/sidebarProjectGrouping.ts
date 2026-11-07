@@ -1,8 +1,4 @@
-import type {
-  EnvironmentId,
-  ScopedProjectRef,
-  SidebarProjectGroupingMode,
-} from "@fab/contracts";
+import type { EnvironmentId, ScopedProjectRef, SidebarProjectGroupingMode } from "@fab/contracts";
 import {
   buildProjectGroups,
   derivePhysicalProjectKey,

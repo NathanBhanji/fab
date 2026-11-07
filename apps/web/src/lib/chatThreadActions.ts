@@ -1,10 +1,5 @@
 import { scopeProjectRef } from "@fab/client-runtime/environment";
-import type {
-  EnvironmentId,
-  ModelSelection,
-  ProjectId,
-  ScopedProjectRef,
-} from "@fab/contracts";
+import type { EnvironmentId, ModelSelection, ProjectId, ScopedProjectRef } from "@fab/contracts";
 import type { ComposerThreadDraftState, DraftThreadEnvMode } from "../composerDraftStore";
 
 type ComposerModelSelectionState = Pick<

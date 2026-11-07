@@ -1,8 +1,4 @@
-import type {
-  GitRunStackedActionResult,
-  GitStackedAction,
-  VcsStatusResult,
-} from "@fab/contracts";
+import type { GitRunStackedActionResult, GitStackedAction, VcsStatusResult } from "@fab/contracts";
 import { isTemporaryWorktreeBranch } from "@fab/shared/git";
 import type { ChangeRequestTerminology } from "@fab/client-runtime/source-control-clients";
 import {

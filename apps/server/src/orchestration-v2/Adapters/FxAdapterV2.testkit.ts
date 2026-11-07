@@ -1,11 +1,7 @@
 import * as NodeCrypto from "@effect/platform-node/NodeCrypto";
 import * as NodeServices from "@effect/platform-node/NodeServices";
 import { FxSettings } from "@fab/provider-fx/settings";
-import {
-  FX_ACP_CANCEL_BEHAVIOR,
-  FX_DRIVER_KIND,
-  makeFxAdapterV2,
-} from "@fab/provider-fx/testing";
+import { FX_ACP_CANCEL_BEHAVIOR, FX_DRIVER_KIND, makeFxAdapterV2 } from "@fab/provider-fx/testing";
 import { ProviderInstanceId } from "@fab/contracts";
 import * as Effect from "effect/Effect";
 import * as FileSystem from "effect/FileSystem";

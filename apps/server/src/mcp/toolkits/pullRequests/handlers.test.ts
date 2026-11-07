@@ -60,10 +60,10 @@ function makeProject(
     locator: {
       source: "git-remote",
       remoteName: "origin",
-      remoteUrl: "git@github.com:Fab/Fab.git",
+      remoteUrl: "git@github.com:NathanBhanji/Fab.git",
     },
     provider: SourceControlProviderKind.make("github"),
-    displayName: "Fab/Fab",
+    displayName: "NathanBhanji/FAB",
     owner: "Fab",
     name: "Fab",
   },
@@ -241,13 +241,13 @@ describe("pull request toolkit handlers", () => {
     Effect.gen(function* () {
       const harness = yield* makeHarness();
       const result = yield* harness.call("link_pull_request", {
-        url: "https://github.com/Fab/Fab/pull/123/files",
+        url: "https://github.com/NathanBhanji/Fab/pull/123/files",
       });
       expect(result).toEqual({
         host: "github.com",
         repository: "nathanbhanji/fab",
         number: 123,
-        url: "https://github.com/Fab/Fab/pull/123/files",
+        url: "https://github.com/NathanBhanji/Fab/pull/123/files",
         alreadyLinked: false,
       });
       expect(yield* Ref.get(harness.commands)).toMatchObject([

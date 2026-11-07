@@ -37,10 +37,7 @@ import {
   resolveProviderStatusCachePath,
   writeProviderStatusCache,
 } from "./providerStatusCache.ts";
-import type {
-  ProviderInstance,
-  ProviderWorkspaceSnapshot,
-} from "@fab/provider-core/server/driver";
+import type { ProviderInstance, ProviderWorkspaceSnapshot } from "@fab/provider-core/server/driver";
 import {
   makeManualOnlyProviderMaintenanceCapabilities,
   type ProviderMaintenanceCapabilities,

@@ -151,7 +151,9 @@ const browserSetupCommand = Command.make("setup", { baseDir: baseDirFlag }).pipe
           );
         }
         if (missing.length > 0) {
-          yield* Console.log(`Fab's browser is missing ${missing.join(", ")}; setup installs them.`);
+          yield* Console.log(
+            `Fab's browser is missing ${missing.join(", ")}; setup installs them.`,
+          );
         }
         if (needsFonts) {
           yield* Console.log(

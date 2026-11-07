@@ -1,7 +1,4 @@
-import {
-  nodeProcessRuntimeAttributes,
-  processServiceInstanceId,
-} from "@fab/shared/observability";
+import { nodeProcessRuntimeAttributes, processServiceInstanceId } from "@fab/shared/observability";
 import * as RelayTracing from "@fab/shared/relayTracing";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";

@@ -3,11 +3,7 @@ import { parseFileUrlHref, splitFilePathPosition, resolvePathLinkTarget } from "
 
 describe("parseFileUrlHref", () => {
   it.each([
-    [
-      "file:///D:/Programme/fab/OpenInPicker.tsx#L69",
-      "D:/Programme/fab/OpenInPicker.tsx",
-      "#L69",
-    ],
+    ["file:///D:/Programme/fab/OpenInPicker.tsx#L69", "D:/Programme/fab/OpenInPicker.tsx", "#L69"],
     ["file://server/share/workspace-image.svg", "\\\\server\\share\\workspace-image.svg", ""],
     ["file://localhost/home/me/notes.md", "/home/me/notes.md", ""],
   ])("parses %s", (href, path, hash) => {

@@ -1,9 +1,4 @@
-import type {
-  KeybindingCommand,
-  ProjectId,
-  ProjectScript,
-  EnvironmentId,
-} from "@fab/contracts";
+import type { KeybindingCommand, ProjectId, ProjectScript, EnvironmentId } from "@fab/contracts";
 import { AuthSettingsWriteScope, EnvironmentAuthorizationError } from "@fab/contracts";
 import type { UnifiedSettings } from "@fab/contracts/settings";
 import {

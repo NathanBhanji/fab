@@ -491,7 +491,8 @@ const CODEX_TEST_RUNTIME_POLICY = ProviderAdapter.ProviderAdapterV2RuntimePolicy
 });
 const FAB_THREAD_ENV_KEY = "shell_environment_policy.set.FAB_THREAD_ID";
 const threadEnvOf = (params: unknown) =>
-  Predicate.hasProperty(params, "config") && Predicate.hasProperty(params.config, FAB_THREAD_ENV_KEY)
+  Predicate.hasProperty(params, "config") &&
+  Predicate.hasProperty(params.config, FAB_THREAD_ENV_KEY)
     ? params.config[FAB_THREAD_ENV_KEY]
     : undefined;
 
@@ -1669,7 +1670,7 @@ describe("CodexAdapterV2 post-settle continuation", () => {
         "mcp_servers.extra.command": "cat",
       };
       for (const recordedMcp of [
-        { mcp_servers: { "fab": recordedServer } },
+        { mcp_servers: { fab: recordedServer } },
         { "mcp_servers.fab": recordedServer, "mcp_servers.extra.command": "echo" },
       ]) {
         const entries = codexReplayPreamble({

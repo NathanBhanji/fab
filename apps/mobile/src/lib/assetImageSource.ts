@@ -1,9 +1,5 @@
 import { sourceControlClients } from "@fab/client-runtime/source-control-clients";
-import {
-  SOURCE_CONTROL_MEDIA_ASSET,
-  type AssetResource,
-  type EnvironmentId,
-} from "@fab/contracts";
+import { SOURCE_CONTROL_MEDIA_ASSET, type AssetResource, type EnvironmentId } from "@fab/contracts";
 import type { ImageSource } from "expo-image";
 
 /**

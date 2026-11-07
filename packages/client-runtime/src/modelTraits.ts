@@ -1,8 +1,4 @@
-import type {
-  ModelSelection,
-  ProviderDriverKind,
-  ProviderOptionDescriptor,
-} from "@fab/contracts";
+import type { ModelSelection, ProviderDriverKind, ProviderOptionDescriptor } from "@fab/contracts";
 import {
   buildProviderOptionSelectionsFromDescriptors,
   getProviderOptionCurrentLabel,

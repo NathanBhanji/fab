@@ -206,7 +206,7 @@ export function cursorMcpServers(
     return undefined;
   }
   return {
-    "fab": {
+    fab: {
       type: "http",
       url: session.endpoint,
       headers: {

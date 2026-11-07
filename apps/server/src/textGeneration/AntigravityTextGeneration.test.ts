@@ -1,10 +1,6 @@
 import * as NodeServices from "@effect/platform-node/NodeServices";
 import { it } from "@effect/vitest";
-import {
-  ANTIGRAVITY_DEFAULT_MODEL,
-  ProviderInstanceId,
-  ProviderSetupError,
-} from "@fab/contracts";
+import { ANTIGRAVITY_DEFAULT_MODEL, ProviderInstanceId, ProviderSetupError } from "@fab/contracts";
 import { symlinksSupported } from "@fab/shared/testing/symlinks";
 import * as Deferred from "effect/Deferred";
 import * as Effect from "effect/Effect";

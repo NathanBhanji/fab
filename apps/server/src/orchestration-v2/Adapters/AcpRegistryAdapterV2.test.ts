@@ -33,10 +33,7 @@ import * as EffectAcpErrors from "effect-acp/errors";
 import { makeProviderFailure } from "@fab/provider-core/server/failure";
 import * as McpProviderSessions from "@fab/provider-core/server/McpProviderSessions";
 import * as TestProviderHost from "@fab/provider-testing/TestProviderHost";
-import {
-  makeProviderReplayGate,
-  type ProviderReplayGate,
-} from "@fab/provider-testing/replayGate";
+import { makeProviderReplayGate, type ProviderReplayGate } from "@fab/provider-testing/replayGate";
 import type { ProviderContinuationRequest } from "@fab/provider-core/server/ProviderContinuationRequests";
 import * as ServerSettings from "../../serverSettings.ts";
 import type { AcpRegistryLiveConfiguration } from "@fab/provider-acp-registry/testing";

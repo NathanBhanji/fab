@@ -324,7 +324,8 @@ export const isRelayTracingEnabled = (env: Readonly<Record<string, string | unde
     telemetry: flag("FAB_TELEMETRY_ENABLED", FAB_TRUE, FAB_FALSE, String),
   }).pipe(
     Effect.map(
-      ({ telemetry, fab, spec }) => telemetry.value !== false && !(fab.value ?? spec.value ?? false),
+      ({ telemetry, fab, spec }) =>
+        telemetry.value !== false && !(fab.value ?? spec.value ?? false),
     ),
     Effect.provide(ConfigProvider.layer(ConfigProvider.fromEnvRecord(env))),
     Effect.orDie,

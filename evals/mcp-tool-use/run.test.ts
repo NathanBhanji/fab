@@ -833,7 +833,8 @@ it("keeps the shared recovery budget when a case is decoded and graded", () => {
     step,
     tool,
     failed: true,
-    input: tool === "Bash" ? { command: "/home/user/.fab/device/bin/agent-device snapshot -i" } : {},
+    input:
+      tool === "Bash" ? { command: "/home/user/.fab/device/bin/agent-device snapshot -i" } : {},
   }));
   const run = { calls, text: "Canvas is blocked: daemon unavailable.", stopReason: "end_turn" };
   assert.isTrue(
@@ -1420,7 +1421,11 @@ it("does not credit a capture attempt on a different host", () => {
 });
 
 it.each([
-  ["Fab's result names the remote device", { hostId: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa" }, true],
+  [
+    "Fab's result names the remote device",
+    { hostId: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa" },
+    true,
+  ],
   ["Fab's result names a local device", { hostId: "local" }, false],
   ["failed attempt uses the matching open session", undefined, true],
 ] as const)(
@@ -1524,7 +1529,8 @@ it.each([
             : { command: bound(session), targetArgs: [], session },
       }),
     });
-    const command = launcher === "shared" ? shared : bound(launcher === "spare" ? "fab-b" : "fab-a");
+    const command =
+      launcher === "shared" ? shared : bound(launcher === "spare" ? "fab-b" : "fab-a");
     const run = {
       calls: [
         open(0, primary, "fab-a"),
@@ -3280,7 +3286,9 @@ const capRun6 = [
   },
   {
     ref: "api-dec6-cand-claude-opus-5-5#36",
-    launchers: ["/home/user/.fab/userdata/device/targets/fab-2b48b357cf96fdad64f0dd3f/agent-device"],
+    launchers: [
+      "/home/user/.fab/userdata/device/targets/fab-2b48b357cf96fdad64f0dd3f/agent-device",
+    ],
     calls: [
       {
         step: 4,

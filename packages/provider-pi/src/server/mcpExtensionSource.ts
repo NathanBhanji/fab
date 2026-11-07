@@ -370,16 +370,14 @@ export default async function fabMcpExtension(pi: ExtensionAPI) {
   let started: Promise<void> | undefined;
 
   const registerTools = () => {
-    // Preserve public names for saved loadouts and tool selectors. Hidden
-    // canonical names reserve ownership against Pi's configured MCP servers.
-    const prefixes = supportsExposure ? ["mcp__fab__", "mcp__fab__"] : ["mcp__fab__"];
+    // The public and canonical server names are both "fab", so one registration covers both.
+    const prefixes = ["mcp__fab__"];
     readOnlyMcpTools.clear();
     for (const tool of catalog) {
       const name = tool.name;
       for (const prefix of prefixes) {
         if (tool.annotations?.readOnlyHint === true) readOnlyMcpTools.add(\`\${prefix}\${name}\`);
-        const exposure = prefix === "mcp__fab__" ? "hidden" :
-          deferOptionalTools && !directTools.has(name) ? "deferred" : "direct";
+        const exposure = deferOptionalTools && !directTools.has(name) ? "deferred" : "direct";
         pi.registerTool({
           name: \`\${prefix}\${name}\`,
           label: name,

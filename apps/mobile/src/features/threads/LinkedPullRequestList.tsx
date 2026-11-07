@@ -1,8 +1,5 @@
 import type { EnvironmentThreadShell } from "@fab/client-runtime/state/shell";
-import {
-  capitalizeTerm,
-  sourceControlClients,
-} from "@fab/client-runtime/source-control-clients";
+import { capitalizeTerm, sourceControlClients } from "@fab/client-runtime/source-control-clients";
 import {
   pullRequestListLines,
   resolveThreadPullRequestChains,

@@ -1784,10 +1784,7 @@ it.effect("flags revoked macOS permissions on read and re-registers once they re
 
       mediaAccessStatusMock.mockReturnValue("denied");
       const revoked = yield* service.state;
-      assert.equal(
-        revoked.message,
-        "Allow Screen Recording in System Settings, then restart Fab.",
-      );
+      assert.equal(revoked.message, "Allow Screen Recording in System Settings, then restart Fab.");
       assert.deepEqual(revoked.macPermissions, { screenRecording: false, accessibility: true });
 
       accessibilityTrustedMock.mockReturnValue(false);
@@ -1797,10 +1794,7 @@ it.effect("flags revoked macOS permissions on read and re-registers once they re
         snapShotIncludeAccessibility: false,
       });
       const blocked = yield* service.state;
-      assert.equal(
-        blocked.message,
-        "Allow Screen Recording in System Settings, then restart Fab.",
-      );
+      assert.equal(blocked.message, "Allow Screen Recording in System Settings, then restart Fab.");
       assert.isFalse(blocked.shortcutRegistered);
 
       mediaAccessStatusMock.mockReturnValue("granted");

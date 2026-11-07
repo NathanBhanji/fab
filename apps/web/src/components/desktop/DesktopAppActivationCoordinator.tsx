@@ -4,10 +4,7 @@ import { useEffect, useEffectEvent, useRef } from "react";
 
 import { handleDesktopAppActivationRequest } from "../../desktopAppActivation";
 import { useNewThreadHandler } from "../../hooks/useHandleNewThread";
-import {
-  findProjectByPath,
-  inferProjectTitleFromPath,
-} from "@fab/client-runtime/state/projects";
+import { findProjectByPath, inferProjectTitleFromPath } from "@fab/client-runtime/state/projects";
 import { newProjectId } from "../../lib/utils";
 import { readProjects, waitForProject } from "../../state/entities";
 import { usePrimaryEnvironment } from "../../state/environments";

@@ -14,7 +14,7 @@ const kindOf = (url: string) => sourceControlClients.parseChangeRequestUrl(url)?
 
 describe("sourceControlClients.parseChangeRequestUrl", () => {
   it("reads a GitHub pull request, lower-casing the repository", () => {
-    expect(parse("https://github.com/Fab/Fab/pull/123")).toEqual({
+    expect(parse("https://github.com/NathanBhanji/Fab/pull/123")).toEqual({
       host: "github.com",
       repository: "nathanbhanji/fab",
       number: 123,
@@ -273,19 +273,16 @@ describe("sourceControlClients.recognizeRemote", () => {
 describe("sourceControlClients repository keys", () => {
   // Persisted as `repositoryIdentity.canonicalKey` and in thread pull request keys.
   it.each([
-    ["git@github.com:Fab/Fab.git", "github.com/nathanbhanji/fab"],
+    ["git@github.com:NathanBhanji/Fab.git", "github.com/nathanbhanji/fab"],
     ["ssh://git@gitlab.company.com:2222/team/project.git", "gitlab.company.com/team/project"],
+    ["git@ssh.dev.azure.com:v3/Fab/Platform/Fab", "dev.azure.com/fab/platform/_git/fab"],
     [
-      "git@ssh.dev.azure.com:v3/Fab/Platform/Fab",
-      "dev.azure.com/fab/platform/_git/fab",
-    ],
-    [
-      "Fab@vs-ssh.visualstudio.com:v3/Fab/Platform/Fab",
-      "fab.visualstudio.com/platform/_git/fab",
+      "Bhanji@vs-ssh.visualstudio.com:v3/Bhanji/Platform/Fab",
+      "bhanji.visualstudio.com/platform/_git/fab",
     ],
     [
       "https://Bhanji.visualstudio.com/DefaultCollection/Platform/_git/Fab",
-      "fab.visualstudio.com/defaultcollection/platform/_git/fab",
+      "bhanji.visualstudio.com/defaultcollection/platform/_git/fab",
     ],
     ["git@ssh.dev.azure.com:v3/o/p", "ssh.dev.azure.com/v3/o/p"],
     ["ssh.dev.azure.com/v3/o/p/r", "ssh.dev.azure.com/v3/o/p/r"],
