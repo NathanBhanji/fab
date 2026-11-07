@@ -60,7 +60,7 @@ const fileSystemMocks = vi.hoisted(() => {
         failRelocationTo = "";
         throw new Error("move failed after destination removal");
       }
-      // Android can fall back to copy-and-delete after native moves fail.
+      // Relocation can fall back to copy-and-delete after native moves fail.
       files.set(destination.name, files.get(this.name)!.slice(0, 1));
       record();
       if (failRelocationTo === "partial") {

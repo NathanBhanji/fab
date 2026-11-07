@@ -117,7 +117,6 @@ function BrowserPreviewScreen({
         onBack={onClose}
         options={{ headerBackVisible: false }}
         actions={
-          // Android WebView cannot play video in picture in picture.
           Platform.OS === "ios" &&
           pictureInPicture.supported &&
           (pictureInPicture.active || pdfUri === null)

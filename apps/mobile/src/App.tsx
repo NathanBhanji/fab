@@ -36,10 +36,7 @@ import {
   installAgentNotificationNavigation,
   setAgentNotificationPathname,
 } from "./features/agent-awareness/notificationNavigation";
-import {
-  installAppShortcuts,
-  recordAppShortcutNavigationState,
-} from "./features/shortcuts/appShortcutsRuntime";
+import { installAppShortcuts } from "./features/shortcuts/appShortcutsRuntime";
 import {
   AppearancePreferencesProvider,
   installAppearanceRuntime,
@@ -166,7 +163,6 @@ function handleNavigationStateChange(state: NavigationState | undefined): void {
   resolvePendingThreadPromptLink(state);
   if (!state) return;
   setAgentNotificationPathname(workspaceLocationFromState(state).pathname);
-  recordAppShortcutNavigationState(state);
   pruneNewTaskFlowStates(state);
   pruneNewTaskBranchCheckouts(state);
   pruneIncomingShareImports(state);

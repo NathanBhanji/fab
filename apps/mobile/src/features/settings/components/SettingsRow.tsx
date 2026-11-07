@@ -1,6 +1,5 @@
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { use, type ComponentProps } from "react";
-import { Platform } from "react-native";
 
 import { ListRow } from "../../../components/ui/ListRow";
 import { ListRowLayout } from "../../../components/ui/ListRowLayout";
@@ -24,9 +23,7 @@ export function SettingsRow(props: {
   const sidebar = use(SettingsSidebarContext);
   // The Settings list opens pages in place of the detail column; a page's own rows push below.
   const inList = ["Home", "Settings"].includes(useRoute().name);
-  const valueBelow =
-    props.valuePosition === "below" ||
-    (props.valuePosition === undefined && Platform.OS === "android");
+  const valueBelow = props.valuePosition === "below";
   const content = {
     icon: props.icon,
     label: props.label,

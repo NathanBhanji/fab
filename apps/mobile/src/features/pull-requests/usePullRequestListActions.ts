@@ -79,12 +79,7 @@ export function usePullRequestListActions(
           !pr.viewerPermissions.requestReviewers
         )
           throw new Error(`Review requests aren't available for this ${terminology.singular}.`);
-        if (Platform.OS === "android") {
-          selectDetail(
-            { name: "PullRequest", params: params(entry) },
-            { name: "PullRequestReviewers", params: params(entry) },
-          );
-        } else navigation.navigate("PullRequestReviewers", params(entry));
+        navigation.navigate("PullRequestReviewers", params(entry));
         return;
       }
       if (

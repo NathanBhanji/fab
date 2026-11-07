@@ -1,6 +1,5 @@
 import * as Notifications from "expo-notifications";
 
-import { setAndroidThreadOnScreen } from "./androidNotifications";
 import { foregroundNotificationBehavior } from "./foregroundNotificationBehavior";
 import { routeAgentNotificationResponseOnce, threadDeepLinkOnScreen } from "./notificationPayload";
 import { consumeLastAgentNotificationResponse } from "./notificationResponseConsumer";
@@ -10,7 +9,6 @@ let deepLinkOnScreen: string | null = null;
 /** Called with the workspace pathname on every root navigation state change. */
 export function setAgentNotificationPathname(pathname: string): void {
   deepLinkOnScreen = threadDeepLinkOnScreen(pathname);
-  setAndroidThreadOnScreen(deepLinkOnScreen);
 }
 
 /**

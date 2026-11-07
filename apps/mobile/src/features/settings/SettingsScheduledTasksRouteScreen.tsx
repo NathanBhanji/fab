@@ -66,10 +66,7 @@ import { withNativeGlassHeaderItem } from "../layout/native-glass-header-items";
 import { resolveNewTaskBranchLabel } from "../threads/new-task-context-presentation";
 import { useVoiceInputController } from "../voice-input/useVoiceInputController";
 import { ScheduledTaskPromptField } from "./components/ScheduledTaskPromptField";
-import {
-  AndroidSettingsEnvironmentFilter,
-  SettingsEnvironmentFilterHeader,
-} from "./components/SettingsEnvironmentFilterHeader";
+import { SettingsEnvironmentFilterHeader } from "./components/SettingsEnvironmentFilterHeader";
 import { SettingsScreen } from "./components/SettingsScreen";
 import { SettingsSection } from "./components/SettingsSection";
 import { useSettingsEnvironmentFilter, type SettingsTarget } from "./settings-environment-filter";
@@ -420,24 +417,7 @@ export function SettingsScheduledTasksRouteScreen() {
           }),
         ]}
       />
-      <SettingsScreen
-        title="Scheduled tasks"
-        trailing={
-          <View className="flex-row items-center">
-            <AndroidSettingsEnvironmentFilter />
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="New task"
-              accessibilityState={{ disabled: visibleEnvironments.length === 0 }}
-              disabled={visibleEnvironments.length === 0}
-              onPress={newTask}
-              className="size-11 items-center justify-center rounded-full disabled:opacity-50"
-            >
-              <SymbolView name="plus" size={22} tintColorClassName="accent-icon" />
-            </Pressable>
-          </View>
-        }
-      >
+      <SettingsScreen title="Scheduled tasks">
         <ScrollView
           keyboardShouldPersistTaps="handled"
           keyboardDismissMode="on-drag"
@@ -1146,8 +1126,6 @@ function TaskForm({
                       display={Platform.OS === "ios" ? "spinner" : "default"}
                       onDismiss={() => setRunAtPicker(null)}
                       onValueChange={(_, selected) => {
-                        // Android shows a dialog that closes on pick; iOS stays inline.
-                        if (Platform.OS === "android") setRunAtPicker(null);
                         setDraft({
                           ...draft,
                           schedule: { ...draft.schedule, runAt: selected.toISOString() },
@@ -1434,9 +1412,7 @@ function EnvironmentTasks({
         <EnvironmentMachineSymbol
           kind={resolveEnvironmentMachineKind(environment.serverConfig)}
           size={16}
-          tintColorClassName={
-            Platform.OS === "android" ? "accent-primary" : "accent-foreground-muted"
-          }
+          tintColorClassName="accent-foreground-muted"
         />
       }
     >

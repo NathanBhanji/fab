@@ -22,10 +22,7 @@ import {
   withManagedRuntimeModeLimits,
 } from "../threads/thread-settings-options";
 import { SettingsScreen } from "./components/SettingsScreen";
-import {
-  AndroidSettingsEnvironmentFilter,
-  SettingsEnvironmentFilterHeader,
-} from "./components/SettingsEnvironmentFilterHeader";
+import { SettingsEnvironmentFilterHeader } from "./components/SettingsEnvironmentFilterHeader";
 import { BranchNamingSettings } from "./components/BranchNamingSettings";
 import { DatabaseStorageNotice } from "./components/DatabaseStorageNotice";
 import { ListChoiceRow as SettingsChoiceRow } from "../../components/ui/ListChoiceRow";
@@ -285,10 +282,7 @@ function ServerSettingsDetail(props: { readonly page: SettingsPage }) {
   return (
     <>
       <SettingsEnvironmentFilterHeader />
-      <SettingsScreen
-        title={PAGE_TITLES[props.page]}
-        trailing={<AndroidSettingsEnvironmentFilter />}
-      >
+      <SettingsScreen title={PAGE_TITLES[props.page]}>
         <ScrollView
           contentInsetAdjustmentBehavior="automatic"
           showsVerticalScrollIndicator={false}
@@ -573,7 +567,7 @@ function MixedValuesLabel(props: { readonly projectSelected: boolean }) {
           ? "Selected project checkouts use different values"
           : "Selected environments use different values"
       }
-      className="px-2 text-sm text-foreground-muted android:px-4"
+      className="px-2 text-sm text-foreground-muted"
     >
       Mixed
     </Text>
@@ -594,7 +588,7 @@ function ManagedPolicyNotice(props: { readonly targets: readonly ScopedMobileSet
   ];
   if (organizations.length === 0) return null;
   return (
-    <Text className="px-2 text-sm text-foreground-muted android:px-4">
+    <Text className="px-2 text-sm text-foreground-muted">
       Some settings are managed by {organizations.join(", ")} and cannot be changed here.
     </Text>
   );

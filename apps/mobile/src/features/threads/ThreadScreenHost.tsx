@@ -6,7 +6,7 @@ import {
   useSyncExternalStore,
   type ReactNode,
 } from "react";
-import { Platform, View } from "react-native";
+import { View } from "react-native";
 import { ThreadDetailScreen, type ThreadDetailScreenProps } from "./ThreadDetailScreen";
 
 type ThreadScreenContent =
@@ -40,11 +40,7 @@ function ThreadScreenOutlet() {
   return (
     <>
       {"props" in content ? content.props.header : content.header}
-      {Platform.OS === "android" ? (
-        <View className="flex-1 overflow-hidden rounded-t-[28px] bg-thread-canvas">{body}</View>
-      ) : (
-        body
-      )}
+      {body}
     </>
   );
 }
@@ -56,7 +52,7 @@ export function ThreadScreenHost({ children }: { readonly children: ReactNode })
   return (
     <ThreadScreenContext.Provider value={store}>
       {children}
-      <View className="flex-1 bg-screen android:bg-header">
+      <View className="flex-1 bg-screen">
         <ThreadScreenOutlet />
       </View>
     </ThreadScreenContext.Provider>

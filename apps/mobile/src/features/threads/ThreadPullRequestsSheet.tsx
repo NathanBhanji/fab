@@ -4,15 +4,11 @@ import { useMemo } from "react";
 import { Platform, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { AndroidSheetHeader } from "../../components/ui/AndroidScreenHeader";
 import { AppText as Text } from "../../components/ui/AppText";
-import { ScreenContent } from "../../components/ui/ScreenContent";
 import { SheetHeader } from "../../components/ui/SheetHeader";
 import { Toolbar } from "../../components/ui/Toolbar";
-import { NativeStackScreenOptions } from "../../native/StackHeader";
 import { useOpenPullRequest } from "../../native/useOpenPullRequest";
 import { useThreadSelection } from "../../state/use-thread-selection";
-import { useAdaptiveWorkspaceLayout } from "../layout/AdaptiveWorkspaceLayout";
 import {
   LinkedPullRequestRow,
   linkedPullRequestKey,
@@ -23,7 +19,6 @@ import { useLinkedPullRequestActions } from "./useLinkedPullRequestActions";
 export function ThreadPullRequestsSheet(
   _props: StaticScreenProps<{ readonly environmentId: string; readonly threadId: string }>,
 ) {
-  const { layout } = useAdaptiveWorkspaceLayout();
   const navigation = useNavigation();
   const insets = useSafeAreaInsets();
   const { selectedThread, selectedThreadProject, selectedEnvironmentRuntime } =
@@ -49,7 +44,7 @@ export function ThreadPullRequestsSheet(
   const title = `Linked ${actions.terminology.plural}`;
 
   const content = (
-    <View className="flex-1 android:bg-sheet-solid ios:bg-screen">
+    <View className="flex-1 ios:bg-screen">
       {/* oxlint-disable-next-line fab/require-registered-list-scroll -- Sheet content; sheets sit outside workspace columns and keep their own header handling. */}
       <LegendList
         data={lines}
@@ -90,44 +85,19 @@ export function ThreadPullRequestsSheet(
     </View>
   );
 
-  if (Platform.OS === "ios") {
-    return (
-      <View collapsable={false} className="flex-1 bg-sheet">
-        <SheetHeader presentation="native" title={title} onClose={() => navigation.goBack()} />
-        {actions.canLink ? (
-          <Toolbar placement="right">
-            <Toolbar.Button
-              icon="plus"
-              accessibilityLabel={`Link ${singular}`}
-              onPress={actions.promptLink}
-            />
-          </Toolbar>
-        ) : null}
-        {content}
-      </View>
-    );
-  }
-
   return (
-    <View collapsable={false} className="flex-1 bg-header">
-      <NativeStackScreenOptions options={{ sheetCornerRadius: 28 }} />
-      <AndroidSheetHeader
-        title={title}
-        hideBottomBorder
-        onBack={() => navigation.goBack()}
-        actions={
-          actions.canLink
-            ? [
-                {
-                  accessibilityLabel: `Link ${singular}`,
-                  icon: "plus",
-                  onPress: actions.promptLink,
-                },
-              ]
-            : undefined
-        }
-      />
-      <ScreenContent insetHorizontal={layout.usesSplitView}>{content}</ScreenContent>
+    <View collapsable={false} className="flex-1 bg-sheet">
+      <SheetHeader presentation="native" title={title} onClose={() => navigation.goBack()} />
+      {actions.canLink ? (
+        <Toolbar placement="right">
+          <Toolbar.Button
+            icon="plus"
+            accessibilityLabel={`Link ${singular}`}
+            onPress={actions.promptLink}
+          />
+        </Toolbar>
+      ) : null}
+      {content}
     </View>
   );
 }

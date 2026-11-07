@@ -1,5 +1,4 @@
 import { NativeScrollView } from "../../native/NativeScrollViewMarker";
-import { SearchField } from "../../components/ui/SearchField";
 import { Button } from "../../components/ui/Button";
 import { Toolbar } from "../../components/ui/Toolbar";
 import * as Dialog from "../../components/ui/Dialog";
@@ -25,7 +24,6 @@ import { sanitizeNewRefName } from "@fab/shared/git";
 import { Platform, Pressable, ScrollView, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { AndroidScreenHeader } from "../../components/ui/AndroidScreenHeader";
 import { ScreenContent } from "../../components/ui/ScreenContent";
 import { SymbolView } from "../../components/ui/AppSymbol";
 import { AppText as Text } from "../../components/ui/AppText";
@@ -151,10 +149,7 @@ function ToggleRow(props: {
   return (
     <View className="min-h-14 flex-row items-center gap-3 bg-grouped-card px-4 py-3">
       <Text
-        className={cn(
-          "min-w-0 flex-1 text-base text-foreground",
-          Platform.OS !== "android" && "font-fab-medium",
-        )}
+        className={cn("min-w-0 flex-1 text-base text-foreground", "font-fab-medium")}
         numberOfLines={1}
       >
         {props.title}
@@ -169,17 +164,7 @@ function ToggleRow(props: {
 }
 
 function PickerSurface(props: { readonly children: ReactNode }) {
-  return (
-    <View
-      className={
-        Platform.OS === "android"
-          ? "overflow-hidden rounded-[28px] bg-grouped-card"
-          : "overflow-hidden rounded-2xl bg-grouped-card"
-      }
-    >
-      {props.children}
-    </View>
-  );
+  return <View className="overflow-hidden rounded-2xl bg-grouped-card">{props.children}</View>;
 }
 
 export function NewTaskEnvironmentPickerRouteScreen() {
@@ -190,17 +175,10 @@ export function NewTaskEnvironmentPickerRouteScreen() {
     <View className="flex-1 bg-sheet" collapsable={false}>
       <NativeStackScreenOptions
         options={{
-          headerShown: Platform.OS !== "android",
+          headerShown: true,
           title: "Environment",
         }}
       />
-      {Platform.OS === "android" ? (
-        <AndroidScreenHeader
-          title="Environment"
-          hideBottomBorder
-          onBack={() => navigation.goBack()}
-        />
-      ) : null}
       <ScreenContent>
         <ScrollView
           contentInsetAdjustmentBehavior="automatic"
@@ -369,8 +347,6 @@ export function BranchPickerScreen(props: {
     readonly onChangeStartFromOrigin: (value: boolean) => void;
   };
 }) {
-  const searchRef = useRef<import("react-native").TextInputInstance>(null);
-  const navigation = useNavigation();
   const insets = useSafeAreaInsets();
   const usesNativeMailSearchToolbar = useNativeMailSearchToolbar();
   const selectedBranchName =
@@ -402,12 +378,7 @@ export function BranchPickerScreen(props: {
   );
 
   const branchListHeader = props.worktree ? (
-    <View
-      className={cn(
-        "mb-3 overflow-hidden",
-        Platform.OS === "android" ? "rounded-[28px]" : "rounded-2xl",
-      )}
-    >
+    <View className={cn("mb-3 overflow-hidden", "rounded-2xl")}>
       <ToggleRow
         onValueChange={props.worktree.onChangeStartFromOrigin}
         title="Start from remote"
@@ -419,7 +390,7 @@ export function BranchPickerScreen(props: {
   const branchContent =
     props.branches.length === 0 ? (
       <ScrollView
-        className="flex-1 bg-sheet android:bg-sheet-solid"
+        className="flex-1 bg-sheet"
         contentInsetAdjustmentBehavior="automatic"
         contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 16, paddingTop: 16 }}
         scrollEnabled={false}
@@ -457,7 +428,7 @@ export function BranchPickerScreen(props: {
         alwaysBounceVertical={false}
         automaticallyAdjustsScrollIndicatorInsets
         automaticallyAdjustKeyboardInsets={Platform.OS === "ios"}
-        className="flex-1 bg-sheet android:bg-sheet-solid"
+        className="flex-1 bg-sheet"
         contentInsetAdjustmentBehavior="automatic"
         contentContainerStyle={branchListContentStyle}
         data={props.branches}
@@ -480,31 +451,6 @@ export function BranchPickerScreen(props: {
         showsVerticalScrollIndicator={false}
       />
     );
-
-  if (Platform.OS === "android") {
-    return (
-      <View className="flex-1 bg-sheet" collapsable={false}>
-        <NativeStackScreenOptions options={{ headerShown: false }} />
-        <AndroidScreenHeader
-          title={props.title}
-          hideBottomBorder
-          onBack={() => navigation.goBack()}
-        />
-        <View className="bg-header px-4 pb-3 pt-1">
-          <SearchField
-            inputRef={searchRef}
-            autoFocus={false}
-            accessibilityLabel="Find a branch"
-            clearAccessibilityLabel="Clear branch search"
-            onChangeText={props.onQueryChange}
-            placeholder="Find a branch"
-            value={props.query}
-          />
-        </View>
-        <ScreenContent>{branchContent}</ScreenContent>
-      </View>
-    );
-  }
 
   return (
     <>

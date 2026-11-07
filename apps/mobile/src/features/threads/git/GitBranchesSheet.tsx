@@ -1,13 +1,11 @@
 import { sanitizeFeatureBranchName } from "@fab/shared/git";
 import { useNavigation, type StaticScreenProps } from "@react-navigation/native";
 import { useState } from "react";
-import { Platform, Pressable, ScrollView, useWindowDimensions, View } from "react-native";
+import { Platform, Pressable, ScrollView, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { AndroidSheetHeader } from "../../../components/ui/AndroidScreenHeader";
 import { SheetHeader } from "../../../components/ui/SheetHeader";
 import { ScreenContent } from "../../../components/ui/ScreenContent";
-import { NativeStackScreenOptions } from "../../../native/StackHeader";
 import { AppText as Text, AppTextInput as TextInput } from "../../../components/ui/AppText";
 import { cn } from "../../../lib/cn";
 import { useEnvironmentQuery } from "../../../state/query";
@@ -26,7 +24,6 @@ type GitBranchesSheetProps = StaticScreenProps<{
 export function GitBranchesSheet(_props: GitBranchesSheetProps) {
   const navigation = useNavigation();
   const insets = useSafeAreaInsets();
-  const { height: windowHeight } = useWindowDimensions();
   const { selectedThread } = useThreadSelection();
   const { selectedThreadCwd } = useSelectedThreadWorktree();
   const gitState = useSelectedThreadGitState();
@@ -64,49 +61,24 @@ export function GitBranchesSheet(_props: GitBranchesSheetProps) {
   const disabledExistingBranches = new Set(disabledExistingBranchNames);
 
   return (
-    <View
-      collapsable={false}
-      className="bg-sheet ios:flex-1"
-      style={Platform.OS === "android" ? { maxHeight: windowHeight * 0.92 } : undefined}
-    >
-      {Platform.OS === "android" ? (
-        <NativeStackScreenOptions
-          options={{
-            sheetCornerRadius: 28,
-            sheetAllowedDetents: "fitToContents",
-          }}
-        />
-      ) : null}
-      {Platform.OS === "android" ? (
-        <AndroidSheetHeader
-          title="Branches & worktrees"
-          onBack={() => navigation.goBack()}
-          hideBottomBorder
-        />
-      ) : (
-        <SheetHeader
-          presentation="native"
-          title="Branches & worktrees"
-          onClose={() => navigation.goBack()}
-        />
-      )}
+    <View collapsable={false} className="bg-sheet ios:flex-1">
+      <SheetHeader
+        presentation="native"
+        title="Branches & worktrees"
+        onClose={() => navigation.goBack()}
+      />
       <ScreenContent fitToContents>
         <ScrollView
           nestedScrollEnabled
-          className="android:shrink android:grow-0 ios:flex-1"
+          className="ios:flex-1"
           contentInsetAdjustmentBehavior={Platform.OS === "ios" ? "automatic" : "never"}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
           contentInset={{ bottom: Math.max(insets.bottom, 18) + 18 }}
-          contentContainerClassName="android:gap-2 android:p-2 ios:gap-4 ios:px-5 ios:pt-2"
-          contentContainerStyle={
-            Platform.OS === "android"
-              ? { paddingBottom: Math.max(insets.bottom, 18) + 18 }
-              : undefined
-          }
+          contentContainerClassName="ios:gap-4 ios:px-5 ios:pt-2"
         >
-          <View className="bg-card android:gap-3 android:rounded-[20px] android:p-4 ios:gap-2 ios:rounded-[18px] ios:border ios:border-border ios:px-4 ios:py-4">
-            <Text className="android:text-foreground android:text-base android:font-fab-medium ios:text-foreground-secondary ios:text-2xs ios:font-fab-bold ios:tracking-[1px] ios:uppercase">
+          <View className="bg-card ios:gap-2 ios:rounded-[18px] ios:border ios:border-border ios:px-4 ios:py-4">
+            <Text className="ios:text-foreground-secondary ios:text-2xs ios:font-fab-bold ios:tracking-[1px] ios:uppercase">
               New branch
             </Text>
             <TextInput
@@ -114,7 +86,7 @@ export function GitBranchesSheet(_props: GitBranchesSheetProps) {
               onChangeText={setNewBranchName}
               placeholder="feature/mobile-polish"
               accessibilityLabel="New branch name"
-              className="android:rounded-xl android:bg-sheet-solid ios:rounded-[18px]"
+              className="ios:rounded-[18px]"
             />
             <SheetActionButton
               icon="plus"
@@ -133,29 +105,23 @@ export function GitBranchesSheet(_props: GitBranchesSheetProps) {
             />
           </View>
 
-          <View className="bg-card android:gap-3 android:rounded-[20px] android:p-4 ios:gap-2 ios:rounded-[18px] ios:border ios:border-border ios:px-4 ios:py-4">
-            <Text className="android:text-foreground android:text-base android:font-fab-medium ios:text-foreground-secondary ios:text-2xs ios:font-fab-bold ios:tracking-[1px] ios:uppercase">
+          <View className="bg-card ios:gap-2 ios:rounded-[18px] ios:border ios:border-border ios:px-4 ios:py-4">
+            <Text className="ios:text-foreground-secondary ios:text-2xs ios:font-fab-bold ios:tracking-[1px] ios:uppercase">
               New worktree
             </Text>
-            {Platform.OS === "android" ? (
-              <Text className="text-foreground-secondary text-sm">Base branch</Text>
-            ) : null}
             <TextInput
               value={worktreeBaseBranch}
               onChangeText={setWorktreeBaseBranchOverride}
               placeholder="main"
               accessibilityLabel="Worktree base branch"
-              className="android:rounded-xl android:bg-sheet-solid ios:rounded-[18px]"
+              className="ios:rounded-[18px]"
             />
-            {Platform.OS === "android" ? (
-              <Text className="text-foreground-secondary text-sm">New branch</Text>
-            ) : null}
             <TextInput
               value={worktreeBranchName}
               onChangeText={setWorktreeBranchName}
               placeholder="feature/mobile-thread"
               accessibilityLabel="Worktree branch name"
-              className="android:rounded-xl android:bg-sheet-solid ios:rounded-[18px]"
+              className="ios:rounded-[18px]"
             />
             <SheetActionButton
               icon="square.split.2x1"
@@ -183,16 +149,16 @@ export function GitBranchesSheet(_props: GitBranchesSheetProps) {
           </View>
 
           <View className="gap-2">
-            <Text className="text-foreground-secondary android:px-4 android:pb-1 android:pt-3 android:text-sm android:font-fab-medium ios:text-2xs ios:font-fab-bold ios:tracking-[1px] ios:uppercase">
+            <Text className="text-foreground-secondary ios:text-2xs ios:font-fab-bold ios:tracking-[1px] ios:uppercase">
               Existing branches
             </Text>
             {branchesLoading ? (
-              <Text className="text-foreground-secondary text-sm font-medium android:px-4">
+              <Text className="text-foreground-secondary text-sm font-medium">
                 Loading branches...
               </Text>
             ) : null}
             {!branchesLoading && availableBranches.length === 0 ? (
-              <Text className="text-foreground-secondary text-sm font-medium android:px-4">
+              <Text className="text-foreground-secondary text-sm font-medium">
                 No local branches found.
               </Text>
             ) : null}
@@ -210,10 +176,8 @@ export function GitBranchesSheet(_props: GitBranchesSheetProps) {
                 <Pressable
                   key={branch.name}
                   className={cn(
-                    "gap-1 px-4 py-3 disabled:opacity-[0.45] android:rounded-[20px] android:active:bg-subtle ios:rounded-[18px] ios:border",
-                    branch.current
-                      ? "android:bg-secondary ios:border-subtle-strong"
-                      : "android:bg-card ios:border-border",
+                    "gap-1 px-4 py-3 disabled:opacity-[0.45] ios:rounded-[18px] ios:border",
+                    branch.current ? "ios:border-subtle-strong" : "ios:border-border",
                   )}
                   accessibilityRole="button"
                   accessibilityState={{ selected: branch.current, disabled: busy || disabled }}
@@ -225,12 +189,8 @@ export function GitBranchesSheet(_props: GitBranchesSheetProps) {
                     });
                   }}
                 >
-                  {Platform.OS !== "android" ? (
-                    <View className="absolute inset-0 rounded-[18px] bg-card" />
-                  ) : null}
-                  <Text className="text-foreground text-base android:font-fab-medium ios:font-fab-bold">
-                    {branch.name}
-                  </Text>
+                  <View className="absolute inset-0 rounded-[18px] bg-card" />
+                  <Text className="text-foreground text-base ios:font-fab-bold">{branch.name}</Text>
                   <Text className="text-foreground-secondary text-xs font-medium">{subtitle}</Text>
                 </Pressable>
               );

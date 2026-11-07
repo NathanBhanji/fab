@@ -495,7 +495,7 @@ function MachineRow(props: {
         tintColorClassName="accent-foreground-muted"
       />
       <View className="min-w-0 flex-1 gap-0.5">
-        <Text className="text-lg text-foreground android:text-base" numberOfLines={1}>
+        <Text className="text-lg text-foreground" numberOfLines={1}>
           {machine.label}
         </Text>
         {status === null ? null : <Text className="text-sm text-foreground-muted">{status}</Text>}

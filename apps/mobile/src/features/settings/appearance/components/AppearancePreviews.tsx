@@ -10,7 +10,6 @@ import { useAppearancePreferences } from "../AppearancePreferencesProvider";
 
 const CODE_FONT_FAMILY = Platform.select({
   ios: "ui-monospace",
-  android: "monospace",
   default: "monospace",
 });
 
@@ -44,7 +43,7 @@ export function TerminalAppearancePreview(props: { readonly fontSize: number }) 
   const theme = getMobileTerminalTheme(themeId, scheme);
   const lineHeight = Math.round(props.fontSize * 1.6);
   const lineStyle = {
-    fontFamily: Platform.OS === "android" ? "monospace" : "Menlo",
+    fontFamily: "Menlo",
     fontSize: props.fontSize,
     lineHeight,
   } as const;

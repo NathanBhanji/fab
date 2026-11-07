@@ -53,12 +53,8 @@ function apply(state: State, action: Parameters<typeof base.getStateForAction>[1
   return base.getRehydratedState(next as State, options);
 }
 
-function select(
-  state: State,
-  detail: WorkspaceDetail,
-  sheet?: Parameters<typeof selectWorkspaceDetail>[1],
-) {
-  return apply(state, selectWorkspaceDetail(detail, sheet) as unknown as RouterAction);
+function select(state: State, detail: WorkspaceDetail) {
+  return apply(state, selectWorkspaceDetail(detail) as unknown as RouterAction);
 }
 
 function push(state: State, name: string, params?: object) {
@@ -99,16 +95,10 @@ describe("selectWorkspaceDetail", () => {
     expect(selected.routes[0]?.key).toBe(settings.routes[0]?.key);
   });
 
-  it("puts Home under a cold-linked page and a sheet over the selection", () => {
+  it("puts Home under a cold-linked page", () => {
     const cold = apply(home(), { type: "RESET", payload: { index: 0, routes: [pullRequest] } });
-    const selected = select(cold, pullRequest, {
-      name: "PullRequestReviewers",
-      params: pullRequest.params,
-    });
-    expect(page(selected)).toEqual({
-      names: ["Home", "PullRequest", "PullRequestReviewers"],
-      index: 2,
-    });
+    const selected = select(cold, pullRequest);
+    expect(page(selected)).toEqual({ names: ["Home", "PullRequest"], index: 1 });
   });
 
   it("never reuses the page native Back is popping", () => {

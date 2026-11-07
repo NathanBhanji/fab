@@ -9,7 +9,7 @@ type State = { readonly isRecording: boolean };
 
 function createNativeRecorder(uri: string) {
   const listeners = new Set<(status: Status) => void>();
-  // Like expo-audio on Android, preparing again requires a stop in between.
+  // Preparing again requires a stop in between.
   let isPrepared = false;
   return {
     uri: null as string | null,

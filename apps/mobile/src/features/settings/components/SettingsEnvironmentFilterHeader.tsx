@@ -1,9 +1,7 @@
 import type { NativeStackHeaderItem } from "@react-navigation/native-stack";
 import { resolveEnvironmentMachineKind } from "@fab/contracts";
-import { Platform, Pressable } from "react-native";
+import { Platform } from "react-native";
 
-import { Menu } from "../../../components/ui/Menu";
-import { SymbolView } from "../../../components/ui/AppSymbol";
 import { ENVIRONMENT_MACHINE_SYMBOLS } from "../../../components/EnvironmentMachineSymbol";
 import { NativeStackScreenOptions } from "../../../native/StackHeader";
 import { withNativeGlassHeaderItem } from "../../layout/native-glass-header-items";
@@ -113,81 +111,6 @@ export function SettingsEnvironmentFilterHeader(props: {
         ],
       }}
     />
-  );
-}
-
-export function AndroidSettingsEnvironmentFilter() {
-  const {
-    availableTargets,
-    selectedIds,
-    selectAll,
-    toggleEnvironment,
-    selectableProjectGroups,
-    selectedProjectKey,
-    selectProject,
-  } = useSettingsEnvironmentFilter();
-  const filterIcon =
-    selectedIds === null && selectedProjectKey === null
-      ? "line.3.horizontal.decrease"
-      : "line.3.horizontal.decrease.circle.fill";
-
-  return (
-    <Menu
-      accessible
-      accessibilityRole="button"
-      accessibilityLabel="Filter settings environments and projects"
-      title="Settings scope"
-      actions={[
-        {
-          id: "all",
-          title: "All connected environments",
-          state: selectedIds === null ? ("on" as const) : ("off" as const),
-        },
-        ...availableTargets.map((entry) => ({
-          id: `environment:${entry.environmentId}`,
-          title: `Environment · ${entry.label}`,
-          image: ENVIRONMENT_MACHINE_SYMBOLS[resolveEnvironmentMachineKind(entry.serverConfig)],
-          subtitle: entry.displayUrl ?? undefined,
-          state:
-            selectedIds === null || selectedIds.has(entry.environmentId)
-              ? ("on" as const)
-              : ("off" as const),
-        })),
-        {
-          id: "project:all",
-          title: "All projects",
-          state: selectedProjectKey === null ? ("on" as const) : ("off" as const),
-        },
-        ...selectableProjectGroups.map((group) => ({
-          id: `project:${group.key}`,
-          title: `Project · ${projectMenuLabel(group)}`,
-          state: selectedProjectKey === group.key ? ("on" as const) : ("off" as const),
-        })),
-      ]}
-      onPressAction={({ nativeEvent }) => {
-        if (nativeEvent.event === "all") selectAll();
-        else if (nativeEvent.event === "project:all") selectProject(null);
-        else if (nativeEvent.event.startsWith("project:")) {
-          const group = selectableProjectGroups.find(
-            (entry) => `project:${entry.key}` === nativeEvent.event,
-          );
-          if (group) selectProject(group.key);
-        } else {
-          const target = availableTargets.find(
-            (entry) => `environment:${entry.environmentId}` === nativeEvent.event,
-          );
-          if (target) toggleEnvironment(target.environmentId);
-        }
-      }}
-    >
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel="Filter settings environments and projects"
-        className="size-11 items-center justify-center rounded-full"
-      >
-        <SymbolView name={filterIcon} size={22} tintColorClassName="accent-icon" />
-      </Pressable>
-    </Menu>
   );
 }
 

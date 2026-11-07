@@ -49,9 +49,6 @@ import {
 } from "./incoming-share-storage";
 
 function receiveSharingEnabled(): boolean {
-  if (Platform.OS === "android") {
-    return true;
-  }
   if (Platform.OS !== "ios") {
     return false;
   }
@@ -67,7 +64,7 @@ async function resolvedPayloadsForFiles(): Promise<ReadonlyArray<ResolvedSharePa
   try {
     return await getResolvedSharedPayloadsAsync();
   } catch (error) {
-    // Raw iOS copied file URLs remain usable; Android's File API can read content URIs when resolution fails.
+    // Raw iOS copied file URLs remain usable when resolution fails.
     console.warn("[incoming-share] could not resolve shared file metadata", error);
     return [];
   }

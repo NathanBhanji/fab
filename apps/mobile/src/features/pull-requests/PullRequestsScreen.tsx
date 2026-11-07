@@ -6,7 +6,7 @@ import {
 import { AppActivityIndicator } from "../../components/ui/AppActivityIndicator";
 import { LegendList, type LegendListRef } from "@legendapp/list/react-native";
 import { useNavigation } from "@react-navigation/native";
-import { use, useMemo, useRef, useState, type ReactNode } from "react";
+import { use, useMemo, useRef, useState } from "react";
 import { useAtomValue } from "@effect/atom-react";
 import {
   Keyboard,
@@ -29,11 +29,7 @@ import { useWorkspaceState } from "../../state/workspace";
 import { useProjects } from "../../state/entities";
 import { environmentServerConfigsAtom } from "../../state/server";
 import { PullRequestListRow } from "./PullRequestListRow";
-import {
-  PullRequestListFilters,
-  usePullRequestListFilters,
-  type PullRequestFilterMenu,
-} from "./PullRequestListFilters";
+import { PullRequestListFilters, usePullRequestListFilters } from "./PullRequestListFilters";
 import { usePullRequestList } from "./usePullRequestList";
 import { usePullRequestListControls } from "./usePullRequestListControls";
 import { usePullRequestListActions } from "./usePullRequestListActions";
@@ -68,8 +64,7 @@ function PullRequestListError(props: { readonly message: string }) {
       accessibilityLabel={props.message}
       accessibilityState={{ expanded }}
       onPress={() => setExpanded((value) => !value)}
-      // A long press selects the text; collapsing under that selection crashes Android's
-      // smart-select animation, so it must not also count as a press.
+      // A long press selects the text, so it must not also count as a press.
       onLongPress={() => undefined}
       className="min-h-11 flex-row items-center gap-3 px-4 py-2.5 active:opacity-70"
     >
@@ -99,11 +94,6 @@ export function PullRequestsScreen(
   props: {
     readonly sidebar?: boolean;
     readonly selectedPullRequestKey?: string | null;
-    /**
-     * Places the list under a header that opens the full filter menu (the Android toolbar). The
-     * filters live here, so the header gets them in the same render as the list.
-     */
-    readonly renderFrame?: (filters: PullRequestFilterMenu | null, list: ReactNode) => ReactNode;
   } = {},
 ) {
   const navigation = useNavigation();
@@ -302,9 +292,7 @@ export function PullRequestsScreen(
           />
         }
         alwaysBounceVertical
-        // Android flashes a list's scrollbar whenever it becomes visible, which was every return
-        // to this tab. The thread list shows none either.
-        showsVerticalScrollIndicator={Platform.OS !== "android"}
+        showsVerticalScrollIndicator
         recycleItems
         renderScrollComponent={Platform.OS === "ios" ? PullRequestScrollView : undefined}
         // UIKit owns the bar's inset, so a minimizing bar and a resized column move
@@ -337,7 +325,7 @@ export function PullRequestsScreen(
         renderItem={renderPullRequest}
         ListHeaderComponent={
           <>
-            <PullRequestListFilters sidebar={sidebar} filters={filters} />
+            <PullRequestListFilters filters={filters} />
             {result.data?.errors.length ? (
               <View key={JSON.stringify(targets)}>
                 {result.data.errors.map((error) => (
@@ -413,5 +401,5 @@ export function PullRequestsScreen(
       />
     </View>
   );
-  return props.renderFrame ? props.renderFrame(filters.headerMenu, list) : list;
+  return list;
 }

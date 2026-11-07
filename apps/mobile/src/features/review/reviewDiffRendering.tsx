@@ -8,7 +8,6 @@ import type { ReviewHighlightedToken } from "./reviewHighlightedToken.types";
 
 export const REVIEW_MONO_FONT_FAMILY = Platform.select({
   ios: "ui-monospace",
-  android: "monospace",
   default: "monospace",
 });
 

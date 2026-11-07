@@ -215,7 +215,7 @@ describe("incoming native shares", () => {
     expect(result.warnings).toEqual(["'empty.txt' is empty or could not be read."]);
   });
 
-  it("reads an Android content URI's size after copying it into app-owned storage", async () => {
+  it("reads a shared file's size after copying it into app-owned storage", async () => {
     const file: SharePayload = {
       shareType: "file",
       value: "content://shared/report",
@@ -225,7 +225,7 @@ describe("incoming native shares", () => {
     const readSize = vi.fn(async (uri: string) => (uri.startsWith("content:") ? null : 42));
 
     const result = await buildIncomingShareDraft({
-      id: "share-android-report",
+      id: "share-report",
       createdAt: "2026-07-15T10:00:00.000Z",
       payloads: [file],
       resolvedPayloads: [],
@@ -239,7 +239,7 @@ describe("incoming native shares", () => {
 
     expect(result.attachments).toEqual([
       {
-        id: "share-android-report:file:0",
+        id: "share-report:file:0",
         type: "file",
         name: "report",
         mimeType: "application/pdf",

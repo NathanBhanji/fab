@@ -8,7 +8,7 @@ import {
   type TextDirection,
 } from "@fab/shared/textDirection";
 import { useRef } from "react";
-import { Platform, Pressable, ScrollView, View, type LayoutChangeEvent } from "react-native";
+import { Pressable, ScrollView, View, type LayoutChangeEvent } from "react-native";
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -79,10 +79,7 @@ function QuestionText(props: {
       markdown={markdown}
       textStyle={styles.nativeTextStyle}
       writingDirection={markdownProseDirection(markdown)}
-      // Android's renderer aligns relative to each paragraph's direction.
-      textAlign={
-        Platform.OS === "android" ? undefined : props.setDirection === "rtl" ? "right" : "left"
-      }
+      textAlign={props.setDirection === "rtl" ? "right" : "left"}
       onLinkPress={(href) => void openLink(href)}
     />
   );
@@ -123,20 +120,12 @@ export function PendingUserInputCard(props: PendingUserInputCardProps) {
   };
   const cardAnimatedStyle = useAnimatedStyle(() => {
     const progress = cardProgress.value;
-    const travel = Platform.OS === "android" ? cardCoverage.value : cardHeight.value;
     return {
       maxHeight: maxHeight.value,
-      opacity:
-        Platform.OS === "android"
-          ? Math.min(1, (progress * cardHeight.value) / Math.max(1, cardHeight.value - travel))
-          : 1,
-      transform: [{ translateY: (1 - progress) * travel }],
+      opacity: 1,
+      transform: [{ translateY: (1 - progress) * cardHeight.value }],
     };
   });
-  // Android hit-tests inside the parent; its height is also the space the card takes below the feed.
-  const androidBoundsStyle = useAnimatedStyle(() => ({
-    paddingTop: cardCoverage.value * cardProgress.value,
-  }));
   const overlayHeightStyle = useAnimatedStyle(() => ({ height: maxHeight.value }));
 
   const bar = (
@@ -329,10 +318,7 @@ export function PendingUserInputCard(props: PendingUserInputCardProps) {
     </Animated.View>
   );
   return (
-    <Animated.View
-      className="relative"
-      style={Platform.OS === "android" ? androidBoundsStyle : undefined}
-    >
+    <Animated.View className="relative">
       {bar}
       <Animated.View
         pointerEvents={props.collapsed ? "none" : "box-none"}

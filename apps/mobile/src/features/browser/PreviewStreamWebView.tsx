@@ -19,7 +19,7 @@ import {
   useState,
   type Ref,
 } from "react";
-import { Platform, Pressable, TextInput, View } from "react-native";
+import { Pressable, TextInput, View } from "react-native";
 import { WebView } from "react-native-webview";
 import * as Clipboard from "expo-clipboard";
 
@@ -309,7 +309,7 @@ function PreviewStreamDocumentView({
   }, []);
   const source = {
     html: previewStreamDocument(configuration, previewStreamScript),
-    baseUrl: Platform.OS === "android" ? "https://localhost/" : "file:///",
+    baseUrl: "file:///",
   };
   useImperativeHandle(ref, () => ({
     command,

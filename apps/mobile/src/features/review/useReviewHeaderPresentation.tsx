@@ -22,7 +22,6 @@ export function useReviewHeaderPresentation(props: {
   readonly threadId: ThreadId;
   readonly title: string;
   readonly subtitle: string;
-  readonly androidSubtitle: string;
   readonly selectedThreadCwd: string | null;
   readonly selectedSection: ReviewSectionItem | null;
   readonly onRefresh: () => Promise<void>;

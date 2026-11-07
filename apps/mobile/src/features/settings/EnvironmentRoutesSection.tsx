@@ -20,7 +20,7 @@ import {
 import { AsyncResult } from "effect/reactivity";
 import * as Option from "effect/Option";
 import { useState } from "react";
-import { Platform, Pressable, View } from "react-native";
+import { Pressable, View } from "react-native";
 import Reanimated, { ReduceMotion, useAnimatedStyle, withTiming } from "react-native-reanimated";
 
 import { type AppSymbolName, SymbolView } from "../../components/ui/AppSymbol";
@@ -35,7 +35,7 @@ import { ListActionRow as SettingsActionRow } from "../../components/ui/ListActi
 import { SettingsDragHandle } from "./components/SettingsDragHandle";
 import { SettingsSection } from "./components/SettingsSection";
 
-const ICON_SIZE = Platform.OS === "android" ? 24 : 22;
+const ICON_SIZE = 22;
 const REMOVE_SIZE = 20;
 
 const ROUTE_ICONS: Record<ConnectionRouteKind, AppSymbolName> = {
@@ -286,11 +286,7 @@ function RouteRow(props: {
         ]
           .filter((part) => part !== null)
           .join(", ")}
-        className={cn(
-          "min-w-0 flex-1 flex-row items-center gap-4 py-4 android:py-3",
-          address !== null ? "android:min-h-18" : "android:min-h-14",
-          !props.editing && "pr-4",
-        )}
+        className={cn("min-w-0 flex-1 flex-row items-center gap-4 py-4", !props.editing && "pr-4")}
       >
         <SymbolView
           name={ROUTE_ICONS[connectionRouteKind(route)]}
@@ -299,9 +295,9 @@ function RouteRow(props: {
           type="monochrome"
           weight="regular"
         />
-        <View className="min-w-0 flex-1 gap-0.5 android:gap-1">
+        <View className="min-w-0 flex-1 gap-0.5">
           <View className="flex-row items-center gap-2">
-            <Text numberOfLines={1} className="shrink text-lg text-foreground android:text-base">
+            <Text numberOfLines={1} className="shrink text-lg text-foreground">
               {label}
             </Text>
             {props.inUse ? (

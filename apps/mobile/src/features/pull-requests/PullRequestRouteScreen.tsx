@@ -27,8 +27,6 @@ import {
   pullRequestActionLabel,
 } from "./pullRequestActions";
 import * as Clipboard from "expo-clipboard";
-import { Menu } from "../../components/ui/Menu";
-import { IconButton } from "../../components/ui/IconButton";
 import { Button } from "../../components/ui/Button";
 import { usePullRequestReviewDraft } from "./usePullRequestReviewDraft";
 import { usePullRequestFilesViewed } from "./usePullRequestFilesViewed";
@@ -65,12 +63,8 @@ import { NativeScrollViewMarker as ScrollViewMarker } from "../../native/NativeS
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { AppText as Text } from "../../components/ui/AppText";
-import { AndroidScreenHeader } from "../../components/ui/AndroidScreenHeader";
-import { useAndroidControlSizing } from "../../components/ui/useAndroidControlSizing";
 import { useAdaptiveWorkspaceLayout } from "../layout/AdaptiveWorkspaceLayout";
-import { AndroidWorkspaceSidebarButton } from "../layout/workspace-sidebar-toolbar";
 import { useWorkspaceSidebarHeaderItem } from "../layout/useWorkspaceSidebarHeaderItem";
-import { useAndroidWorkspaceBack } from "../workspace/useAndroidWorkspaceNavigation";
 import { EmptyState } from "../../components/ui/EmptyState";
 import { SegmentedControl } from "../../components/ui/SegmentedControl";
 import { SymbolView } from "../../components/ui/AppSymbol";
@@ -328,19 +322,11 @@ function PullRequestOverview(props: {
   );
 }
 
-function usePullRequestToolbarHeight(bottomInset: number) {
-  const { buttonSize } = useAndroidControlSizing();
-  return useState(() => (Platform.OS === "android" ? bottomInset + buttonSize + 40 : 0));
-}
-
 export function PullRequestRouteScreen({ route }: StaticScreenProps<PullRequestParams>) {
-  const returnToList = useAndroidWorkspaceBack("pullRequests");
   const { layout } = useAdaptiveWorkspaceLayout();
   const sidebarHeaderItem = useWorkspaceSidebarHeaderItem();
   const navigation = useNavigation();
   const insets = useSafeAreaInsets();
-  const [toolbarHeight, setToolbarHeight] = usePullRequestToolbarHeight(insets.bottom);
-  // Only iOS lists run under the bars; Android lists start below the header.
   const barInsets = Platform.OS === "ios" ? insets : { top: 0, bottom: 0 };
   const params = route.params;
   usePullRequestEnvironmentFallback(params);
@@ -470,7 +456,7 @@ export function PullRequestRouteScreen({ route }: StaticScreenProps<PullRequestP
   };
   return (
     <PullRequestMarkdownRepository params={params} changeRequest={pr}>
-      <View className={Platform.OS === "android" ? "flex-1 bg-header" : "flex-1 bg-screen"}>
+      <View className="flex-1 bg-screen">
         <NativeStackScreenOptions
           options={{
             title: `#${params.number}`,
@@ -482,111 +468,6 @@ export function PullRequestRouteScreen({ route }: StaticScreenProps<PullRequestP
           }}
           optionsVersion={[layout.usesSplitView, sidebarHeaderItem]}
         />
-        {Platform.OS === "android" ? (
-          <AndroidScreenHeader
-            title={`#${params.number}${connected ? "" : " · Offline"}`}
-            subtitle={params.repository}
-            onBack={layout.usesSplitView ? undefined : returnToList}
-            leading={layout.usesSplitView ? <AndroidWorkspaceSidebarButton /> : undefined}
-            actions={[
-              ...(permissions.verdicts.length
-                ? [
-                    {
-                      accessibilityLabel: "Submit review",
-                      icon: "text.bubble" as const,
-                      onPress: () =>
-                        navigation.navigate("PullRequestReview", { ...params, mode: "review" }),
-                    },
-                  ]
-                : []),
-              ...(permissions.canComment
-                ? [
-                    {
-                      accessibilityLabel: "Add comment",
-                      icon: "plus.bubble" as const,
-                      onPress: () =>
-                        navigation.navigate("PullRequestReview", { ...params, mode: "comment" }),
-                    },
-                  ]
-                : []),
-              ...(permissions.canEditChangeRequest
-                ? [
-                    {
-                      accessibilityLabel: "Edit title",
-                      icon: "pencil" as const,
-                      overflowOnly: true,
-                      onPress: () =>
-                        navigation.navigate("PullRequestEdit", { ...params, field: "title" }),
-                    },
-                    {
-                      accessibilityLabel: "Edit description",
-                      icon: "doc.text" as const,
-                      overflowOnly: true,
-                      onPress: () =>
-                        navigation.navigate("PullRequestEdit", { ...params, field: "body" }),
-                    },
-                  ]
-                : []),
-              ...(maintainerEdits.visible
-                ? [
-                    {
-                      accessibilityLabel: "Allow edits from maintainers",
-                      icon: "pencil" as const,
-                      selected: maintainerEdits.value,
-                      disabled: maintainerEdits.saving,
-                      subtitle: maintainerEdits.subtitle,
-                      overflowOnly: true,
-                      onPress: maintainerEdits.toggle,
-                    },
-                  ]
-                : []),
-              ...(identity
-                ? [
-                    {
-                      accessibilityLabel: openOnProviderLabel(identity.provider),
-                      icon: "arrow.up.right" as const,
-                      onPress: () => void Linking.openURL(identity.url),
-                    },
-                    {
-                      accessibilityLabel: "Copy link",
-                      icon: "link" as const,
-                      overflowOnly: true,
-                      onPress: () => copyPullRequestLink(identity),
-                    },
-                    {
-                      accessibilityLabel: "Share…",
-                      icon: "square.and.arrow.up" as const,
-                      overflowOnly: true,
-                      onPress: () => sharePullRequestLink(identity),
-                    },
-                  ]
-                : []),
-              ...(stateAction
-                ? [
-                    {
-                      accessibilityLabel: pullRequestActionLabel(stateAction, terminology),
-                      icon: PR_ACTION_ICONS[stateAction],
-                      destructive: stateAction === "close",
-                      overflowOnly: true,
-                      onPress: runStateAction,
-                    },
-                  ]
-                : []),
-              ...(showsDeleteBranch
-                ? [
-                    {
-                      accessibilityLabel: pullRequestActionLabel("delete-branch", terminology),
-                      icon: PR_ACTION_ICONS["delete-branch"],
-                      disabled: !action.available("delete-branch"),
-                      destructive: true,
-                      overflowOnly: true,
-                      onPress: confirmDeleteBranch,
-                    },
-                  ]
-                : []),
-            ]}
-          />
-        ) : null}
         <Toolbar placement="right">
           <Toolbar.Menu
             title={capitalizeTerm(terminology.singular)}
@@ -694,15 +575,7 @@ export function PullRequestRouteScreen({ route }: StaticScreenProps<PullRequestP
           </Toolbar.Menu>
         </Toolbar>
         <View
-          style={{
-            flex: 1,
-            marginHorizontal: Platform.OS === "android" && layout.usesSplitView ? 4 : 0,
-          }}
-          className={
-            Platform.OS === "android"
-              ? "overflow-hidden rounded-t-[28px] bg-sheet-solid"
-              : undefined
-          }
+          style={{ flex: 1 }}
           onLayout={(event) => setViewportHeight(event.nativeEvent.layout.height)}
         >
           {(["overview", "guide", "activity"] as const)
@@ -761,7 +634,7 @@ export function PullRequestRouteScreen({ route }: StaticScreenProps<PullRequestP
                   contentContainerStyle={{
                     paddingHorizontal: 16,
                     paddingTop: 8,
-                    paddingBottom: 24 + (Platform.OS === "android" ? toolbarHeight : 0),
+                    paddingBottom: 24,
                     // Short tabs must still be tall enough to preserve the collapsed header.
                     minHeight: Math.max(
                       0,
@@ -925,12 +798,7 @@ export function PullRequestRouteScreen({ route }: StaticScreenProps<PullRequestP
               </View>
             ))}
         </View>
-        <PullRequestActionToolbar
-          pr={pr}
-          params={params}
-          onOpenFiles={openFiles}
-          onHeightChange={setToolbarHeight}
-        />
+        <PullRequestActionToolbar pr={pr} params={params} onOpenFiles={openFiles} />
       </View>
     </PullRequestMarkdownRepository>
   );
@@ -953,9 +821,6 @@ export function PullRequestFileRouteScreen(props: PullRequestFileRouteProps) {
   return (
     <View className="flex-1 bg-screen">
       <NativeStackScreenOptions options={{ title, headerTitle: title }} />
-      {Platform.OS === "android" ? (
-        <AndroidScreenHeader title={title} onBack={() => navigation.goBack()} />
-      ) : null}
       <View className="flex-1 items-center justify-center">
         <AppActivityIndicator accessibilityLabel="Loading changes" />
       </View>
@@ -964,10 +829,8 @@ export function PullRequestFileRouteScreen(props: PullRequestFileRouteProps) {
 }
 
 function PullRequestFileRouteContent({ route }: PullRequestFileRouteProps) {
-  const { layout } = useAdaptiveWorkspaceLayout();
   const navigation = useNavigation();
   const insets = useSafeAreaInsets();
-  const [toolbarHeight, setToolbarHeight] = usePullRequestToolbarHeight(insets.bottom);
   const commit = route.params.commit;
   const detail = useEnvironmentQuery(composerPullRequests.detail(requestTarget(route.params)));
   const terminology = sourceControlClients.get(
@@ -1142,7 +1005,7 @@ function PullRequestFileRouteContent({ route }: PullRequestFileRouteProps) {
   const seekingFile = !targetFile && result.nextCursor !== null;
   const loadingDiff = (result.isPending && !data.rows.length) || (seekingFile && !result.error);
   return (
-    <View className={Platform.OS === "android" ? "flex-1 bg-header" : "flex-1 bg-screen"}>
+    <View className="flex-1 bg-screen">
       <NativeStackScreenOptions
         options={{
           title,
@@ -1150,60 +1013,6 @@ function PullRequestFileRouteContent({ route }: PullRequestFileRouteProps) {
           unstable_headerSubtitle: `${commit ? commit.slice(0, 7) : `#${route.params.number}`} · ${data.files.length} ${data.files.length === 1 ? "file" : "files"}${filter.hideTestFiles && filter.hiddenCount ? ` · ${filter.hiddenCount} ${filter.hiddenCount === 1 ? "test" : "tests"} hidden` : ""}`,
         }}
       />
-      {Platform.OS === "android" ? (
-        <AndroidScreenHeader
-          title={title}
-          onBack={() => navigation.goBack()}
-          trailing={
-            <Menu
-              actions={[
-                {
-                  id: "word-wrap",
-                  title: "Word wrap",
-                  image: "text.alignleft",
-                  state: appearance.codeWordBreak ? "on" : "off",
-                },
-                {
-                  id: "hide-tests",
-                  title: "Hide test files",
-                  image: "line.3.horizontal.decrease",
-                  state: filter.hideTestFiles ? "on" : "off",
-                },
-                ...(permissions.verdicts.length
-                  ? [{ id: "submit-review", title: "Submit review", image: "text.bubble" }]
-                  : []),
-                ...(permissions.canComment
-                  ? [{ id: "comment-on-pr", title: "Add comment", image: "plus.bubble" }]
-                  : []),
-                ...(selectedRow && selectedFile
-                  ? [
-                      ...(canCommentOnDiff ? [{ id: "comment", title: "Add review comment" }] : []),
-                      { id: "copy", title: "Copy line" },
-                    ]
-                  : []),
-              ]}
-              onPressAction={({ nativeEvent }) => {
-                if (nativeEvent.event === "word-wrap") setCodeWordBreak(!appearance.codeWordBreak);
-                else if (nativeEvent.event === "hide-tests") toggleTestFiles();
-                else if (
-                  nativeEvent.event === "submit-review" ||
-                  nativeEvent.event === "comment-on-pr"
-                )
-                  navigation.navigate("PullRequestReview", {
-                    ...route.params,
-                    mode: nativeEvent.event === "submit-review" ? "review" : "comment",
-                  });
-                else if (nativeEvent.event === "comment") commentOnLine();
-                else void Clipboard.setStringAsync(selectedRow?.content ?? "");
-              }}
-            >
-              <View pointerEvents="none">
-                <IconButton icon="ellipsis" accessibilityLabel="Diff options" />
-              </View>
-            </Menu>
-          }
-        />
-      ) : null}
       <Toolbar placement="right">
         <Toolbar.Menu title="Diff options" accessibilityLabel="Diff options" icon="ellipsis">
           {permissions.verdicts.length ? (
@@ -1285,15 +1094,7 @@ function PullRequestFileRouteContent({ route }: PullRequestFileRouteProps) {
           />
         </View>
       ) : null}
-      <View
-        className={
-          Platform.OS === "android"
-            ? "flex-1 overflow-hidden rounded-t-[28px] bg-sheet-solid"
-            : "flex-1"
-        }
-        collapsable={false}
-        style={{ marginHorizontal: Platform.OS === "android" && layout.usesSplitView ? 4 : 0 }}
-      >
+      <View className="flex-1" collapsable={false}>
         {loadingDiff || result.error ? (
           <View style={{ paddingTop: Platform.OS === "ios" && !staleDiff ? insets.top : 0 }}>
             <PullRequestReadStatus
@@ -1372,7 +1173,7 @@ function PullRequestFileRouteContent({ route }: PullRequestFileRouteProps) {
               rowHeight={nativeReviewDiffStyle.rowHeight}
               contentWidth={NATIVE_REVIEW_DIFF_CONTENT_WIDTH}
               contentInsetTop={Platform.OS === "ios" ? (staleDiff ? 0 : insets.top) : undefined}
-              contentInsetBottom={Platform.OS === "android" ? toolbarHeight : insets.bottom}
+              contentInsetBottom={insets.bottom}
               contentResetKey={`pull-request:${route.params.environmentId}:${route.params.repository}:${route.params.number}:${commit ?? "all"}`}
             />
           </View>
@@ -1416,7 +1217,6 @@ function PullRequestFileRouteContent({ route }: PullRequestFileRouteProps) {
         params={route.params}
         filePath={visibleFile?.path}
         onOpenFiles={() => navigation.navigate("PullRequestFiles", route.params)}
-        onHeightChange={setToolbarHeight}
       />
     </View>
   );

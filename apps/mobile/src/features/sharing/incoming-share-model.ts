@@ -315,7 +315,7 @@ export async function buildIncomingShareDraft(input: {
         }
         if (persistedFileUri === undefined && input.fileReader.persistFile) {
           persistedFileUri = await input.fileReader.persistFile(uri, name);
-          // Android content sources can misreport size; record the stored copy's measured size.
+          // Source metadata can misreport size; record the stored copy's measured size.
           const storedSize = (await input.fileReader.readSize?.(persistedFileUri)) ?? null;
           if (storedSize !== null) {
             sizeBytes = storedSize;

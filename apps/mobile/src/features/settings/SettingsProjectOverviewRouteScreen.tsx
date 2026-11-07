@@ -16,7 +16,7 @@ import {
 import type { EnvironmentProject } from "@fab/client-runtime/state/shell";
 import { useNavigation } from "@react-navigation/native";
 import { useRef, useState } from "react";
-import { Platform, Pressable, View } from "react-native";
+import { Pressable, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { projectEnvironment } from "../../state/projects";
@@ -38,10 +38,7 @@ import { SettingsScreen } from "./components/SettingsScreen";
 import { SettingsSection } from "./components/SettingsSection";
 import { ListActionRow as SettingsActionRow } from "../../components/ui/ListActionRow";
 import { SettingsSwitchRow } from "./components/SettingsSwitchRow";
-import {
-  AndroidSettingsEnvironmentFilter,
-  SettingsEnvironmentFilterHeader,
-} from "./components/SettingsEnvironmentFilterHeader";
+import { SettingsEnvironmentFilterHeader } from "./components/SettingsEnvironmentFilterHeader";
 import { useSettingsEnvironmentFilter, type SettingsTarget } from "./settings-environment-filter";
 import { leaveSettingsPage } from "./settings-navigation";
 import { workspaceHasColumns } from "../workspace/workspace-selection-store";
@@ -88,7 +85,7 @@ export function SettingsProjectOverviewRouteScreen() {
   return (
     <>
       <SettingsEnvironmentFilterHeader />
-      <SettingsScreen title="Projects" trailing={<AndroidSettingsEnvironmentFilter />}>
+      <SettingsScreen title="Projects">
         <ScrollView
           contentInsetAdjustmentBehavior="automatic"
           showsVerticalScrollIndicator={false}
@@ -387,15 +384,7 @@ function ProjectOverviewContent(props: {
               key={`${member.environmentId}:${member.id}`}
               className={index === 0 ? "gap-1 p-4" : "gap-1 border-t border-border-subtle p-4"}
             >
-              <Text
-                className={
-                  Platform.OS === "android"
-                    ? "text-base text-foreground"
-                    : "text-lg text-foreground"
-                }
-              >
-                {environment?.label ?? "Environment"}
-              </Text>
+              <Text className="text-lg text-foreground">{environment?.label ?? "Environment"}</Text>
               {environment?.displayUrl ? (
                 <Text className="text-sm leading-normal text-foreground-muted">
                   {environment.displayUrl}

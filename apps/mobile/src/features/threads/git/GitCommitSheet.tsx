@@ -3,12 +3,11 @@ import { SheetHeader } from "../../../components/ui/SheetHeader";
 import { Button } from "../../../components/ui/Button";
 import { useNavigation, type StaticScreenProps } from "@react-navigation/native";
 import { useState } from "react";
-import { Platform, Pressable, ScrollView, useWindowDimensions, View } from "react-native";
+import { Pressable, ScrollView, View } from "react-native";
 import { formatDiffCount } from "@fab/client-runtime/diff-count";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { SymbolView } from "../../../components/ui/AppSymbol";
-import { NativeStackScreenOptions } from "../../../native/StackHeader";
 import { AppText as Text, AppTextInput as TextInput } from "../../../components/ui/AppText";
 import { cn } from "../../../lib/cn";
 import { useEnvironmentQuery } from "../../../state/query";
@@ -26,7 +25,6 @@ type GitCommitSheetProps = StaticScreenProps<{
 export function GitCommitSheet(_props: GitCommitSheetProps) {
   const navigation = useNavigation();
   const insets = useSafeAreaInsets();
-  const { height: windowHeight } = useWindowDimensions();
   const { selectedThread } = useThreadSelection();
   const { selectedThreadCwd } = useSelectedThreadWorktree();
   const gitState = useSelectedThreadGitState();
@@ -67,10 +65,9 @@ export function GitCommitSheet(_props: GitCommitSheetProps) {
     });
   };
 
-  const android = Platform.OS === "android";
   const header = (
     <SheetHeader
-      presentation={android ? "inline" : "native"}
+      presentation="native"
       title="Commit changes"
       subtitle={gitStatus.data?.refName ?? "(detached HEAD)"}
       onCancel={() => navigation.goBack()}
@@ -79,24 +76,13 @@ export function GitCommitSheet(_props: GitCommitSheetProps) {
   );
 
   return (
-    // Material sheet drags follow the first nested-scrolling native view, and the inline
-    // header's Compose button is one, so Android renders content first and reverses the column.
-    <View
-      collapsable={false}
-      className="bg-sheet ios:flex-1 android:flex-col-reverse"
-      style={android ? { maxHeight: windowHeight * 0.92 } : undefined}
-    >
-      {android ? (
-        <NativeStackScreenOptions
-          options={{ sheetCornerRadius: 28, sheetAllowedDetents: "fitToContents" }}
-        />
-      ) : null}
-      {android ? null : header}
+    <View collapsable={false} className="bg-sheet ios:flex-1">
+      {header}
       <ScreenContent fitToContents>
         <ScrollView
           nestedScrollEnabled
           contentInsetAdjustmentBehavior="automatic"
-          className="android:shrink android:grow-0 ios:flex-1"
+          className="ios:flex-1"
           keyboardShouldPersistTaps="handled"
           keyboardDismissMode="on-drag"
           automaticallyAdjustKeyboardInsets
@@ -235,7 +221,6 @@ export function GitCommitSheet(_props: GitCommitSheetProps) {
           </View>
         </ScrollView>
       </ScreenContent>
-      {android ? header : null}
     </View>
   );
 }

@@ -413,12 +413,10 @@ export function PullRequestFilesSheet({ route }: StaticScreenProps<PullRequestDi
   return (
     <View collapsable={false} className="flex-1 bg-sheet">
       <SheetHeader
-        presentation={Platform.OS === "android" ? "inline" : "native"}
+        presentation="native"
         title="Changed files"
         subtitle={`#${params.number} · ${params.commit?.slice(0, 7) ?? params.repository}`}
         onClose={() => navigation.goBack()}
-        // iOS gets the native menu below; SheetHeader would render this as a custom bar item.
-        trailing={Platform.OS === "android" ? <FileFilterMenu filter={filter} /> : undefined}
       />
       <Toolbar placement="right">
         <Toolbar.Menu
