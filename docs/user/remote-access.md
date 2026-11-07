@@ -456,8 +456,8 @@ error, where the problem is, and how to fix it.
 
 If a computer should only drive work running elsewhere, turn off its local environment. In the
 desktop app, open **Settings → Environments** and switch off **Local
-environment**. Fab restarts without a local server: no local agents or terminals run, WSL
-backends stay off, and other devices can no longer connect to this computer. Your projects,
+environment**. Fab restarts without a local server: no local agents or terminals run, and
+other devices can no longer connect to this computer. Your projects,
 history, and saved connections are kept, and you keep working through pairing, Fab Connect, or SSH.
 
 Switch **Local environment** back on in the same place to restart with your previous local

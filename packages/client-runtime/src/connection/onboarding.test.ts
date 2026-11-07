@@ -428,13 +428,13 @@ describe("connection onboarding", () => {
       registration: new BearerConnectionRegistration({
         target: new BearerConnectionTarget({
           environmentId: PAIRED_ENVIRONMENT_ID,
-          connectionId: "platform:wsl",
-          label: "WSL",
+          connectionId: "platform:secondary",
+          label: "Secondary backend",
         }),
         profile: new BearerConnectionProfile({
           ...PAIRED_PROFILE,
-          connectionId: "platform:wsl",
-          label: "WSL",
+          connectionId: "platform:secondary",
+          label: "Secondary backend",
           httpBaseUrl: "http://127.0.0.1:4000",
           wsBaseUrl: "ws://127.0.0.1:4000",
         }),

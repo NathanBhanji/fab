@@ -65,7 +65,6 @@ export interface SettingsSearchItem {
   readonly macProviderSettingsOnly?: boolean;
   readonly localBackendManagementOnly?: boolean;
   readonly localEnvironmentOnly?: boolean;
-  readonly wslAvailableOnly?: boolean;
   readonly managedTunnelOnly?: boolean;
   readonly peerLinksOnly?: boolean;
   readonly secondary?: boolean;
@@ -79,7 +78,6 @@ export interface SettingsSearchAvailability {
   readonly hasProviderSettingsEnvironment: boolean;
   readonly hasMacProviderSettingsEnvironment: boolean;
   readonly canManageLocalBackend: boolean;
-  readonly isWslSettingsRowVisible: boolean;
   readonly hasThreadAutoSettlement: boolean;
   readonly managedTunnelActive?: boolean;
   readonly hasPeerLinkHost?: boolean;
@@ -1086,18 +1084,6 @@ export const SETTINGS_SEARCH_ITEMS = [
     localBackendManagementOnly: true,
   },
   {
-    id: "wsl-backend",
-    title: "WSL backend",
-    to: "/settings/access",
-    searchTerms: [
-      "windows subsystem linux distro second server projects stop windows backend restart wsl only",
-    ],
-    desktopOnly: true,
-    windowsOnly: true,
-    localBackendManagementOnly: true,
-    wslAvailableOnly: true,
-  },
-  {
     id: "fab-connect",
     localEnvironmentOnly: true,
     title: "Fab Connect",
@@ -1335,7 +1321,6 @@ export function filterAvailableSettingsSearchItems(
       (!item.macProviderSettingsOnly || availability.hasMacProviderSettingsEnvironment) &&
       (!item.localBackendManagementOnly || availability.canManageLocalBackend) &&
       (!item.localEnvironmentOnly || !availability.localEnvironmentDisabled) &&
-      (!item.wslAvailableOnly || availability.isWslSettingsRowVisible) &&
       (!item.requiresThreadAutoSettlement || availability.hasThreadAutoSettlement) &&
       (!item.managedTunnelOnly || availability.managedTunnelActive === true) &&
       (!item.peerLinksOnly || availability.hasPeerLinkHost === true),

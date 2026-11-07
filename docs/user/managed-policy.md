@@ -287,10 +287,6 @@ The policy controls what Fab does. Agents run through each provider's own CLI, w
 own configuration, such as `~/.claude`, and which a user can also run outside Fab. To restrict
 those CLIs, use their own managed configuration, such as Claude Code's managed settings.
 
-On a managed Windows machine, the desktop app does not run a WSL environment. A Fab server a
-user starts inside WSL reads `/etc/fab/policy.json` in that distro, not the Windows policy.
-Deploy the policy file there too if your users run Fab in WSL.
-
 Without `remote`, Fab does not expose the server, but a user can still forward its local port
 with other tools.
 

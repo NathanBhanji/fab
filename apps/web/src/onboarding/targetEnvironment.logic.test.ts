@@ -77,16 +77,16 @@ const sshEnvironment = {
 } as const;
 
 const desktopLocalEnvironment = {
-  environmentId: EnvironmentId.make("desktop-local-wsl"),
+  environmentId: EnvironmentId.make("desktop-local-secondary"),
   connection: { phase: "connected" },
   entry: {
     target: new BearerConnectionTarget({
-      environmentId: EnvironmentId.make("desktop-local-wsl"),
-      label: "WSL",
-      connectionId: "local:wsl:Ubuntu",
+      environmentId: EnvironmentId.make("desktop-local-secondary"),
+      label: "Secondary backend",
+      connectionId: "local:secondary",
     }),
   },
-  label: "WSL",
+  label: "Secondary backend",
 } as const;
 
 describe("resolveOnboardingTargetEnvironment", () => {

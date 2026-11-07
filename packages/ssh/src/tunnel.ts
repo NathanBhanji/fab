@@ -813,7 +813,7 @@ export function buildRemoteFabRunnerScript(input?: RemoteFabRunnerOptions): stri
   );
 }
 
-export function buildRemoteNodeEnvScript(input?: RemoteFabRunnerOptions): string {
+function buildRemoteNodeEnvScript(input?: RemoteFabRunnerOptions): string {
   return stripTrailingNewlines(
     applyScriptPlaceholders(REMOTE_NODE_ENV_SCRIPT, {
       FAB_NODE_ENGINE_RANGE: shellSingleQuote(input?.nodeEngineRange?.trim() || ""),

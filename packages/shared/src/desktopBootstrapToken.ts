@@ -1,7 +1,7 @@
 // @effect-diagnostics-next-line nodeBuiltinImport:off -- Effect's Crypto has no createHmac or timingSafeEqual.
 import * as NodeCrypto from "node:crypto";
 
-/** Accept previous/current windows for token lifetime and the next window for WSL clock lag. */
+/** Accept previous/current windows for token lifetime and the next window for clock lag between processes. */
 export const DESKTOP_BOOTSTRAP_TOKEN_WINDOW_MS = 12 * 60 * 60 * 1000;
 
 function windowIndex(nowMs: number): number {

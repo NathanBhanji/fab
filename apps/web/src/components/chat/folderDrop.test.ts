@@ -49,8 +49,8 @@ describe("folderDropTarget", () => {
       "remote",
     ],
     [
-      "a desktop WSL backend",
-      { ...thinClient, connection: savedServer("http://127.0.0.1:3774", "local:wsl-ubuntu") },
+      "a desktop-local backend",
+      { ...thinClient, connection: savedServer("http://127.0.0.1:3774", "local:secondary") },
       "remote",
     ],
     [
