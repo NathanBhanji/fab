@@ -73,12 +73,9 @@ export default defineConfig({
       sourcemap: true,
       outExtensions: () => ({ js: ".cjs" }),
       define: publicConfigDefine,
-      entry: [
-        "src/electron/WindowsForegroundFocusWorker.ts",
-        "src/snapShot/GlobalShiftShortcutWorker.ts",
-        "src/snapShot/RegionSnapShotWorker.ts",
-        "src/snapShot/SnapShotAccessibilityWorker.ts",
-      ],
+      entry: ["src/snapShot/SnapShotAccessibilityWorker.ts"],
+      // Keep worker output under dist-electron/snapShot, where the main process loads it.
+      root: "src",
       clean: false,
       deps: {
         alwaysBundle: (id) => !id.startsWith("node:") && !isMainProcessExternal(id),
@@ -143,8 +140,6 @@ export default defineConfig({
   ],
   test: {
     include: [...defaultInclude, "../../native/kde-snap-shot/src/*.test.ts"],
-    // The Windows lane runs workspace suites concurrently; filesystem-heavy
-    // desktop integration tests can exceed Vitest's 5 second default there.
     testTimeout: 15_000,
     setupFiles: ["../../packages/shared/src/testing/providerEnv.ts"],
   },

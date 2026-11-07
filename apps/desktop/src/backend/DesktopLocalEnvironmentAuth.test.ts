@@ -69,7 +69,7 @@ describe("DesktopLocalEnvironmentAuth", () => {
         list: Effect.succeed([
           {
             id: PRIMARY_LOCAL_ENVIRONMENT_ID,
-            label: Effect.succeed("Windows"),
+            label: Effect.succeed("Local environment"),
             currentConfig: Effect.succeedSome(config),
             waitForReady: (timeout: Duration.Duration) =>
               Deferred.succeed(waiting, undefined).pipe(
@@ -134,7 +134,7 @@ describe("DesktopLocalEnvironmentAuth", () => {
           list: Effect.succeed([
             {
               id: PRIMARY_LOCAL_ENVIRONMENT_ID,
-              label: Effect.succeed("Windows"),
+              label: Effect.succeed("Local environment"),
               waitForReady: () => Effect.succeed(true),
               currentConfig: Effect.succeedSome({
                 ...config,
@@ -181,7 +181,7 @@ describe("DesktopLocalEnvironmentAuth", () => {
     list: Effect.succeed([
       {
         id: PRIMARY_LOCAL_ENVIRONMENT_ID,
-        label: Effect.succeed("Windows"),
+        label: Effect.succeed("Local environment"),
         currentConfig: Effect.succeedSome(config),
         waitForReady: () => Effect.succeed(true),
       },

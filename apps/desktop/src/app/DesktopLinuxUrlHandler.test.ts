@@ -85,7 +85,6 @@ const layerHandler = (
         Layer.succeed(DesktopAssets.DesktopAssets, {
           iconPaths: Effect.succeed({
             png: Option.fromUndefinedOr(input.iconSource),
-            ico: Option.none(),
             icns: Option.none(),
           }),
           resolveResourcePath: () => Effect.succeedNone,
@@ -467,7 +466,6 @@ const registerWithRealFileSystem = (run: ThemeIconRun) =>
                 Effect.map((path) => ({
                   iconPaths: Effect.succeed({
                     png: Option.none(),
-                    ico: Option.none(),
                     icns: Option.none(),
                   }),
                   resolveResourcePath: (fileName: string) =>

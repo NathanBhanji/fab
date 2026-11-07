@@ -82,16 +82,12 @@ const logBackendObservabilitySettingsReadFailure = (
   );
 };
 
-function resourceMonitorBinaryName(platform: NodeJS.Platform): string {
-  return platform === "win32" ? "fab-resource-monitor.exe" : "fab-resource-monitor";
-}
-
 const resolveResourceMonitorPath = Effect.fn(
   "desktop.backendConfiguration.resolveResourceMonitorPath",
 )(function* () {
   const environment = yield* DesktopEnvironment.DesktopEnvironment;
   const fileSystem = yield* FileSystem.FileSystem;
-  const binaryName = resourceMonitorBinaryName(environment.platform);
+  const binaryName = "fab-resource-monitor";
   const candidates = environment.isDevelopment
     ? [
         environment.path.join(
@@ -310,9 +306,7 @@ export const make = Effect.gen(function* () {
     resolvePrimary: buildPrimaryConfig.pipe(
       Effect.withSpan("desktop.backendConfiguration.resolvePrimary"),
     ),
-    resolvePrimaryLabel: Effect.succeed(
-      environment.platform === "win32" ? "Windows" : "Local environment",
-    ),
+    resolvePrimaryLabel: Effect.succeed("Local environment"),
   });
 });
 

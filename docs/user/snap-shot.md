@@ -5,8 +5,8 @@ attachment carries the app name and window title, and when available the app ico
 accessibility data (its controls, text, and their positions in the image). Agents can use that data
 to reason about the screenshot.
 
-SnapShots are off by default and available in the desktop app on macOS, Windows, and Linux with
-Wayland. X11 sessions are not supported.
+SnapShots are off by default and available in the desktop app on macOS and Linux with Wayland.
+X11 sessions are not supported.
 
 ## Turning it on
 
@@ -16,15 +16,14 @@ off but keeps anything you already installed, so you can resume where you left o
 
 - **macOS** asks for Screen Recording during setup. It asks for Accessibility only when **Include
   app text** is on.
-- **Windows** needs no setup or permission.
 - **Linux** depends on your desktop. See [Linux desktops](#linux-desktops).
 
 Turning capture off releases the shortcut. It does not uninstall a helper or extension you installed.
 
 ## Taking a capture
 
-Switch to the window you want and press the shortcut. The default on macOS and Windows is both
-Shift keys together. Fab attaches the image to your draft and brings itself forward. If no thread
+Switch to the window you want and press the shortcut. The default on macOS is both Shift
+keys together. Fab attaches the image to your draft and brings itself forward. If no thread
 is open it starts a draft in the current project.
 
 Pressing the shortcut while Fab is in front captures Fab itself.
@@ -35,8 +34,8 @@ too large are discarded.
 
 ## Changing the shortcut
 
-Select the shortcut in Settings, press the new keys, then **Save**. On macOS and Windows you can use
-a modifier pair such as Command+Command or Ctrl+Ctrl, or a key chord. Fab refuses shortcuts
+Select the shortcut in Settings, press the new keys, then **Save**. On macOS you can use a modifier
+pair such as Command+Command or Ctrl+Ctrl, or a key chord. Fab refuses shortcuts
 that collide with its own keybindings or that the operating system already reserves.
 
 On Linux, choose a key chord; modifier pairs are not supported. On Niri and Hyprland the shortcut

@@ -8,9 +8,6 @@ import * as FileSystem from "effect/FileSystem";
 import * as Layer from "effect/Layer";
 import * as Option from "effect/Option";
 import * as Schema from "effect/Schema";
-import * as Stream from "effect/Stream";
-import * as ChildProcess from "effect/process/ChildProcess";
-import * as ChildProcessSpawner from "effect/process/ChildProcessSpawner";
 
 import * as DesktopCliShim from "./DesktopCliShim.ts";
 import * as DesktopEnvironment from "./DesktopEnvironment.ts";
@@ -28,30 +25,6 @@ const unixCandidates = (home: string, platform: NodeJS.Platform) =>
 const pathEntries = (value: string | undefined, separator: string) =>
   (value ?? "").split(separator).filter((entry) => entry.length > 0);
 
-const sameWindowsPath = (left: string, right: string) =>
-  left.replace(/[\\/]+$/, "").toLowerCase() === right.replace(/[\\/]+$/, "").toLowerCase();
-
-// Preserve REG_EXPAND_SZ and %VAR% expansion; notify Explorer with WM_SETTINGCHANGE.
-// Failed reads must exit nonzero to prevent replacing PATH wholesale.
-const WINDOWS_USER_PATH_SCRIPT = `
-$ErrorActionPreference = 'Stop'
-if ($env:FAB_SET -eq '1') {
-  $key = [Microsoft.Win32.Registry]::CurrentUser.CreateSubKey('Environment')
-  $kind = [Microsoft.Win32.RegistryValueKind]::ExpandString
-  if ($key.GetValueNames() -contains 'Path' -and $key.GetValueKind('Path') -eq 'String') {
-    $kind = [Microsoft.Win32.RegistryValueKind]::String
-  }
-  $key.SetValue('Path', $env:FAB_PATH, $kind)
-  Add-Type -Namespace Fab -Name Env -MemberDefinition '[DllImport("user32.dll", CharSet = CharSet.Unicode)] public static extern System.IntPtr SendMessageTimeout(System.IntPtr hWnd, uint Msg, System.UIntPtr wParam, string lParam, uint fuFlags, uint uTimeout, out System.UIntPtr lpdwResult);'
-  $result = [System.UIntPtr]::Zero
-  [void][Fab.Env]::SendMessageTimeout([System.IntPtr]0xffff, 0x1A, [System.UIntPtr]::Zero, 'Environment', 2, 5000, [ref]$result)
-} else {
-  $key = [Microsoft.Win32.Registry]::CurrentUser.OpenSubKey('Environment')
-  $value = if ($key) { $key.GetValue('Path', '', 'DoNotExpandEnvironmentNames') } else { '' }
-  [Console]::Out.Write([Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes([string]$value)))
-}
-`;
-
 export class DesktopCliCommand extends Context.Service<
   DesktopCliCommand,
   {
@@ -65,12 +38,8 @@ export class DesktopCliCommand extends Context.Service<
 export const make = Effect.gen(function* () {
   const environment = yield* DesktopEnvironment.DesktopEnvironment;
   const fs = yield* FileSystem.FileSystem;
-  const spawner = yield* ChildProcessSpawner.ChildProcessSpawner;
   const path = environment.path;
-  const windows = environment.platform === "win32";
   const launcher = DesktopCliShim.launcherPath(environment);
-  const binDirectory = path.dirname(launcher);
-  const ownedPathMarker = path.join(environment.stateDir, "cli-command-path-entry");
 
   const fail = (message: string) => new DesktopCliCommandError({ message });
   const exists = (target: string) => fs.exists(target).pipe(Effect.orElseSucceed(() => false));
@@ -105,35 +74,6 @@ export const make = Effect.gen(function* () {
     Effect.orElseSucceed(() => false),
   );
 
-  const powershell = (env: Record<string, string>) =>
-    Effect.scoped(
-      Effect.gen(function* () {
-        const root = process.env.SystemRoot ?? process.env.WINDIR;
-        const handle = yield* spawner.spawn(
-          ChildProcess.make(
-            root ? `${root}\\System32\\WindowsPowerShell\\v1.0\\powershell.exe` : "powershell.exe",
-            ["-NoLogo", "-NoProfile", "-NonInteractive", "-Command", WINDOWS_USER_PATH_SCRIPT],
-            { stdin: "ignore", stderr: "ignore", env, extendEnv: true },
-          ),
-        );
-        const [stdout, exitCode] = yield* Effect.all(
-          [handle.stdout.pipe(Stream.decodeText(), Stream.mkString), handle.exitCode],
-          { concurrency: "unbounded" },
-        );
-        if (exitCode !== 0) return yield* Effect.fail(`powershell exited with ${exitCode}`);
-        return stdout;
-      }),
-    );
-  const readUserPath = powershell({}).pipe(
-    Effect.map((encoded) => Buffer.from(encoded.trim(), "base64").toString("utf8")),
-    Effect.mapError(() => fail("Could not read your PATH, so it was left unchanged.")),
-  );
-  const writeUserPath = (value: string) =>
-    powershell({ FAB_SET: "1", FAB_PATH: value }).pipe(
-      Effect.asVoid,
-      Effect.mapError(() => fail("Could not update your PATH.")),
-    );
-
   const isExecutableFile = Effect.fn("DesktopCliCommand.isExecutableFile")(
     function* (target: string) {
       if ((yield* fs.stat(target)).type !== "File") return false;
@@ -152,20 +92,12 @@ export const make = Effect.gen(function* () {
   });
 
   const foreignFirstOnPath = Effect.gen(function* () {
-    if (windows) return Option.none<string>();
     const first = yield* firstOnPath;
     if (Option.isNone(first) || (yield* runsOurLauncher(first.value))) return Option.none<string>();
     return first;
   });
 
   const installedAt = Effect.gen(function* () {
-    if (windows) {
-      if (!(yield* exists(ownedPathMarker))) return Option.none<string>();
-      const entries = pathEntries(yield* readUserPath, ";");
-      return entries.some((entry) => sameWindowsPath(entry, binDirectory))
-        ? Option.some(launcher)
-        : Option.none<string>();
-    }
     for (const directory of unixCandidates(environment.homeDirectory, environment.platform)) {
       const link = path.join(directory, "fab");
       if (yield* isOurLink(link)) return Option.some(link);
@@ -182,9 +114,7 @@ export const make = Effect.gen(function* () {
     const shadowedBy = yield* foreignFirstOnPath;
     const shadow = Option.isSome(shadowedBy) ? { shadowedBy: shadowedBy.value } : {};
     const first = yield* firstOnPath;
-    const onPath = windows
-      ? Option.isSome(installed)
-      : Option.isSome(first) && (yield* runsOurLauncher(first.value));
+    const onPath = Option.isSome(first) && (yield* runsOurLauncher(first.value));
     return {
       supported: true,
       installedPath: Option.getOrNull(installed),
@@ -215,16 +145,6 @@ export const make = Effect.gen(function* () {
   const install: DesktopCliCommand["Service"]["install"] = Effect.gen(function* () {
     if (!environment.isPackaged) return yield* fail("The fab command needs an installed app.");
     yield* ensureLauncher;
-    if (windows) {
-      const entries = pathEntries(yield* readUserPath, ";");
-      if (!entries.some((entry) => sameWindowsPath(entry, binDirectory))) {
-        yield* writeUserPath([...entries, binDirectory].join(";"));
-        yield* fs
-          .writeFileString(ownedPathMarker, `${binDirectory}\n`)
-          .pipe(Effect.mapError(() => fail("Added fab to your PATH but could not record it.")));
-      }
-      return yield* state;
-    }
     const existing = yield* installedAt;
     if (Option.isSome(existing)) {
       const target = yield* fs.readLink(existing.value).pipe(Effect.option);
@@ -265,15 +185,6 @@ export const make = Effect.gen(function* () {
   }).pipe(Effect.withSpan("desktop.cliCommand.install"));
 
   const uninstall: DesktopCliCommand["Service"]["uninstall"] = Effect.gen(function* () {
-    if (windows) {
-      if (yield* exists(ownedPathMarker)) {
-        const entries = pathEntries(yield* readUserPath, ";");
-        const kept = entries.filter((entry) => !sameWindowsPath(entry, binDirectory));
-        if (kept.length !== entries.length) yield* writeUserPath(kept.join(";"));
-        yield* fs.remove(ownedPathMarker).pipe(Effect.ignore);
-      }
-      return yield* state;
-    }
     for (const directory of unixCandidates(environment.homeDirectory, environment.platform)) {
       const link = path.join(directory, "fab");
       if (yield* isOurLink(link)) {

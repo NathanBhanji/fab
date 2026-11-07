@@ -12,7 +12,6 @@ import {
   snapShotShortcutModifierPair,
   type SnapShotAccessibilityNode,
   type SnapShotKeyChord,
-  type SnapShotModifier,
   type SnapShotShortcut,
 } from "@fab/contracts";
 
@@ -23,16 +22,6 @@ interface AccessibilityTreeNode {
 }
 
 const MAX_ACCESSIBILITY_TREE_NODES = 10_000;
-
-export const WINDOWS_MODIFIER_PAIR_VIRTUAL_KEYS: Record<
-  SnapShotModifier,
-  readonly [number, number]
-> = {
-  shift: [0xa0, 0xa1],
-  control: [0xa2, 0xa3],
-  alt: [0xa4, 0xa5],
-  meta: [0x5b, 0x5c],
-};
 
 export function snapShotShortcutRegistrationFailureMessage(
   shortcut: SnapShotShortcut,

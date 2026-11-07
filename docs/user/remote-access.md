@@ -270,7 +270,7 @@ the background service, and restart it. Script preview URLs still appear.
 
 ### Browser host setup
 
-macOS, Windows, and Linux desktops run the browser as is. Some Linux hosts need
+macOS and Linux desktops run the browser as is. Some Linux hosts need
 one-time setup: Ubuntu 23.10 and later block the sandbox the browser runs in,
 and minimal images and containers lack libraries it loads. When that happens,
 the server says so at startup, and browser tabs and HTML previews show the

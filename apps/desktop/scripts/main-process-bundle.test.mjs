@@ -12,16 +12,8 @@ import desktopConfig from "../vite.config.ts";
 it("keeps lazy Linux imports and worker bundles from executing desktop startup twice", async () => {
   const directory = await NodeFSP.mkdtemp(NodePath.join(NodeOS.tmpdir(), "fab-desktop-bundle-"));
   try {
-    const workerEntries = [
-      "src/electron/WindowsForegroundFocusWorker.ts",
-      "src/snapShot/GlobalShiftShortcutWorker.ts",
-      "src/snapShot/RegionSnapShotWorker.ts",
-      "src/snapShot/SnapShotAccessibilityWorker.ts",
-    ];
-    await Promise.all([
-      NodeFSP.mkdir(NodePath.join(directory, "src/electron"), { recursive: true }),
-      NodeFSP.mkdir(NodePath.join(directory, "src/snapShot"), { recursive: true }),
-    ]);
+    const workerEntries = ["src/snapShot/SnapShotAccessibilityWorker.ts"];
+    await NodeFSP.mkdir(NodePath.join(directory, "src/snapShot"), { recursive: true });
     await Promise.all([
       NodeFSP.writeFile(
         NodePath.join(directory, "src/main.ts"),
@@ -104,7 +96,10 @@ void import("./linux.ts").then(({ result }) => process.emit("ready", result));`,
     for (const entry of workerEntries) {
       load(NodePath.join(outputDirectory, entry.replace(/^src\//, "").replace(/\.ts$/, ".cjs")));
     }
-    assert.deepEqual(workers, [42, 42, 42, 42]);
+    assert.deepEqual(
+      workers,
+      workerEntries.map(() => 42),
+    );
     assert.deepEqual(startups, [42]);
   } finally {
     await NodeFSP.rm(directory, { recursive: true, force: true });

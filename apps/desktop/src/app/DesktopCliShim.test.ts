@@ -103,22 +103,4 @@ describe("renderCliShim", () => {
       "",
     ]);
   });
-
-  it("writes a Windows launcher that keeps cmd from reinterpreting paths", () => {
-    const executable = "C:\\Apps\\R&whoami&X 100%\\!CHANNEL!\\Fab.exe";
-    const script = renderCliShim({
-      target: { kind: "windows", executable, entry: "C:\\Apps\\server.asar\\bin.mjs" },
-      shimPath: "C:\\Users\\José\\.fab\\bin\\fab.cmd",
-      fabHome: "C:\\Users\\José\\.fab",
-    });
-    const lines = script.split("\r\n");
-    expect(lines).toContain("setlocal EnableExtensions DisableDelayedExpansion");
-    expect(lines).toContain("chcp 65001 >nul");
-    expect(lines).toContain('if exist "C:\\Apps\\R&whoami&X 100%%\\!CHANNEL!\\Fab.exe" goto run');
-    const bare = lines.filter(
-      (line) => line.includes("whoami") && !/"[^"]*whoami[^"]*"/.test(line),
-    );
-    expect(bare).toEqual([]);
-    expect(lines).toContain('set "FAB_CLI_PATH=C:\\Users\\José\\.fab\\bin\\fab.cmd"');
-  });
 });

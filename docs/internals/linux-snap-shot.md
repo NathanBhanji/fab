@@ -10,7 +10,7 @@ GNOME extension must not select another desktop's backend; session detection com
 
 `dbus-next` must only be reached through dynamic imports. `linuxCaptureSession.ts` holds the pure
 helpers (session detection, Niri binding text, portal key mapping, PNG reading) so the main process
-can answer "which desktop is this" without loading a D-Bus client on macOS or Windows.
+can answer "which desktop is this" without loading a D-Bus client on macOS.
 
 `patches/dbus-next@0.10.2.patch` removes `usocket` (its optional native Unix-FD transport) and
 connects to both `unix:path=` and `unix:abstract=` buses through Node's `net`. We never pass Unix

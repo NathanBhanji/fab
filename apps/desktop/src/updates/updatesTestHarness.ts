@@ -122,7 +122,6 @@ export function makeHarness(options: UpdatesHarnessOptions = {}) {
     focusedMainOrFirst: Effect.succeedNone,
     setMain: () => Effect.void,
     clearMain: () => Effect.void,
-    prepareReveal: () => Effect.succeed(false),
     reveal: () => Effect.void,
     sendAll: (_channel, state) =>
       Effect.sync(() => {
@@ -137,7 +136,7 @@ export function makeHarness(options: UpdatesHarnessOptions = {}) {
   let backendDesiredRunning = options.backendDesiredRunning ?? true;
   const stubBackendInstance: DesktopBackendPool.DesktopBackendInstance = {
     id: DesktopBackendPool.PRIMARY_INSTANCE_ID,
-    label: Effect.succeed("Windows"),
+    label: Effect.succeed("Local environment"),
     start: Effect.sync(() => {
       backendDesiredRunning = true;
       installSteps.push("startBackend");

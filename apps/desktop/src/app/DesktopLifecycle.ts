@@ -300,14 +300,12 @@ export const make = DesktopLifecycle.of({
       );
     });
 
-    if (environment.platform !== "win32") {
-      yield* addScopedListener(process, "SIGINT", () => {
-        quitFromSignal("SIGINT", runEffect, quit);
-      });
-      yield* addScopedListener(process, "SIGTERM", () => {
-        quitFromSignal("SIGTERM", runEffect, quit);
-      });
-    }
+    yield* addScopedListener(process, "SIGINT", () => {
+      quitFromSignal("SIGINT", runEffect, quit);
+    });
+    yield* addScopedListener(process, "SIGTERM", () => {
+      quitFromSignal("SIGTERM", runEffect, quit);
+    });
   }).pipe(Effect.withSpan("desktop.lifecycle.register")),
 });
 

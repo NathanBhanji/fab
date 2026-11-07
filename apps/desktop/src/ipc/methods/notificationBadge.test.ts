@@ -5,11 +5,8 @@ import * as HostProcess from "@fab/shared/HostProcess";
 
 const native = vi.hoisted(() => ({
   setBadgeCount: vi.fn(),
-  setOverlayIcon: vi.fn(),
   isDestroyed: vi.fn(() => false),
   getFocusedWindow: vi.fn(() => null as object | null),
-  image: { isEmpty: vi.fn(() => false) },
-  createFromDataURL: vi.fn(),
   webContents: { send: vi.fn() },
   listeners: new Map<string, () => void>(),
 }));
@@ -23,7 +20,6 @@ vi.mock("electron", () => ({
     getFocusedWindow: native.getFocusedWindow,
     getAllWindows: () => [native],
   },
-  nativeImage: { createFromDataURL: native.createFromDataURL },
 }));
 
 import * as ElectronApp from "../../electron/ElectronApp.ts";
@@ -36,8 +32,6 @@ beforeEach(() => {
   vi.clearAllMocks();
   native.getFocusedWindow.mockReturnValue(null);
   native.isDestroyed.mockReturnValue(false);
-  native.image.isEmpty.mockReturnValue(false);
-  native.createFromDataURL.mockReturnValue(native.image);
   native.setBadgeCount.mockImplementation(() => true);
   native.listeners.clear();
 });

@@ -705,7 +705,7 @@ function resolveKnownWindowsCliDirs(env: NodeJS.ProcessEnv): ReadonlyArray<strin
 }
 
 /** Keep one PATH spelling in copied Windows environment records. */
-export function setWindowsPath(env: NodeJS.ProcessEnv, value: string | null): void {
+function setWindowsPath(env: NodeJS.ProcessEnv, value: string | null): void {
   for (const key of Object.keys(env)) {
     if (key.toUpperCase() === "PATH") {
       delete env[key];

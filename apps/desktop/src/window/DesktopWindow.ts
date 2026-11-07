@@ -101,7 +101,6 @@ export class DesktopWindow extends Context.Service<
     readonly handleBackendReady: (httpBaseUrl: URL) => Effect.Effect<void, DesktopWindowError>;
     readonly handleBackendNotReady: Effect.Effect<void>;
     readonly flushMainWindowBounds: Effect.Effect<void>;
-    readonly prepareCaptureReveal: Effect.Effect<void>;
     readonly dispatchMenuAction: (
       action: string,
       options?: { readonly reveal?: boolean },
@@ -124,8 +123,7 @@ function getIconOption(
   platform: NodeJS.Platform,
 ): { icon: string } | Record<string, never> {
   if (platform === "darwin") return {};
-  const ext = platform === "win32" ? "ico" : "png";
-  return Option.match(iconPaths[ext], {
+  return Option.match(iconPaths.png, {
     onNone: () => ({}),
     onSome: (icon) => ({ icon }),
   });
@@ -911,12 +909,6 @@ export const make = Effect.gen(function* () {
     createMain: createMain.pipe(Effect.flatMap(requireWindow)),
     ensureMain: ensureMain.pipe(Effect.flatMap(requireWindow)),
     revealOrCreateMain,
-    prepareCaptureReveal: Effect.gen(function* () {
-      const existingWindow = yield* currentMainWindow;
-      if (Option.isSome(existingWindow) && !pendingMainReveals.has(existingWindow.value)) {
-        yield* electronWindow.prepareReveal(existingWindow.value);
-      }
-    }),
     activate: Effect.gen(function* () {
       if (yield* Ref.get(desktopState.quitting)) return;
       const existingWindow = yield* currentMainWindow;

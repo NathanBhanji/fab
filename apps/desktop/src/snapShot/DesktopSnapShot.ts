@@ -15,7 +15,6 @@ import {
   type DesktopCaptureConfigPreview,
   type DesktopCaptureConfigApplied,
   type ClientSettings,
-  type SnapShotModifier,
   type SnapShotModifierPairShortcut,
   type SnapShotShortcut,
   type DesktopSnapShotEvent,
@@ -41,7 +40,6 @@ import * as Electron from "electron";
 import * as DesktopEnvironment from "../app/DesktopEnvironment.ts";
 import * as DesktopClientSettings from "../settings/DesktopClientSettings.ts";
 import * as DesktopWindow from "../window/DesktopWindow.ts";
-import { startGlobalShiftShortcutProcess } from "./GlobalShiftShortcutProcess.ts";
 import { startMacModifierPairShortcutProcess } from "./MacModifierPairShortcutProcess.ts";
 import { activeWindow, type ActiveWindow } from "./ActiveWindow.ts";
 import { captureMacWindowSnapshot, type MacSnapShotSource } from "./MacSnapShot.ts";
@@ -68,12 +66,6 @@ import {
   isKdeCaptureSession,
   type KdeCapturePaths,
 } from "./KdeSnapShot.ts";
-import {
-  captureRegionWindowSnapshot,
-  makeRegionSnapShotPool,
-  type RegionSnapShotPool,
-  type RegionSnapShotSource,
-} from "./RegionSnapShot.ts";
 import { type SnapShotAnimationDestination, SnapShotTransition } from "./SnapShotTransition.ts";
 import {
   type AccessibilityProcessPool,
@@ -81,7 +73,6 @@ import {
 } from "./SnapShotAccessibilityProcess.ts";
 import * as MacPermissions from "../permissions/MacPermissions.ts";
 import { MAC_PERMISSION_SETTINGS_URLS } from "../permissions/MacPermission.ts";
-import { showWindowsCaptureOverlay } from "./WindowsCaptureFeedback.ts";
 
 import {
   boundedSnapShotString,
@@ -287,7 +278,7 @@ type SnapShotSystemAnimationSettings = Pick<
 function captureMode(platform: NodeJS.Platform): DesktopSnapShotState["mode"] {
   if (platform === "linux")
     return isWaylandSession(platform, process.env) ? "portal" : "unavailable";
-  return platform === "darwin" || platform === "win32" ? "direct" : "unavailable";
+  return platform === "darwin" ? "direct" : "unavailable";
 }
 
 function shouldAnimateSnapShot(settings: SnapShotSystemAnimationSettings): boolean {
@@ -345,10 +336,7 @@ function snapShotAppName(
   linuxWindow: LinuxWindowMetadata | undefined,
   sourceName: string,
 ): string {
-  const appName =
-    active?.owner.name.trim() || linuxWindow?.appName.trim() || sourceName.trim() || "Window";
-  if (active?.platform !== "windows") return appName;
-  return appName.replace(/\.exe$/i, "").trim() || appName;
+  return active?.owner.name.trim() || linuxWindow?.appName.trim() || sourceName.trim() || "Window";
 }
 
 async function requestMacScreenCapturePermission(): Promise<string | null> {
@@ -441,8 +429,6 @@ async function captureSource({
   kdeCapturePaths,
   hyprlandCapturePaths,
   accessibilityProcessPool,
-  regionSnapShotPool,
-  prepareReveal,
   onLinuxFeedback,
 }: {
   mode: DesktopSnapShotState["mode"];
@@ -456,8 +442,6 @@ async function captureSource({
   kdeCapturePaths: KdeCapturePaths;
   hyprlandCapturePaths: HyprlandCapturePaths;
   accessibilityProcessPool: AccessibilityProcessPool;
-  regionSnapShotPool: RegionSnapShotPool;
-  prepareReveal: () => Promise<void>;
   onLinuxFeedback: (feedback: LinuxCaptureFeedback) => void;
 }) {
   let active: ActiveWindow | undefined;
@@ -469,13 +453,11 @@ async function captureSource({
     Electron.BrowserWindow.getAllWindows().find((window) => !window.isDestroyed());
   const destinationWindowBounds = destinationWindow?.getBounds();
   {
-    const revealPreparation =
-      platform === "win32" ? prepareReveal().catch(() => undefined) : Promise.resolve();
     if (mode === "direct") {
       active = await activeWindow(platform);
     }
 
-    let source: MacSnapShotSource | RegionSnapShotSource | Electron.DesktopCapturerSource;
+    let source: MacSnapShotSource | Electron.DesktopCapturerSource;
     let png: Buffer;
     let imageTempReady = false;
     if (platform === "darwin") {
@@ -488,16 +470,6 @@ async function captureSource({
         snapShotThumbnailSize(active),
       ));
       imageTempReady = true;
-    } else if (mode === "direct") {
-      if (!active) {
-        throw new DesktopSnapShotError({ operation: "window-unavailable", captureId });
-      }
-      ({ source, png } = await captureRegionWindowSnapshot(
-        regionSnapShotPool,
-        active,
-        snapShotFlashBounds(active, platform),
-        snapShotThumbnailSize(active),
-      ));
     } else {
       const { captureLinuxWindow } = await import("./LinuxSnapShot.ts");
       const snapshot = await captureLinuxWindow(
@@ -533,9 +505,9 @@ async function captureSource({
         png = selected.thumbnail.toPNG();
       }
     }
-    const accessibleIdentity = active
-      ? { ...active, bounds: snapShotFlashBounds(active, platform) }
-      : linuxWindow?.processId
+    const accessibleIdentity =
+      active ??
+      (linuxWindow?.processId
         ? {
             title: linuxWindow.title,
             bounds: linuxWindow.bounds,
@@ -545,7 +517,7 @@ async function captureSource({
               ? { accessibilityBoundsReliable: false }
               : {}),
           }
-        : undefined;
+        : undefined);
     const accessibilityRead =
       accessibleIdentity && settings.snapShotIncludeAccessibility
         ? accessibilityProcessPool.read({
@@ -559,7 +531,6 @@ async function captureSource({
       await accessibilityRead.started;
     }
     const contextPromise = accessibilityRead?.result ?? Promise.resolve(undefined);
-    await revealPreparation;
     if (linuxFeedback && destinationWindow && !destinationWindow.isDestroyed()) {
       if (destinationWindow.isMinimized()) destinationWindow.restore();
       if (!destinationWindow.isVisible()) destinationWindow.show();
@@ -614,13 +585,6 @@ class SnapShotFlash {
   private flashWindow: Electron.BaseWindow | undefined;
   private animationTimer: ReturnType<typeof setInterval> | undefined;
   private closeTimer: ReturnType<typeof setTimeout> | undefined;
-  private readonly showWindow: (window: Electron.BaseWindow) => void;
-
-  constructor(
-    showWindow: (window: Electron.BaseWindow) => void = (window) => window.showInactive(),
-  ) {
-    this.showWindow = showWindow;
-  }
 
   showAnimated(bounds: Electron.Rectangle): Promise<void> {
     return this.show(bounds, true, FLASH_ANIMATION_DURATION_MS);
@@ -648,7 +612,7 @@ class SnapShotFlash {
     const window = createSnapShotFlashWindow(bounds);
     this.flashWindow = window;
     if (window.isDestroyed()) return;
-    this.showWindow(window);
+    window.showInactive();
     if (animated) {
       let opacity = FLASH_PEAK_OPACITY;
       this.animationTimer = setInterval(() => {
@@ -666,14 +630,8 @@ class SnapShotFlash {
   }
 }
 
-function snapShotFlashBounds(
-  active: ActiveWindow | undefined,
-  platform: NodeJS.Platform,
-): Electron.Rectangle {
-  if (!active) return Electron.screen.getPrimaryDisplay().bounds;
-  return platform === "win32"
-    ? Electron.screen.screenToDipRect(null, active.bounds)
-    : active.bounds;
+function snapShotFlashBounds(active: ActiveWindow | undefined): Electron.Rectangle {
+  return active?.bounds ?? Electron.screen.getPrimaryDisplay().bounds;
 }
 
 async function showCaptureFeedback(
@@ -688,7 +646,7 @@ async function showCaptureFeedback(
 ): Promise<boolean> {
   // Wayland does not let this client position overlays on another app's window.
   if (platform === "linux") return false;
-  const bounds = snapShotFlashBounds(active, platform);
+  const bounds = snapShotFlashBounds(active);
   const animationsEnabled =
     settings.snapShotAnimations &&
     shouldAnimateSnapShot(Electron.systemPreferences.getAnimationSettings());
@@ -721,9 +679,6 @@ function observedPairMessage(
   const base = `${label} is observed and cannot be reserved exclusively.`;
   if (modifier === "meta" && platform !== "darwin") {
     return `${base} This key can also open the system's own menu.`;
-  }
-  if (modifier === "alt" && platform === "win32") {
-    return `${base} This key can also activate app menu bars.`;
   }
   return base;
 }
@@ -797,7 +752,6 @@ export const make = Effect.gen(function* () {
         ),
     dataHome: path.dirname(environment.linuxApplicationsDir),
   };
-  const shiftShortcutWorkerPath = path.join(__dirname, "snapShot", "GlobalShiftShortcutWorker.cjs");
   const shortcutConfig = new CaptureShortcutConfig(home);
   const accessibilityWorkerPath = path.join(
     __dirname,
@@ -805,9 +759,6 @@ export const make = Effect.gen(function* () {
     "SnapShotAccessibilityWorker.cjs",
   );
   const accessibilityProcessPool = makeSnapShotAccessibilityProcessPool(accessibilityWorkerPath);
-  const regionSnapShotPool = makeRegionSnapShotPool(
-    path.join(__dirname, "snapShot", "RegionSnapShotWorker.cjs"),
-  );
   let registeredAccelerator: string | undefined;
   let initialized = false;
   let portalShortcut: PortalCaptureShortcut | undefined;
@@ -815,13 +766,8 @@ export const make = Effect.gen(function* () {
   let shortcutSuppressed = false;
   let lastShortcutAt: bigint | undefined;
   let stopShiftShortcut: (() => void) | undefined;
-  const showCaptureWindow =
-    environment.platform === "win32" ? showWindowsCaptureOverlay : undefined;
-  const flash = new SnapShotFlash(showCaptureWindow);
+  const flash = new SnapShotFlash();
   const transition = new SnapShotTransition({
-    showWindow: showCaptureWindow,
-    waitForCompositorFrame: environment.platform === "win32",
-    // Transparent Windows surfaces must not resize while their compositor animation is running.
     boundOverlayToCaptureDisplays: environment.platform !== "linux",
     alwaysOnTopLevel: environment.platform === "linux" ? undefined : "pop-up-menu",
   });
@@ -837,15 +783,6 @@ export const make = Effect.gen(function* () {
     await pending.feedback.complete().catch(() => undefined);
     if (linuxFeedback === pending) linuxFeedback = undefined;
   };
-
-  const startPairShortcutProcess = (
-    modifier: SnapShotModifier,
-    onTrigger: () => void,
-    onFailure: (error: Error) => void,
-  ) =>
-    environment.platform === "darwin"
-      ? startMacModifierPairShortcutProcess(modifier, onTrigger, onFailure)
-      : startGlobalShiftShortcutProcess(shiftShortcutWorkerPath, modifier, onTrigger, onFailure);
 
   const releaseShortcut = () => {
     shortcutGeneration++;
@@ -924,8 +861,6 @@ export const make = Effect.gen(function* () {
             kdeCapturePaths,
             hyprlandCapturePaths,
             accessibilityProcessPool,
-            regionSnapShotPool,
-            prepareReveal: () => runPromise(desktopWindow.prepareCaptureReveal),
             onLinuxFeedback: (feedback) => {
               linuxFeedback = { id, feedback };
             },
@@ -1067,7 +1002,7 @@ export const make = Effect.gen(function* () {
         return { available: false, message: WAYLAND_MODIFIER_PAIR_UNAVAILABLE_MESSAGE };
       }
       const available = yield* Effect.tryPromise(() =>
-        startPairShortcutProcess(
+        startMacModifierPairShortcutProcess(
           snapShotShortcutModifierPair(shortcut),
           () => undefined,
           () => undefined,
@@ -1126,11 +1061,6 @@ export const make = Effect.gen(function* () {
       accessibilityProcessPool.warm();
     } else {
       accessibilityProcessPool.cool();
-    }
-    if (settings.snapShotEnabled && environment.platform === "win32") {
-      regionSnapShotPool.warm();
-    } else {
-      regionSnapShotPool.cool();
     }
     if (!settings.snapShotEnabled || !settings.snapShotFlash || mode === "unavailable") {
       flash.dispose();
@@ -1292,13 +1222,17 @@ export const make = Effect.gen(function* () {
     let registered = false;
     if (isModifierPairShortcut(shortcut)) {
       registered = yield* Effect.tryPromise(() =>
-        startPairShortcutProcess(snapShotShortcutModifierPair(shortcut), onCurrentShortcut, () => {
-          void pipe(
-            snapShotShortcutRegistrationFailureMessage(shortcut, environment.platform),
-            setShortcutFailure,
-            runPromise,
-          ).catch(() => undefined);
-        }),
+        startMacModifierPairShortcutProcess(
+          snapShotShortcutModifierPair(shortcut),
+          onCurrentShortcut,
+          () => {
+            void pipe(
+              snapShotShortcutRegistrationFailureMessage(shortcut, environment.platform),
+              setShortcutFailure,
+              runPromise,
+            ).catch(() => undefined);
+          },
+        ),
       ).pipe(
         Effect.tap((stop) =>
           Effect.sync(() => {
@@ -1508,7 +1442,6 @@ export const make = Effect.gen(function* () {
       transition.dispose();
       closeLinuxFeedback();
       accessibilityProcessPool.close();
-      regionSnapShotPool.close();
     }),
   );
 
@@ -1613,9 +1546,7 @@ export const make = Effect.gen(function* () {
                     : state;
                 return { ...recovered, macPermissions, ...(message ? { message } : {}) };
               })
-            : Effect.succeed(
-                environment.platform === "win32" ? { ...state, windows: true } : state,
-              ),
+            : Effect.succeed(state),
       ),
       Effect.flatMap((state) =>
         Effect.gen(function* () {

@@ -573,8 +573,6 @@ describe("PreviewManager", () => {
 
   effectIt.effect.each([
     ["linux", "ctrl+alt+[", "[", "BracketLeft", false],
-    ["win32", "ctrl+alt+8", "[", "Digit8", false],
-    ["win32", "ctrl+alt+k", "K", "KeyK", false],
     ["linux", "ctrl+alt+`", "Dead", "Backquote", false],
     ["darwin", "ctrl+alt+[", "[", "BracketLeft", true],
     ["linux", "ctrl+alt+f7", "F7", "F7", true],
@@ -619,7 +617,6 @@ describe("PreviewManager", () => {
     ["darwin", true, false, true],
     ["darwin", false, true, false],
     ["linux", false, true, true],
-    ["win32", true, false, false],
   ] as const)(
     "reloads the preview only on the platform refresh chord: %s meta=%s ctrl=%s",
     ([platform, meta, control, expected]) =>
