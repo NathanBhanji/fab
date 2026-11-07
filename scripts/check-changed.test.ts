@@ -301,11 +301,7 @@ function launcherFixture() {
     NodeFS.mkdirSync(NodePath.dirname(path), { recursive: true });
     NodeFS.writeFileSync(path, content);
   };
-  for (const file of [
-    "scripts/check-changed.ts",
-    "scripts/check-changed-command.ts",
-    ".github/scripts/ci-changes.cjs",
-  ]) {
+  for (const file of ["scripts/check-changed.ts", ".github/scripts/ci-changes.cjs"]) {
     write(file, NodeFS.readFileSync(NodePath.join(import.meta.dirname, "..", file), "utf8"));
   }
   write(".gitignore", "node_modules/\nrecords/\n");
@@ -333,14 +329,11 @@ function launcherFixture() {
     process.exit(args[0] === process.env.FAIL_STEP ? 23 : 0);
   `,
   );
-  // Select the Windows launcher without changing the Effect runtime's host platform.
   write(
-    "scripts/check-changed.ts",
-    NodeFS.readFileSync(NodePath.join(import.meta.dirname, "check-changed.ts"), "utf8").replace(
-      "vitePlusCommand(args, platform)",
-      'vitePlusCommand(args, "win32")',
-    ),
+    "bin/vp",
+    `#!/bin/sh\nexec "${process.execPath}" "${root}/node_modules/vite-plus/cli.js" "$@"\n`,
   );
+  NodeFS.chmodSync(NodePath.join(root, "bin/vp"), 0o755);
   for (const name of ["effect", "@effect/platform-node", "@fab/shared"]) {
     const dest = NodePath.join(root, "node_modules", name);
     NodeFS.mkdirSync(NodePath.dirname(dest), { recursive: true });
@@ -377,7 +370,13 @@ function launcherFixture() {
       return NodeChildProcess.spawnSync(process.execPath, ["scripts/check-changed.ts", "HEAD"], {
         cwd: root,
         encoding: "utf8",
-        env: { ...env, TEMP: NodeOS.tmpdir(), RECORDS: records, FAIL_STEP: failStep },
+        env: {
+          ...env,
+          PATH: `${NodePath.join(root, "bin")}${NodePath.delimiter}${process.env.PATH ?? ""}`,
+          TEMP: NodeOS.tmpdir(),
+          RECORDS: records,
+          FAIL_STEP: failStep,
+        },
       });
     },
     calls: (): Array<{ args: Array<string>; cwd: string }> =>
@@ -390,7 +389,7 @@ function launcherFixture() {
   };
 }
 
-it("checks changed source paths through the Windows launcher", () => {
+it("checks changed source paths through vp", () => {
   using project = launcherFixture();
   project.write(project.source, "export const value = 2;\n");
   const result = project.run();

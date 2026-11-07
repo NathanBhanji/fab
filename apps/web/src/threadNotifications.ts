@@ -77,7 +77,7 @@ export function setNotificationBadge(count: number) {
       originalFavicon = undefined;
     }
   }
-  void bridge?.setNotificationBadge({ count, image }).catch(() => undefined);
+  void bridge?.setNotificationBadge({ count }).catch(() => undefined);
 }
 
 let audioContext: AudioContext | undefined;

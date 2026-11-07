@@ -1,4 +1,4 @@
-import { AndroidIcon, AppleIcon } from "../Icons";
+import { AppleIcon } from "../Icons";
 import { Button } from "../ui/button";
 import { Popover, PopoverPopup, PopoverTitle, PopoverTrigger } from "../ui/popover";
 import { QRCodeSvg } from "../ui/qr-code";
@@ -11,12 +11,6 @@ const stores = [
     store: "App Store",
     url: "https://apps.apple.com/us/app/fab-remote-claude-more/id6787819824",
     Icon: AppleIcon,
-  },
-  {
-    label: "Android",
-    store: "Google Play",
-    url: "https://play.google.com/store/apps/details?id=dev.bhanji.fab",
-    Icon: AndroidIcon,
   },
 ];
 

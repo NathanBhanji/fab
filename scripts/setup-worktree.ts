@@ -46,12 +46,11 @@ if (!projectRoot) {
   throw new Error("FAB_PROJECT_ROOT is not set. Run this through the fab.json setup action.");
 }
 
-// Use the shell for Windows vp shims. Unattended installs need pnpm's confirmation
-// flag and closed stdin so other prompts fail. A stale lockfile must fail, not be rewritten.
-// Pipe output so the failure marker can keep its tail.
-const install = NodeChildProcess.spawn("vp i --frozen-lockfile -- --yes", {
+// Unattended installs need pnpm's confirmation flag and closed stdin so other prompts
+// fail. A stale lockfile must fail, not be rewritten. Pipe output so the failure marker
+// can keep its tail.
+const install = NodeChildProcess.spawn("vp", ["i", "--frozen-lockfile", "--", "--yes"], {
   cwd: worktree,
-  shell: true,
   stdio: ["ignore", "pipe", "pipe"],
 });
 activeInstall = install;

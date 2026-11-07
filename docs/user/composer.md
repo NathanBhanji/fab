@@ -57,20 +57,20 @@ On web and desktop, choose **Settings → Chat → Follow-up behavior** to queue
 new messages for a later turn or steer the running turn immediately. The setting
 applies to this client; already queued messages keep their place. Queued messages
 are saved on the server and can be edited or removed before they send.
-When Enter sends, `Cmd+Enter` on macOS or `Ctrl+Enter` on Windows and Linux uses
+When Enter sends, `Cmd+Enter` on macOS or `Ctrl+Enter` on Linux uses
 the opposite action: it steers when your default is Queue and queues when your
 default is Steer.
 If your **Send shortcut** requires `Cmd+Enter` or `Ctrl+Enter`, that shortcut uses
 your default follow-up behavior; add **Shift** to use the opposite action. This
 applies only to multiline messages when you choose the multiline send option.
 
-Use `Cmd+Shift+Enter` on macOS or `Ctrl+Shift+Enter` on Windows and Linux to send
+Use `Cmd+Shift+Enter` on macOS or `Ctrl+Shift+Enter` on Linux to send
 the oldest queued message as a steer. This leaves the current draft intact and
 requires an active turn that supports steering. If that shortcut sends the opposite
 action for your draft, move focus outside the composer to steer the queued message. Change
 `thread.steerQueuedMessage` in **Settings → Keybindings** to use another shortcut.
 
-Press `Option+Up` on macOS or `Alt+Up` on Windows and Linux with the cursor at the
+Press `Option+Up` on macOS or `Alt+Up` on Linux with the cursor at the
 start of the composer to edit the most recently queued message. Change
 `thread.editQueuedMessage` to use another shortcut.
 
@@ -166,7 +166,7 @@ memory. The action is available only when the provider supports rewind.
 
 ## Prompt stash
 
-On web and desktop, press `Cmd+S` on macOS or `Ctrl+S` on Windows and Linux to save
+On web and desktop, press `Cmd+S` on macOS or `Ctrl+S` on Linux to save
 the current prompt and its attachments for later. Wait for uploads to finish first.
 With an empty composer, the same shortcut restores a single stash or opens the
 stash menu when there are several.
@@ -210,8 +210,8 @@ transcription or cancellation; only the message text is sent when you submit.
 On web and desktop, the composer shows **Interrupt** while the agent is working and the draft is
 empty. Adding text or attachments replaces it with a send button that shows your
 [Follow-up behavior](#send-while-the-agent-is-working): a queue icon for Queue or a steer arrow for
-Steer. Click it or press your send shortcut to use that action. Hold `Cmd` on macOS or `Ctrl` on
-Windows and Linux to switch the button to the opposite action, then click, or use the opposite-action
+Steer. Click it or press your send shortcut to use that action. Hold `Cmd` on macOS or `Ctrl` on Linux
+to switch the button to the opposite action, then click, or use the opposite-action
 shortcut described above.
 
 On web and desktop, queued messages appear at the end of the thread as dashed messages that have

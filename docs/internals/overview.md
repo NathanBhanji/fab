@@ -123,9 +123,9 @@ shortcut-registration result only confirms submission; it does not confirm deskt
 an active binding.
 
 Native modules never load in the Electron main process on the startup path, and the one the
-snapshot feature keeps is isolated: `@crowecawcaw/xa11y` runs only in forked Node-mode children
-(`SnapShotAccessibilityWorker`, `RegionSnapShotWorker`) and a worker thread. macOS window lookup
-shells out to `osascript` instead of a native addon. A crash or stall in any of these must not take the app
+snapshot feature keeps is isolated: `@crowecawcaw/xa11y` runs only in a forked Node-mode child
+(`SnapShotAccessibilityWorker`) and a worker thread. macOS window lookup shells out to
+`osascript` instead of a native addon. A crash or stall in any of these must not take the app
 down, so new native capability goes in a child with a deadline, not an `import` in main.
 
 See the [glossary](./glossary.md) for shared terms and the

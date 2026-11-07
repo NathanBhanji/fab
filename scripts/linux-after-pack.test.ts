@@ -1,5 +1,4 @@
 // @effect-diagnostics nodeBuiltinImport:off - Applies real file modes in a temporary app folder.
-import * as HostProcess from "@fab/shared/HostProcess";
 import * as NodeFSP from "node:fs/promises";
 import * as NodeOS from "node:os";
 import * as NodePath from "node:path";
@@ -7,7 +6,7 @@ import { describe, expect, it } from "vite-plus/test";
 
 import { removeSharedWriteAccess } from "./linux-after-pack.ts";
 
-describe.skipIf(HostProcess.Platform.defaultValue() === "win32")("removeSharedWriteAccess", () => {
+describe("removeSharedWriteAccess", () => {
   it("removes group and other write access from the packed app only", async () => {
     const root = await NodeFSP.mkdtemp(NodePath.join(NodeOS.tmpdir(), "fab-after-pack-"));
     try {

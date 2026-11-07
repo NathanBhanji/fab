@@ -3,9 +3,6 @@ export const GITHUB_REPOSITORY_URL = "https://github.com/nathanbhanji/fab";
 export const IOS_APP_STORE_URL =
   "https://apps.apple.com/us/app/fab-remote-claude-more/id6787819824";
 
-export const ANDROID_PLAY_STORE_URL =
-  "https://play.google.com/store/apps/details?id=dev.bhanji.fab";
-
 // Runs at build time, so each deploy picks up the current count.
 async function fetchGithubStars(): Promise<string> {
   const token = process.env.GITHUB_TOKEN;
