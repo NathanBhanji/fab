@@ -3,7 +3,6 @@ import {
   applyShellEnvironment,
   buildEnvironmentCaptureCommand,
   listLoginShellCandidates,
-  setWindowsPath,
 } from "@fab/shared/shell";
 import * as Context from "effect/Context";
 import * as Duration from "effect/Duration";
@@ -31,16 +30,7 @@ interface ShellEnvironmentConfig {
   readonly platform: NodeJS.Platform;
 }
 
-interface WindowsProbeOptions {
-  readonly loadProfile: boolean;
-}
-
-const DesktopShellEnvironmentProbe = Schema.Literals([
-  "login-shell",
-  "launchctl-path",
-  "powershell-profile",
-  "powershell-no-profile",
-]);
+const DesktopShellEnvironmentProbe = Schema.Literals(["login-shell", "launchctl-path"]);
 type DesktopShellEnvironmentProbe = typeof DesktopShellEnvironmentProbe.Type;
 
 const desktopShellEnvironmentCommandFields = {
@@ -109,10 +99,8 @@ const LOGIN_SHELL_ENV_NAMES = [
   "__MISE_DIFF",
   "JAVA_HOME",
 ] as const;
-const WINDOWS_PROFILE_ENV_NAMES = ["PATH", "FNM_DIR", "FNM_MULTISHELL_PATH"] as const;
 const LOCALE_ENV_NAMES = ["LANG", "LC_ALL", "LC_CTYPE"] as const;
 const FALLBACK_LC_CTYPE = "en_US.UTF-8";
-const WINDOWS_SHELL_CANDIDATES = ["pwsh.exe", "powershell.exe"] as const;
 const LOGIN_SHELL_TIMEOUT = Duration.seconds(5);
 const LAUNCHCTL_TIMEOUT = Duration.seconds(2);
 const PROCESS_TERMINATE_GRACE = Duration.seconds(1);
@@ -122,8 +110,6 @@ const trimNonEmpty = (value: string | null | undefined): Option.Option<string> =
     Option.map((entry) => entry.trim()),
     Option.filter((entry) => entry.length > 0),
   );
-
-const pathDelimiter = (platform: NodeJS.Platform) => (platform === "win32" ? ";" : ":");
 
 const readEnvPath = (env: NodeJS.ProcessEnv): Option.Option<string> =>
   trimNonEmpty(env.PATH ?? env.Path ?? env.path);
@@ -145,19 +131,10 @@ const linuxRuntimeDirCandidates = (
   return candidates.filter((candidate) => candidate.length > 0);
 };
 
-const pathComparisonKey = (entry: string, platform: NodeJS.Platform) => {
-  const normalized = entry.trim().replace(/^"+|"+$/g, "");
-  return platform === "win32" ? normalized.toLowerCase() : normalized;
-};
+const pathComparisonKey = (entry: string) => entry.trim().replace(/^"+|"+$/g, "");
 
-const sanitizePathEntry = (entry: string, platform: NodeJS.Platform) =>
-  platform === "win32" ? entry.replaceAll('"', "") : entry;
-
-const mergePaths = (
-  platform: NodeJS.Platform,
-  values: ReadonlyArray<Option.Option<string>>,
-): Option.Option<string> => {
-  const delimiter = pathDelimiter(platform);
+const mergePaths = (values: ReadonlyArray<Option.Option<string>>): Option.Option<string> => {
+  const delimiter = ":";
   const entries: string[] = [];
   const seen = new Set<string>();
 
@@ -165,10 +142,10 @@ const mergePaths = (
     if (Option.isNone(value)) continue;
 
     for (const entry of value.value.split(delimiter)) {
-      const sanitized = sanitizePathEntry(entry.trim(), platform);
+      const sanitized = entry.trim();
       if (sanitized.length === 0) continue;
 
-      const key = pathComparisonKey(sanitized, platform);
+      const key = pathComparisonKey(sanitized);
       if (key.length === 0 || seen.has(key)) continue;
 
       seen.add(key);
@@ -178,27 +155,6 @@ const mergePaths = (
 
   return entries.length > 0 ? Option.some(entries.join(delimiter)) : Option.none();
 };
-
-const knownWindowsCliDirs = (env: NodeJS.ProcessEnv): ReadonlyArray<string> => [
-  ...trimNonEmpty(env.APPDATA).pipe(
-    Option.match({
-      onNone: () => [],
-      onSome: (value) => [`${value}\\npm`],
-    }),
-  ),
-  ...trimNonEmpty(env.LOCALAPPDATA).pipe(
-    Option.match({
-      onNone: () => [],
-      onSome: (value) => [`${value}\\Programs\\nodejs`, `${value}\\Volta\\bin`, `${value}\\pnpm`],
-    }),
-  ),
-  ...trimNonEmpty(env.USERPROFILE).pipe(
-    Option.match({
-      onNone: () => [],
-      onSome: (value) => [`${value}\\.local\\bin`, `${value}\\.bun\\bin`, `${value}\\scoop\\shims`],
-    }),
-  ),
-];
 
 const startMarker = (name: string) => `__FAB_ENV_${name}_START__`;
 const endMarker = (name: string) => `__FAB_ENV_${name}_END__`;
@@ -214,19 +170,6 @@ const logShellEnvironmentCommandError = (
       error,
     }),
   );
-
-const captureWindowsEnvironmentCommand = (names: ReadonlyArray<string>) =>
-  [
-    "$ErrorActionPreference = 'Stop'",
-    ...names.flatMap((name) => {
-      return [
-        `Write-Output '${startMarker(name)}'`,
-        `$value = [Environment]::GetEnvironmentVariable('${name}')`,
-        "if ($null -ne $value -and $value.Length -gt 0) { Write-Output $value }",
-        `Write-Output '${endMarker(name)}'`,
-      ];
-    }),
-  ].join("; ");
 
 const extractEnvironment = (output: string, names: ReadonlyArray<string>): EnvironmentPatch => {
   const environment: EnvironmentPatch = {};
@@ -348,71 +291,6 @@ const readLaunchctlPath = (env: NodeJS.ProcessEnv) =>
     timeout: LAUNCHCTL_TIMEOUT,
   }).pipe(Effect.map(trimNonEmpty));
 
-const readWindowsEnvironment = Effect.fn("desktop.shellEnvironment.readWindowsEnvironment")(
-  function* (
-    names: ReadonlyArray<string>,
-    options: WindowsProbeOptions,
-    env: NodeJS.ProcessEnv,
-  ): Effect.fn.Return<EnvironmentPatch, never, ChildProcessSpawner.ChildProcessSpawner> {
-    if (names.length === 0) return {};
-
-    const args = [
-      "-NoLogo",
-      ...(options.loadProfile ? ([] as const) : (["-NoProfile"] as const)),
-      "-NonInteractive",
-      "-Command",
-      captureWindowsEnvironmentCommand(names),
-    ];
-
-    for (const command of WINDOWS_SHELL_CANDIDATES) {
-      const output = yield* runCommandOutput({
-        probe: options.loadProfile ? "powershell-profile" : "powershell-no-profile",
-        command,
-        args,
-        env,
-        timeout: LOGIN_SHELL_TIMEOUT,
-      });
-      const environment = extractEnvironment(output, names);
-      if (Object.keys(environment).length > 0) {
-        return environment;
-      }
-    }
-
-    return {};
-  },
-);
-
-const installWindowsEnvironment = Effect.fn("desktop.shellEnvironment.installWindowsEnvironment")(
-  function* (
-    config: ShellEnvironmentConfig,
-  ): Effect.fn.Return<boolean, never, ChildProcessSpawner.ChildProcessSpawner> {
-    const [noProfile, profile] = yield* Effect.all(
-      [
-        readWindowsEnvironment(["PATH"], { loadProfile: false }, config.env),
-        readWindowsEnvironment(WINDOWS_PROFILE_ENV_NAMES, { loadProfile: true }, config.env),
-      ],
-      { concurrency: 2 },
-    );
-    const mergedPath = mergePaths("win32", [
-      trimNonEmpty(profile.PATH),
-      trimNonEmpty(knownWindowsCliDirs(config.env).join(";")),
-      trimNonEmpty(noProfile.PATH),
-      readEnvPath(config.env),
-    ]);
-
-    if (Option.isSome(mergedPath)) {
-      setWindowsPath(config.env, mergedPath.value);
-    }
-    if (!config.env.FNM_DIR && profile.FNM_DIR) {
-      config.env.FNM_DIR = profile.FNM_DIR;
-    }
-    if (!config.env.FNM_MULTISHELL_PATH && profile.FNM_MULTISHELL_PATH) {
-      config.env.FNM_MULTISHELL_PATH = profile.FNM_MULTISHELL_PATH;
-    }
-    return Boolean(noProfile.PATH && profile.PATH);
-  },
-);
-
 const installPosixEnvironment = Effect.fn("desktop.shellEnvironment.installPosixEnvironment")(
   function* (
     config: ShellEnvironmentConfig,
@@ -436,7 +314,7 @@ const installPosixEnvironment = Effect.fn("desktop.shellEnvironment.installPosix
       config.platform === "darwin" && !shellEnvironment.PATH
         ? yield* readLaunchctlPath(config.env)
         : Option.none<string>();
-    const mergedPath = mergePaths(config.platform, [
+    const mergedPath = mergePaths([
       trimNonEmpty(shellEnvironment.PATH).pipe(Option.orElse(() => launchctlPath)),
       readEnvPath(config.env),
     ]);
@@ -529,9 +407,6 @@ const installShellEnvironment = (
   never,
   ChildProcessSpawner.ChildProcessSpawner | FileSystem.FileSystem
 > => {
-  if (config.platform === "win32") {
-    return installWindowsEnvironment(config);
-  }
   if (config.platform === "darwin" || config.platform === "linux") {
     return installPosixEnvironment(config);
   }
@@ -642,7 +517,7 @@ export const make = Effect.gen(function* () {
         const cachedPath = cached.PATH;
         if (cachedPath) {
           cached.PATH = Option.getOrElse(
-            mergePaths(environment.platform, [Option.some(cachedPath), readEnvPath(inherited)]),
+            mergePaths([Option.some(cachedPath), readEnvPath(inherited)]),
             () => cachedPath,
           );
         }

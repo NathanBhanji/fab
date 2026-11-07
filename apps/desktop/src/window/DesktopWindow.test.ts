@@ -166,7 +166,6 @@ const layerElectronApp = Layer.mock(ElectronApp.ElectronApp)({
 
 const layerDesktopAssets = Layer.succeed(DesktopAssets.DesktopAssets, {
   iconPaths: Effect.succeed({
-    ico: Option.none<string>(),
     icns: Option.none<string>(),
     png: Option.none<string>(),
   }),
@@ -278,7 +277,6 @@ function layerTest(input: {
         : Effect.succeedSome(input.focusedWindow),
     setMain: (window) => Ref.set(input.mainWindow, Option.some(window)),
     clearMain: () => Ref.set(input.mainWindow, Option.none()),
-    prepareReveal: () => Effect.succeed(false),
     reveal: (window) => Effect.sync(() => input.onReveal?.(window)),
     sendAll: () => Effect.void,
     destroyAll: input.destroyAll ?? Effect.void,

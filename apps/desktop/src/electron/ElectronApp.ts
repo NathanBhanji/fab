@@ -59,7 +59,6 @@ export class ElectronApp extends Context.Service<
     readonly setAboutPanelOptions: (
       options: Electron.AboutPanelOptionsOptions,
     ) => Effect.Effect<void>;
-    readonly setAppUserModelId: (id: string) => Effect.Effect<void>;
     readonly getAppMetrics: Effect.Effect<ReadonlyArray<Electron.ProcessMetric>>;
     readonly setAsDefaultProtocolClient: (
       protocol: string,
@@ -189,11 +188,6 @@ export const make = ElectronApp.of({
   setAboutPanelOptions: Effect.fn("ElectronApp.setAboutPanelOptions")(function (options) {
     return Effect.sync(() => {
       Electron.app.setAboutPanelOptions(options);
-    });
-  }),
-  setAppUserModelId: Effect.fn("ElectronApp.setAppUserModelId")(function (id) {
-    return Effect.sync(() => {
-      Electron.app.setAppUserModelId(id);
     });
   }),
   getAppMetrics: Effect.sync(() => Electron.app.getAppMetrics()),

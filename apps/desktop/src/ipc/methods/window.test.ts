@@ -289,33 +289,31 @@ describe("pickProjectFavicon", () => {
   );
 });
 
-it.effect.skipIf(HostProcess.Platform.defaultValue() === "win32")(
-  "finds remote editors installed without PATH launchers",
-  () =>
-    Effect.gen(function* () {
-      const fs = yield* FileSystem.FileSystem;
-      const path = yield* Path.Path;
-      const home = yield* fs.makeTempDirectoryScoped({ prefix: "fab-remote-editors-" });
-      for (const app of ["Cursor", "Visual Studio Code", "WebStorm"]) {
-        const executable = path.join(
-          home,
-          "Applications",
-          `${app}.app`,
-          app === "WebStorm" ? "Contents/MacOS/webstorm" : "Contents/Resources/app/bin/code",
-        );
-        yield* fs.makeDirectory(path.dirname(executable), { recursive: true });
-        yield* fs.writeFileString(executable, "#!/bin/sh\n");
-        yield* fs.chmod(executable, 0o755);
-      }
-      const editors = yield* probeRemoteEditors.handler(undefined).pipe(
-        Effect.provideService(HostProcess.Environment, {
-          HOME: home,
-          PATH: path.join(home, "empty"),
-        }),
-        Effect.provideService(HostProcess.Platform, "darwin"),
+it.effect("finds remote editors installed without PATH launchers", () =>
+  Effect.gen(function* () {
+    const fs = yield* FileSystem.FileSystem;
+    const path = yield* Path.Path;
+    const home = yield* fs.makeTempDirectoryScoped({ prefix: "fab-remote-editors-" });
+    for (const app of ["Cursor", "Visual Studio Code", "WebStorm"]) {
+      const executable = path.join(
+        home,
+        "Applications",
+        `${app}.app`,
+        app === "WebStorm" ? "Contents/MacOS/webstorm" : "Contents/Resources/app/bin/code",
       );
-      assert.include(editors, "cursor");
-      assert.include(editors, "vscode");
-      assert.include(editors, "webstorm");
-    }).pipe(Effect.scoped, Effect.provide(NodeServices.layer)),
+      yield* fs.makeDirectory(path.dirname(executable), { recursive: true });
+      yield* fs.writeFileString(executable, "#!/bin/sh\n");
+      yield* fs.chmod(executable, 0o755);
+    }
+    const editors = yield* probeRemoteEditors.handler(undefined).pipe(
+      Effect.provideService(HostProcess.Environment, {
+        HOME: home,
+        PATH: path.join(home, "empty"),
+      }),
+      Effect.provideService(HostProcess.Platform, "darwin"),
+    );
+    assert.include(editors, "cursor");
+    assert.include(editors, "vscode");
+    assert.include(editors, "webstorm");
+  }).pipe(Effect.scoped, Effect.provide(NodeServices.layer)),
 );

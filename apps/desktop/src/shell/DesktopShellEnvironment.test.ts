@@ -3,7 +3,6 @@ import * as NodeServices from "@effect/platform-node/NodeServices";
 import { assert, describe, it } from "@effect/vitest";
 import * as HostProcess from "@fab/shared/HostProcess";
 import * as Effect from "effect/Effect";
-import * as Fiber from "effect/Fiber";
 import * as Deferred from "effect/Deferred";
 import * as FileSystem from "effect/FileSystem";
 import * as Layer from "effect/Layer";
@@ -15,7 +14,6 @@ import * as Schema from "effect/Schema";
 import * as Option from "effect/Option";
 import * as ChildProcess from "effect/process/ChildProcess";
 import * as ChildProcessSpawner from "effect/process/ChildProcessSpawner";
-import * as TestClock from "effect/testing/TestClock";
 import * as NodeOS from "node:os";
 import { vi } from "vite-plus/test";
 
@@ -51,22 +49,6 @@ function makeProcess(output: string, exitCode = 0): ChildProcessSpawner.ChildPro
     exitCode: Effect.succeed(ChildProcessSpawner.ExitCode(exitCode)),
     isRunning: Effect.succeed(false),
     kill: () => Effect.void,
-    stdin: Sink.drain,
-    getInputFd: () => Sink.drain,
-    getOutputFd: () => Stream.empty,
-    unref: Effect.succeed(Effect.void),
-  });
-}
-
-function makeHungProcess(): ChildProcessSpawner.ChildProcessHandle {
-  return ChildProcessSpawner.makeHandle({
-    pid: ChildProcessSpawner.ProcessId(124),
-    stdout: Stream.never,
-    stderr: Stream.never,
-    all: Stream.never,
-    exitCode: Effect.never,
-    isRunning: Effect.succeed(true),
-    kill: () => Effect.never,
     stdin: Sink.drain,
     getInputFd: () => Sink.drain,
     getOutputFd: () => Stream.empty,
@@ -610,110 +592,6 @@ describe("DesktopShellEnvironment", () => {
       });
 
       assert.isFalse(prepared);
-    }),
-  );
-
-  it.effect("loads PowerShell profile environment on Windows", () =>
-    Effect.gen(function* () {
-      const env: NodeJS.ProcessEnv = {
-        PATH: "C:\\Windows\\System32",
-        APPDATA: "C:\\Users\\testuser\\AppData\\Roaming",
-        LOCALAPPDATA: "C:\\Users\\testuser\\AppData\\Local",
-        USERPROFILE: "C:\\Users\\testuser",
-      };
-
-      const prepared = yield* runShellEnvironment({
-        env,
-        platform: "win32",
-        handler: (command) => {
-          if (command._tag !== "StandardCommand") return "";
-          const loadProfile = !command.args.includes("-NoProfile");
-          return loadProfile
-            ? envOutput({
-                PATH: "C:\\Profile\\Node;C:\\Windows\\System32",
-                FNM_DIR: "C:\\Users\\testuser\\AppData\\Roaming\\fnm",
-                FNM_MULTISHELL_PATH: "C:\\Users\\testuser\\AppData\\Local\\fnm_multishells\\123",
-              })
-            : envOutput({ PATH: 'C:\\Custom\\Bin;C:";C:\\Windows\\System32' });
-        },
-      });
-
-      assert.isTrue(prepared);
-      assert.equal(
-        env.PATH,
-        [
-          "C:\\Profile\\Node",
-          "C:\\Windows\\System32",
-          "C:\\Users\\testuser\\AppData\\Roaming\\npm",
-          "C:\\Users\\testuser\\AppData\\Local\\Programs\\nodejs",
-          "C:\\Users\\testuser\\AppData\\Local\\Volta\\bin",
-          "C:\\Users\\testuser\\AppData\\Local\\pnpm",
-          "C:\\Users\\testuser\\.local\\bin",
-          "C:\\Users\\testuser\\.bun\\bin",
-          "C:\\Users\\testuser\\scoop\\shims",
-          "C:\\Custom\\Bin",
-          "C:",
-        ].join(";"),
-      );
-      assert.equal(env.FNM_DIR, "C:\\Users\\testuser\\AppData\\Roaming\\fnm");
-      assert.equal(
-        env.FNM_MULTISHELL_PATH,
-        "C:\\Users\\testuser\\AppData\\Local\\fnm_multishells\\123",
-      );
-    }),
-  );
-
-  it.effect.each([false, true])(
-    "leaves Windows preparation incomplete when loadProfile=%s fails",
-    (loadProfile) =>
-      Effect.gen(function* () {
-        const env: NodeJS.ProcessEnv = { PATH: "C:\\Windows\\System32" };
-        let calls = 0;
-        const prepared = yield* runShellEnvironment({
-          env,
-          platform: "win32",
-          handler: (command) => {
-            calls++;
-            if (command._tag !== "StandardCommand") return "";
-            return !command.args.includes("-NoProfile") === loadProfile
-              ? { output: "", exitCode: 1 }
-              : envOutput({ PATH: "C:\\Working" });
-          },
-        }).pipe(Effect.provide(Logger.layer([])));
-        assert.isFalse(prepared);
-        assert.equal(calls, 3);
-        assert.include(env.PATH, "C:\\Working");
-        assert.include(env.PATH, "C:\\Windows\\System32");
-      }),
-  );
-
-  it.effect("gives up on a Windows shell that survives the kill", () =>
-    Effect.gen(function* () {
-      const commands: Array<string> = [];
-      // Both PowerShell probes spawn pwsh, time out, then spawn powershell. Each probe's timeout
-      // is armed before its spawn runs, so waiting for the spawns keeps the clock in step.
-      const spawned = yield* Effect.forEach([0, 1, 2, 3], () => Deferred.make<void>());
-      const fiber = yield* runShellEnvironment({
-        env: { PATH: "C:\\Windows", APPDATA: "C:\\Roaming" },
-        platform: "win32",
-        handler: () => "",
-        processSpawner: ChildProcessSpawner.make((command) => {
-          const spawn = spawned[commands.length];
-          commands.push(command._tag === "StandardCommand" ? command.command : "");
-          return (spawn ? Deferred.succeed(spawn, undefined) : Effect.void).pipe(
-            Effect.andThen(
-              Effect.acquireRelease(Effect.succeed(makeHungProcess()), () => Effect.never),
-            ),
-          );
-        }),
-      }).pipe(Effect.forkChild({ startImmediately: true }));
-
-      yield* Effect.forEach(spawned.slice(0, 2), Deferred.await);
-      yield* TestClock.adjust("5 seconds");
-      yield* Effect.forEach(spawned.slice(2), Deferred.await);
-      yield* TestClock.adjust("5 seconds");
-      yield* Fiber.join(fiber);
-      assert.deepEqual([...new Set(commands)], ["pwsh.exe", "powershell.exe"]);
     }),
   );
 

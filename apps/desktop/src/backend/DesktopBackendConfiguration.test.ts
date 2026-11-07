@@ -167,42 +167,6 @@ describe("DesktopBackendConfiguration", () => {
     ),
   );
 
-  it.effect("resolvePrimary starts from server.asar", () =>
-    Effect.gen(function* () {
-      const fileSystem = yield* FileSystem.FileSystem;
-      const path = yield* Path.Path;
-      const baseDir = yield* fileSystem.makeTempDirectoryScoped({
-        prefix: "fab-desktop-backend-config-test-",
-      });
-      const resourcesPath = path.join(baseDir, "resources");
-
-      const config = yield* Effect.gen(function* () {
-        const configuration = yield* DesktopBackendConfiguration.DesktopBackendConfiguration;
-        return yield* configuration.resolvePrimary;
-      }).pipe(
-        Effect.provide(
-          layerBackendConfiguration().pipe(
-            Layer.provideMerge(layerServerExposure),
-            Layer.provideMerge(DesktopAppSettings.layerTest()),
-            Layer.provideMerge(
-              layerEnvironment(baseDir, {
-                appPath: `${resourcesPath}/app.asar`,
-                platform: "win32",
-                resourcesPath,
-              }),
-            ),
-          ),
-        ),
-      );
-
-      assert.equal(
-        config.entryPath,
-        path.join(resourcesPath, "server.asar/apps/server/dist/bin.mjs"),
-      );
-      assert.equal(config.env.ELECTRON_RUN_AS_NODE, "1");
-    }).pipe(Effect.scoped, Effect.provide(Layer.mergeAll(NodeServices.layer, NodeCrypto.layer))),
-  );
-
   it.effect("prefers the external packaged resource monitor over the copy inside the asar", () =>
     Effect.gen(function* () {
       const fileSystem = yield* FileSystem.FileSystem;
