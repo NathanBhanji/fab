@@ -6,7 +6,7 @@ import {
 } from "./PullRequestMedia";
 import { PullRequestSectionHeading } from "./PullRequestSectionHeading";
 import { useContext, useMemo, useState, type ReactNode } from "react";
-import { Platform, Pressable, ScrollView, StyleSheet, View } from "react-native";
+import { Pressable, ScrollView, StyleSheet, View } from "react-native";
 import Svg, { Defs, LinearGradient, Rect, Stop } from "react-native-svg";
 import { pullRequestImageSource } from "./pullRequestMediaSource";
 import { parseMarkdownDocument } from "../../lib/markdownDocument";
@@ -31,7 +31,7 @@ export function PullRequestDescription(props: {
   const [bodyHeight, setBodyHeight] = useState(0);
   const mediaContext = useContext(PullRequestMediaContext);
   const { themeVariables: colors } = useAppearancePreferences();
-  const fadeColor = colors[Platform.OS === "android" ? "--color-sheet-solid" : "--color-screen"];
+  const fadeColor = colors["--color-screen"];
   const content = useMemo(() => {
     const document = parseMarkdownDocument(props.markdown);
     const content = pullRequestDescriptionContent(document, splitPullRequestBody(props.markdown));

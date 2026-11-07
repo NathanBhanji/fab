@@ -3,7 +3,6 @@ import { AudioModule, RecordingPresets, type RecordingStatus } from "expo-audio"
 import { File } from "expo-file-system";
 import { activateKeepAwakeAsync, deactivateKeepAwake } from "expo-keep-awake";
 import { useSyncExternalStore } from "react";
-import { Platform } from "react-native";
 import { Atom, AsyncResult } from "effect/reactivity";
 import { makeMutable } from "react-native-reanimated";
 
@@ -29,15 +28,13 @@ import {
 } from "../../lib/audioSession";
 
 // The native constructor expects platform-flattened options, as built by useAudioRecorder.
-const { ios: IOS_RECORDING_OPTIONS, android: ANDROID_RECORDING_OPTIONS } =
-  RecordingPresets.HIGH_QUALITY;
 const VOICE_RECORDING_OPTIONS = {
   extension: RecordingPresets.HIGH_QUALITY.extension,
   sampleRate: RecordingPresets.HIGH_QUALITY.sampleRate,
   numberOfChannels: RecordingPresets.HIGH_QUALITY.numberOfChannels,
   bitRate: RecordingPresets.HIGH_QUALITY.bitRate,
   isMeteringEnabled: true,
-  ...(Platform.OS === "ios" ? IOS_RECORDING_OPTIONS : ANDROID_RECORDING_OPTIONS),
+  ...RecordingPresets.HIGH_QUALITY.ios,
 };
 
 function keepScreenAwake(tag: string): () => void {
@@ -48,7 +45,7 @@ function keepScreenAwake(tag: string): () => void {
 }
 
 export const deviceMicrophoneOrder = (saved?: ReadonlyArray<MicrophoneEntry>) =>
-  microphoneOrder(saved, Platform.OS === "android" ? "android" : "ios");
+  microphoneOrder(saved);
 
 /** "checking" until the first availability probe settles; re-probed on foreground. */
 export const localVoiceTranscriberAtom = makePermissionStatusAtom<

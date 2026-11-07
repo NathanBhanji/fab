@@ -1,7 +1,7 @@
 import type { NavigationState } from "@react-navigation/native";
 import type { EnvironmentId, ThreadId } from "@fab/contracts";
 import * as Linking from "expo-linking";
-import { AppState, Dimensions, Platform } from "react-native";
+import { AppState, Dimensions } from "react-native";
 
 import { environmentCatalog } from "../../connection/catalog";
 import { deriveLayout } from "../../lib/layout";
@@ -29,9 +29,6 @@ import {
   workspaceSelectionsIn,
   type WorkspaceSelectionCheck,
 } from "./workspace-tab-navigation";
-
-// Only iOS columns reopen a remembered page; Android always opens a tab on its list.
-const REMEMBERS = Platform.OS === "ios";
 
 // Read synchronously when a tab opens, so it lives in memory and is saved when the app leaves
 // the foreground rather than on every chat switch.
@@ -65,7 +62,6 @@ function withoutRouteKeys(saved: WorkspaceSelections | undefined): WorkspaceSele
 
 /** Loads the saved selections once; pages visited before it resolves win over saved ones. */
 export function hydrateWorkspaceSelections() {
-  if (!REMEMBERS) return Promise.resolve();
   hydration ??= loadPreferences()
     .then((preferences) => {
       selections = { ...withoutRouteKeys(preferences.workspaceSelections), ...selections };
@@ -87,7 +83,7 @@ export function currentWorkspaceSelections() {
  * showing. The initial state, such as a cold start's reopened chat, reaches only `onReady`.
  */
 export function recordWorkspaceSelections(state: NavigationState | undefined) {
-  if (!REMEMBERS || !state) return;
+  if (!state) return;
   selections = workspaceSelectionsIn(state.routes.slice(0, state.index + 1), selections);
 }
 
@@ -131,7 +127,7 @@ export function workspaceHasColumns() {
 
 /** The Settings page a bare `settings` link opens beside the list when there are columns. */
 export function settingsLinkPage() {
-  return REMEMBERS && workspaceHasColumns() ? rememberedSettingsPage(selections) : undefined;
+  return workspaceHasColumns() ? rememberedSettingsPage(selections) : undefined;
 }
 
 /**
@@ -140,7 +136,6 @@ export function settingsLinkPage() {
  * It waits for the first layout metrics as long as the workspace itself does.
  */
 export async function launchWorkspaceURL(): Promise<string | null> {
-  if (!REMEMBERS) return null;
   const metrics = firstNativeLayoutMetrics(NATIVE_METRICS_TIMEOUT_MS);
   await hydrateWorkspaceSelections();
   const thread = selections.threads;

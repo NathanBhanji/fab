@@ -88,7 +88,6 @@ import {
   useSyncExternalStore,
 } from "react";
 import {
-  AppState,
   Keyboard,
   Platform,
   useWindowDimensions,
@@ -132,11 +131,7 @@ import type { ComposerEditorHandle } from "../../components/ComposerEditor";
 import type { StatusTone } from "../../components/StatusPill";
 import { getComposerDraftSnapshot } from "../../state/use-composer-drafts";
 import { RenderErrorBoundary, RenderFailureView } from "../../components/RenderErrorBoundary";
-import {
-  ANDROID_READING_MAX_WIDTH,
-  CHAT_CONTENT_MAX_WIDTH,
-  type LayoutVariant,
-} from "../../lib/layout";
+import { CHAT_CONTENT_MAX_WIDTH, type LayoutVariant } from "../../lib/layout";
 import { editPendingThreadMessage } from "../../state/edit-pending-thread-message";
 import { deviceEnvironment } from "../../state/device";
 import { useEnvironmentQuery } from "../../state/query";
@@ -314,8 +309,6 @@ export interface ThreadDetailScreenProps {
   readonly showContent?: boolean;
 }
 
-// iOS questions overlay the controls; Android questions stack with child approvals.
-const ComposerPanels = Platform.OS === "android" ? Animated.ScrollView : Animated.View;
 const USAGE_LIMITS_PANEL_GAP = 12;
 const USAGE_LIMITS_PANEL_MIN_HEIGHT = 44;
 
@@ -435,36 +428,9 @@ function ThreadDetailBody(
   const insets = useSafeAreaInsets();
   const isKeyboardVisible = useKeyboardState((state) => state.isVisible);
   const liveKeyboardHeight = useKeyboardState((state) => state.height);
-  // Android can lose IME hide callbacks on backgrounding. Quarantine translation on resume unless focused input retained its keyboard.
-  const [keyboardStateSuspect, setKeyboardStateSuspect] = useState(false);
-  const ownedInputFocusedRef = useRef(false);
-  // oxlint-disable-next-line fab/no-unreasoned-state-sync -- subscribes to AppState on Android to mark keyboard state suspect when the app resumes
-  useEffect(() => {
-    if (Platform.OS !== "android") {
-      return;
-    }
-    const subscription = AppState.addEventListener("change", (state) => {
-      if (state === "active") {
-        setKeyboardStateSuspect(!ownedInputFocusedRef.current);
-      }
-    });
-    return () => {
-      subscription.remove();
-    };
-  }, []);
-  // oxlint-disable-next-line fab/no-unreasoned-state-sync -- clears the suspect flag whenever the native keyboard reports a visibility or height change
-  useEffect(() => {
-    // oxlint-disable-next-line react/set-state-in-effect -- Any native keyboard report clears the suspect flag set when the app resumed.
-    setKeyboardStateSuspect(false);
-    // oxlint-disable-next-line react/exhaustive-effect-dependencies -- Any keyboard visibility or height report clears the suspect flag set when the app resumed.
-  }, [isKeyboardVisible, liveKeyboardHeight]);
   const handleOwnedInputFocusChange = (focused: boolean) => {
-    ownedInputFocusedRef.current = focused;
-    if (focused) {
-      if (deviceType === "duo-folded" || deviceType === "duo-unfolded")
-        setComposerOwnsKeyboard(true);
-      setKeyboardStateSuspect(false);
-    }
+    if (focused && (deviceType === "duo-folded" || deviceType === "duo-unfolded"))
+      setComposerOwnsKeyboard(true);
   };
   const windowHeight = useWindowDimensions().height;
   const navigationHeaderHeight = useContext(HeaderHeightContext) ?? insets.top + 44;
@@ -912,7 +878,6 @@ function ThreadDetailBody(
     readonly collapsed: boolean;
   } | null>(null);
   const activeUserInputRequestId = props.activePendingUserInput?.requestId ?? null;
-  const questionInFlow = Platform.OS === "android" && activeUserInputRequestId !== null;
   const composerSlotHidden =
     activeUserInputRequestId !== null || props.creationState?.kind === "failed";
   const pendingMessageEditBlocked =
@@ -971,9 +936,7 @@ function ThreadDetailBody(
     lastKnownKeyboardHeight > 0 ? lastKnownKeyboardHeight : ESTIMATED_KEYBOARD_HEIGHT;
   // Waiting for a visibility render misses the first keyboard frames.
   const keyboardStickyEnabled =
-    Platform.OS === "ios"
-      ? deviceType !== "duo-unfolded" || (composerOwnsKeyboard && !sidebarSearchActive)
-      : !keyboardStateSuspect;
+    deviceType !== "duo-unfolded" || (composerOwnsKeyboard && !sidebarSearchActive);
   const estimatedOverlayHeight = composerOverlapHeight;
   // UIKit adds safe-area bottom to overlay insets; subtract here and include it in ThreadFeed scroll math.
   const nativeInsetOvercount =
@@ -987,8 +950,6 @@ function ThreadDetailBody(
     // Easing these samples again makes the feed trail behind it.
     0,
   );
-  // Android lays the screen out below its opaque header and reports a zero
-  // header height, so the window height overstates the room by the header.
   const [screenHeight, setScreenHeight] = useState<number | null>(null);
   const handleScreenLayout = (event: LayoutChangeEvent) => {
     setScreenHeight(event.nativeEvent.layout.height);
@@ -1006,17 +967,13 @@ function ThreadDetailBody(
       composerOverlapHeight: composerBottomInset,
     }),
   );
-  const composerPanelsHeightStyle = useAnimatedStyle(() => ({
-    maxHeight: pendingUserInputMaxHeight.value,
-    flexGrow: 0,
-  }));
   // The usage panel stacks with the composer and any approval card, so it gets
   // whatever room they leave below the header. Measured only while it is open
   // so typing in the composer does not re-render the screen.
   const usageLimitsOpen = usageLimitsReport !== null && activeUserInputRequestId === null;
   const [usageLimitsLayout, setUsageLimitsLayout] = useState({ overlay: 0, panel: 0 });
   const handleComposerOverlayLayout = (event: LayoutChangeEvent) => {
-    if (!questionInFlow) onComposerLayout(event);
+    onComposerLayout(event);
     if (!usageLimitsOpen) return;
     const overlay = event.nativeEvent.layout.height;
     setUsageLimitsLayout((current) =>
@@ -1104,23 +1061,18 @@ function ThreadDetailBody(
     [floatingCoverageTarget],
   );
   const userInputCoverageApplies = Platform.OS === "ios" && activeUserInputRequestId !== null;
-  const questionStatusSpace = useAnimatedStyle(() => ({ height: floatingControlCoverage.value }));
   const combinedContentInsetEndAdjustment = useSharedValue(
     Math.max(0, estimatedOverlayHeight - nativeInsetOvercount),
   );
   useAnimatedReaction(
     () =>
-      questionInFlow
-        ? 0
-        : contentInsetEndAdjustment.value +
-          floatingControlCoverage.value +
-          (userInputCoverageApplies
-            ? userInputInsetProgress.value * userInputCardCoverage.value
-            : 0),
+      contentInsetEndAdjustment.value +
+      floatingControlCoverage.value +
+      (userInputCoverageApplies ? userInputInsetProgress.value * userInputCardCoverage.value : 0),
     (value) => {
       combinedContentInsetEndAdjustment.set(value);
     },
-    [questionInFlow, userInputCoverageApplies],
+    [userInputCoverageApplies],
   );
   const composerPopoverLift = useDerivedValue(() =>
     withTiming(
@@ -1158,11 +1110,11 @@ function ThreadDetailBody(
     }
     if (userInputCollapsed) {
       setUserInputToggle({ requestId: activeUserInputRequestId, collapsed: false });
-      if (!questionInFlow) scheduleOverlayRepin(USER_INPUT_TOGGLE_DURATION_MS + 50);
+      scheduleOverlayRepin(USER_INPUT_TOGGLE_DURATION_MS + 50);
     } else {
       Keyboard.dismiss();
       setUserInputToggle({ requestId: activeUserInputRequestId, collapsed: true });
-      if (!questionInFlow) scheduleOverlayRepin(60);
+      scheduleOverlayRepin(60);
     }
   };
   const showContent = props.showContent ?? true;
@@ -1176,12 +1128,7 @@ function ThreadDetailBody(
   );
   const layoutVariant = props.layoutVariant ?? "compact";
   const isSplitLayout = layoutVariant === "split";
-  const contentMaxWidth =
-    Platform.OS === "android"
-      ? ANDROID_READING_MAX_WIDTH
-      : isSplitLayout
-        ? CHAT_CONTENT_MAX_WIDTH
-        : undefined;
+  const contentMaxWidth = isSplitLayout ? CHAT_CONTENT_MAX_WIDTH : undefined;
   const providerSubagentProvider = props.serverConfig?.providers.find(
     (provider) => provider.instanceId === props.selectedThread.modelSelection.instanceId,
   );
@@ -1196,7 +1143,6 @@ function ThreadDetailBody(
     (model) => model.slug === providerSubagentModelSlug,
   );
   const workspaceContentWidth = useWorkspaceContentWidth();
-  // Clearing animated width can retain the unfolded width after Android resumes folded.
   const composerWidthStyle = useAnimatedStyle(() =>
     isSplitLayout && workspaceContentWidth !== null
       ? {
@@ -1419,14 +1365,7 @@ function ThreadDetailBody(
           onTouchEnd={handleFeedTouchEnd}
           onTouchCancel={handleFeedTouchCancel}
         >
-          <View
-            pointerEvents="none"
-            className={
-              Platform.OS === "android"
-                ? "absolute inset-0 bg-thread-canvas"
-                : "absolute inset-0 bg-screen"
-            }
-          />
+          <View pointerEvents="none" className="absolute inset-0 bg-screen" />
           <RenderErrorBoundary
             key={selectedThreadKey}
             resetKeys={[props.threadCwd]}
@@ -1469,13 +1408,10 @@ function ThreadDetailBody(
                 contentInsetEndAdjustment={combinedContentInsetEndAdjustment}
                 keyboardOffset={composerKeyboardOffset}
                 sendingWithKeyboard={sendingWithKeyboard}
-                fitShortFeedToViewport={questionInFlow && !isKeyboardVisible}
                 contentTopInset={0}
                 contentBottomInset={
-                  questionInFlow
-                    ? 0
-                    : estimatedOverlayHeight +
-                      (showFloatingStatus ? FLOATING_WORKING_CONTROL_COVERAGE : 0)
+                  estimatedOverlayHeight +
+                  (showFloatingStatus ? FLOATING_WORKING_CONTROL_COVERAGE : 0)
                 }
                 contentMaxWidth={contentMaxWidth}
                 historyControls={props.historyControls}
@@ -1510,45 +1446,24 @@ function ThreadDetailBody(
         <KeyboardStickyView
           enabled={keyboardStickyEnabled}
           pointerEvents="box-none"
-          style={
-            questionInFlow
-              ? {
-                  marginLeft: controlInsets.left,
-                  marginRight: controlInsets.right,
-                  marginBottom: controlInsets.bottom,
-                }
-              : { position: "absolute", bottom: 0, left: 0, right: 0, top: 0 }
-          }
+          style={{ position: "absolute", bottom: 0, left: 0, right: 0, top: 0 }}
           offset={{ closed: 0, opened: composerKeyboardOffset }}
         >
-          {questionInFlow ? (
-            <Animated.View pointerEvents="none" style={questionStatusSpace} />
-          ) : null}
-          <ComposerPopoverHost
-            hidden={composerSlotHidden}
-            popoverHeight={composerPopoverHeight}
-            inFlow={questionInFlow}
-          >
+          <ComposerPopoverHost hidden={composerSlotHidden} popoverHeight={composerPopoverHeight}>
             {/* The fixed sticky host gives this bottom-anchored child a stable
               coordinate space. Its top and height can then animate together
               instead of the auto-sized host jumping to Yoga's destination. */}
             <Animated.View
               pointerEvents="box-none"
-              style={
-                questionInFlow
-                  ? isSplitLayout
-                    ? composerWidthStyle
-                    : undefined
-                  : [
-                      {
-                        position: "absolute",
-                        bottom: controlInsets.bottom,
-                        left: controlInsets.left,
-                        right: controlInsets.right,
-                      },
-                      composerWidthStyle,
-                    ]
-              }
+              style={[
+                {
+                  position: "absolute",
+                  bottom: controlInsets.bottom,
+                  left: controlInsets.left,
+                  right: controlInsets.right,
+                },
+                composerWidthStyle,
+              ]}
             >
               {/* No paddingTop here: the overlay's measured height becomes the
                 list's bottom inset, so any padding above the pill/composer
@@ -1592,12 +1507,7 @@ function ThreadDetailBody(
                       });
                     }}
                   />
-                  <ComposerPanels
-                    className="w-full"
-                    style={Platform.OS === "android" ? composerPanelsHeightStyle : undefined}
-                    keyboardShouldPersistTaps="handled"
-                    nestedScrollEnabled
-                  >
+                  <Animated.View className="w-full">
                     {props.queuedRunEdit !== null ? (
                       <Animated.View
                         className="shrink-0"
@@ -1740,7 +1650,7 @@ function ThreadDetailBody(
                         ) : null}
                       </Animated.View>
                     ) : null}
-                  </ComposerPanels>
+                  </Animated.View>
                 </View>
 
                 <View style={composerSlotHidden ? { display: "none" } : undefined}>

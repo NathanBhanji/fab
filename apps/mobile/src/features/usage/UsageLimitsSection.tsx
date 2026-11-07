@@ -351,7 +351,6 @@ export function useRefreshLimits(
         refreshEnvironmentLimits(registry, environmentId, { afterPending }),
       ),
     );
-  // Android RefreshControl needs a true-to-false cycle to stop, even with nothing to probe.
   const refreshManually = async () => {
     if (refreshingRef.current) return;
     refreshingRef.current = true;

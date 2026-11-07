@@ -1,7 +1,6 @@
 import { isDraftThreadRoute } from "./thread-route-state";
 import * as Dialog from "../../components/ui/Dialog";
 import { AppActivityIndicator } from "../../components/ui/AppActivityIndicator";
-import { NavigationRow } from "../../components/ui/NavigationRow";
 import { AppBar } from "../../components/ui/AppBar";
 import {
   StackActions,
@@ -18,7 +17,7 @@ import {
 } from "@fab/client-runtime/state/runtime";
 import type { EnvironmentProject } from "@fab/client-runtime/state/shell";
 import { useEffect, useRef, useState } from "react";
-import { Platform, Pressable, View } from "react-native";
+import { Pressable, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { cn } from "../../lib/cn";
 import { ScreenContent } from "../../components/ui/ScreenContent";
@@ -321,77 +320,51 @@ export function NewTaskRouteScreen({ route }: StaticScreenProps<NewTaskRoutePara
           keyboardDismissMode="on-drag"
           className="flex-1"
           contentContainerStyle={{
-            gap: Platform.OS === "android" ? 8 : 12,
+            gap: 12,
             paddingBottom: Math.max(insets.bottom, 18) + 18,
-            paddingHorizontal: Platform.OS === "android" ? 16 : 20,
-            paddingTop: Platform.OS === "android" ? 16 : 8,
-            ...(Platform.OS === "android" && visibleScopes.length === 0
-              ? { flexGrow: 1, justifyContent: "center" as const }
-              : {}),
+            paddingHorizontal: 20,
+            paddingTop: 8,
           }}
         >
           {scratchOption !== null && listScopes.length > 0 ? (
-            Platform.OS === "android" ? (
-              <View collapsable={false} className="overflow-hidden rounded-[28px] bg-grouped-card">
-                <NavigationRow
-                  className="bg-grouped-card"
-                  title="No project"
-                  subtitle="Start a task without a project"
-                  disabled={!canStartScratch}
-                  onPress={() => void startScratch()}
-                  leading={
-                    <SymbolView
-                      name="text.bubble"
-                      size={22}
-                      tintColorClassName="accent-icon-muted"
-                      type="monochrome"
-                    />
-                  }
-                />
-              </View>
-            ) : (
-              <View collapsable={false} className="overflow-hidden rounded-[24px] bg-grouped-card">
-                <Pressable
-                  accessibilityRole="button"
-                  accessibilityLabel="No project"
-                  disabled={!canStartScratch}
-                  onPress={() => void startScratch()}
-                  className={cn(
-                    "flex-row items-center gap-3 bg-grouped-card px-4 py-3.5",
-                    !canStartScratch && "opacity-45",
-                  )}
-                >
-                  <View className="h-7 w-7 items-center justify-center">
-                    <SymbolView
-                      name="text.bubble"
-                      size={18}
-                      tintColorClassName="accent-icon-muted"
-                      type="monochrome"
-                    />
-                  </View>
-                  <View className="min-w-0 flex-1">
-                    <Text className="text-base font-fab-bold leading-snug">No project</Text>
-                    <Text className="text-xs leading-snug text-foreground-muted" numberOfLines={1}>
-                      Start a task without a project
-                    </Text>
-                  </View>
+            <View collapsable={false} className="overflow-hidden rounded-[24px] bg-grouped-card">
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="No project"
+                disabled={!canStartScratch}
+                onPress={() => void startScratch()}
+                className={cn(
+                  "flex-row items-center gap-3 bg-grouped-card px-4 py-3.5",
+                  !canStartScratch && "opacity-45",
+                )}
+              >
+                <View className="h-7 w-7 items-center justify-center">
                   <SymbolView
-                    name="chevron.right"
-                    size={14}
-                    tintColorClassName="accent-chevron"
+                    name="text.bubble"
+                    size={18}
+                    tintColorClassName="accent-icon-muted"
                     type="monochrome"
                   />
-                </Pressable>
-              </View>
-            )
+                </View>
+                <View className="min-w-0 flex-1">
+                  <Text className="text-base font-fab-bold leading-snug">No project</Text>
+                  <Text className="text-xs leading-snug text-foreground-muted" numberOfLines={1}>
+                    Start a task without a project
+                  </Text>
+                </View>
+                <SymbolView
+                  name="chevron.right"
+                  size={14}
+                  tintColorClassName="accent-chevron"
+                  type="monochrome"
+                />
+              </Pressable>
+            </View>
           ) : null}
           {listScopes.length === 0 ? (
             <View
               collapsable={false}
-              className={cn(
-                "items-center gap-3 px-6 py-8",
-                Platform.OS !== "android" && "rounded-[24px] bg-grouped-card",
-              )}
+              className="items-center gap-3 rounded-[24px] bg-grouped-card px-6 py-8"
             >
               {projectEmptyState.loading ? (
                 <AppActivityIndicator colorClassName="accent-icon-muted" />
@@ -402,26 +375,7 @@ export function NewTaskRouteScreen({ route }: StaticScreenProps<NewTaskRoutePara
               <Text className="text-center text-sm leading-normal text-foreground-muted">
                 {projectEmptyState.detail}
               </Text>
-              {Platform.OS === "android" ? (
-                <>
-                  <Button
-                    label={catalogState.hasReadyEnvironment ? "Add new project" : "Add environment"}
-                    tone="primary"
-                    onPress={() =>
-                      catalogState.hasReadyEnvironment
-                        ? navigation.dispatch(StackActions.push("AddProject"))
-                        : navigation.navigate("ConnectionsNew")
-                    }
-                  />
-                  {canStartScratch ? (
-                    <Button
-                      label="Start without a project"
-                      tone="secondary"
-                      onPress={() => void startScratch()}
-                    />
-                  ) : null}
-                </>
-              ) : !catalogState.hasReadyEnvironment ? (
+              {!catalogState.hasReadyEnvironment ? (
                 <View className="mt-1">
                   <Button
                     label="Add environment"
@@ -458,14 +412,7 @@ export function NewTaskRouteScreen({ route }: StaticScreenProps<NewTaskRoutePara
               </Text>
             </View>
           ) : (
-            <View
-              collapsable={false}
-              className={
-                Platform.OS === "android"
-                  ? "overflow-hidden rounded-[28px] bg-grouped-card"
-                  : "overflow-hidden rounded-[24px] bg-grouped-card"
-              }
-            >
+            <View collapsable={false} className="overflow-hidden rounded-[24px] bg-grouped-card">
               {visibleScopes.map((scope, scopeIndex) => {
                 const hasMultipleProjects = scope.projects.length > 1;
                 const selectionTarget = getProjectScopeSelectionTarget(
@@ -473,34 +420,6 @@ export function NewTaskRouteScreen({ route }: StaticScreenProps<NewTaskRoutePara
                   selectedEnvironmentId,
                   connectedEnvironmentIds,
                 );
-                if (Platform.OS === "android") {
-                  return (
-                    <NavigationRow
-                      className="bg-grouped-card"
-                      key={scope.key}
-                      title={scope.title}
-                      subtitle={
-                        hasMultipleProjects
-                          ? `${scope.projects.length} workspaces`
-                          : selectionTarget.workspaceRoot
-                      }
-                      subtitleNumberOfLines={1}
-                      subtitleEllipsizeMode="middle"
-                      disabled={reservedDestinationProject !== null}
-                      onPress={() => void selectProject(selectionTarget)}
-                      leading={
-                        <ProjectFavicon
-                          environmentId={scope.representative.environmentId}
-                          faviconPath={scope.representative.faviconPath}
-                          projectIcon={scope.representative.projectIcon}
-                          size={24}
-                          projectTitle={scope.title}
-                          workspaceRoot={scope.representative.workspaceRoot}
-                        />
-                      }
-                    />
-                  );
-                }
                 return (
                   <View
                     key={scope.key}

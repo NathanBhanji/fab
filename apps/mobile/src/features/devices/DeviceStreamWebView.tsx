@@ -8,7 +8,7 @@ import {
   useState,
   type Ref,
 } from "react";
-import { Platform, View } from "react-native";
+import { View } from "react-native";
 import { WebView } from "react-native-webview";
 import type { DeviceStreamStatus } from "@fab/client-runtime/device/stream";
 
@@ -16,7 +16,6 @@ import { AppActivityIndicator } from "../../components/ui/AppActivityIndicator";
 import { AppText } from "../../components/ui/AppText";
 
 import {
-  deviceStreamBaseUrl,
   deviceStreamDocument,
   deviceStreamMessage,
   type DeviceStreamConfiguration,
@@ -53,7 +52,7 @@ export function DeviceStreamWebView({
       key={`${attempt}:${configuration}`}
       ref={ref}
       configuration={configuration}
-      baseUrl={deviceStreamBaseUrl(Platform.OS, props.platform, props.access.httpBase)}
+      baseUrl="file:///"
       background={props.colors.background}
       onUnauthorized={props.onUnauthorized}
       onInputConnected={props.onInputConnected}

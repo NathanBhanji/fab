@@ -1,6 +1,5 @@
 import { useActiveNewTask } from "../../state/active-new-task";
 import { AppActivityIndicator } from "../../components/ui/AppActivityIndicator";
-import { useAndroidControlSizing } from "../../components/ui/useAndroidControlSizing";
 import type { ThreadMoveDestination } from "../threads/threadOrder";
 import type { LegendListRef } from "@legendapp/list/react-native";
 import { AnimatedLegendList } from "@legendapp/list/reanimated";
@@ -17,7 +16,6 @@ import { use, useEffect, useMemo, useRef, useState, type ComponentProps } from "
 import {
   Platform,
   ScrollView,
-  useWindowDimensions,
   View,
   type ScrollViewProps,
   type GestureResponderEvent,
@@ -30,12 +28,7 @@ import type { SwipeableMethods } from "react-native-gesture-handler/ReanimatedSw
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { cn } from "../../lib/cn";
-import {
-  ANDROID_READING_MAX_WIDTH,
-  deriveCenteredContentHorizontalPadding,
-} from "../../lib/layout";
 import { EmptyState } from "../../components/ui/EmptyState";
-import { FloatingActionButton } from "../../components/ui/FloatingActionButton";
 import type { WorkspaceEnvironment, WorkspaceState } from "../../state/workspaceModel";
 import type { SavedRemoteConnection } from "../../lib/connection";
 import { scopedProjectKey, scopedThreadKey } from "../../lib/scopedEntities";
@@ -209,10 +202,6 @@ function deriveEmptyState(props: {
   };
 }
 
-function HomeTopContentSpacer() {
-  return <View className="h-4" />;
-}
-
 function HomeScrollView(props: ComponentProps<typeof ScrollView>) {
   const primaryColumn = use(NativePrimaryColumnContext);
   if (Platform.OS !== "ios") return <ScrollView {...props} />;
@@ -246,10 +235,7 @@ export function HomeScreen(props: HomeScreenProps) {
   const [initialScrollOffset] = useState(() => workspace?.getScrollOffset("threads") ?? 0);
   const primaryColumn = use(NativePrimaryColumnContext);
   const contentBackground = primaryColumn ? "bg-drawer" : "bg-screen";
-  const containerClassName = cn(
-    "flex-1",
-    Platform.OS === "android" ? "bg-header" : contentBackground,
-  );
+  const containerClassName = cn("flex-1", contentBackground);
   const columnMetrics = useNativeColumnLayoutMetrics();
   const activeNewTask = useActiveNewTask();
   const selectedThreadKey = activeNewTask ? null : (primaryColumn?.selectedThreadKey ?? null);
@@ -258,21 +244,10 @@ export function HomeScreen(props: HomeScreenProps) {
   const openSwipeableRef = useRef<SwipeableMethods | null>(null);
   const homeScrollGesture = useNativeGesture();
   const insets = useSafeAreaInsets();
-  const { fabClearance } = useAndroidControlSizing();
   const screenMetrics = useNativeLayoutMetrics();
   const contentSideInsets = usesNativeWorkspaceColumns
     ? (columnMetrics ?? screenMetrics)?.safeArea
     : undefined;
-  // Wide Android lists need reading-width gutters to clear edges and camera cutouts.
-  const { width: windowWidth } = useWindowDimensions();
-  const androidListGutter =
-    Platform.OS === "android"
-      ? deriveCenteredContentHorizontalPadding({
-          viewportWidth: windowWidth,
-          maxContentWidth: ANDROID_READING_MAX_WIDTH,
-          minimumPadding: 0,
-        })
-      : 0;
   const iosBottomClearance = Math.max(
     columnMetrics?.safeArea.bottom ?? insets.bottom,
     24,
@@ -670,13 +645,9 @@ export function HomeScreen(props: HomeScreenProps) {
     return (
       <View className={containerClassName}>
         <View
-          className={cn(
-            "flex-1 items-center justify-center px-8",
-            contentBackground,
-            Platform.OS === "android" && "overflow-hidden rounded-t-[28px]",
-          )}
+          className={cn("flex-1 items-center justify-center px-8", contentBackground)}
           style={{
-            paddingBottom: Platform.OS === "ios" ? iosBottomClearance : Math.max(insets.bottom, 24),
+            paddingBottom: iosBottomClearance,
             paddingTop: NATIVE_LIQUID_GLASS_SUPPORTED ? insets.top + 72 : 0,
             paddingLeft: 32 + (contentSideInsets?.left ?? 0),
             paddingRight: 32 + (contentSideInsets?.right ?? 0),
@@ -688,17 +659,6 @@ export function HomeScreen(props: HomeScreenProps) {
               detail={emptyState.detail}
               actionLabel={!props.catalogState.hasReadyEnvironment ? "Add environment" : undefined}
               onAction={!props.catalogState.hasReadyEnvironment ? props.onAddConnection : undefined}
-              action={
-                Platform.OS === "android" && !props.catalogState.hasReadyEnvironment ? (
-                  <FloatingActionButton
-                    label="Add environment"
-                    icon="plus"
-                    variant="extended"
-                    tone="primary"
-                    onPress={props.onAddConnection}
-                  />
-                ) : undefined
-              }
               variant="plain"
             />
             {emptyState.loading ? (
@@ -712,12 +672,9 @@ export function HomeScreen(props: HomeScreenProps) {
     );
   }
 
-  const listHeader = Platform.OS === "ios" ? undefined : <HomeTopContentSpacer />;
-
   const v2ListHeader = (
     <>
-      {listHeader}
-      {Platform.OS === "ios" && workspace ? (
+      {workspace ? (
         <ThreadListFilters
           gutter={primaryColumn ? 8 : 0}
           environments={props.environments}
@@ -736,53 +693,24 @@ export function HomeScreen(props: HomeScreenProps) {
 
   const v2ListEmpty =
     hasSearchQuery && threadSearch.isPending ? undefined : hasSearchQuery ? (
-      <EmptyState
-        title="No results"
-        detail={`No threads matching "${props.searchQuery}".`}
-        variant={Platform.OS === "android" ? "plain" : undefined}
-      />
+      <EmptyState title="No results" detail={`No threads matching "${props.searchQuery}".`} />
     ) : v2ScopedProjectGroup !== null ? (
       <EmptyState
         title={`No threads in ${v2ScopedProjectGroup.title}`}
         detail="Choose another project or create a new task."
-        variant={Platform.OS === "android" ? "plain" : undefined}
       />
     ) : selectedEnvironmentLabel ? (
       <EmptyState
         title={`No threads in ${selectedEnvironmentLabel}`}
         detail="Choose another environment or create a new task."
-        variant={Platform.OS === "android" ? "plain" : undefined}
       />
     ) : (
-      <EmptyState
-        title="No threads yet"
-        detail="Create a task to start a new coding session."
-        variant={Platform.OS === "android" ? "plain" : undefined}
-      />
+      <EmptyState title="No threads yet" detail="Create a task to start a new coding session." />
     );
-
-  if (Platform.OS === "android" && threadListV2Items.length === 0) {
-    return (
-      <View className="flex-1 bg-header">
-        <View
-          className="flex-1 items-center justify-center overflow-hidden rounded-t-[28px] bg-screen px-4"
-          style={{ paddingBottom: insets.bottom }}
-        >
-          {v2ListEmpty}
-        </View>
-      </View>
-    );
-  }
 
   return (
     <View className={containerClassName}>
-      <View
-        className={
-          Platform.OS === "android"
-            ? "flex-1 overflow-hidden rounded-t-[28px] bg-screen"
-            : cn("flex-1", contentBackground)
-        }
-      >
+      <View className={cn("flex-1", contentBackground)}>
         <SwipeableScrollGateProvider enabled={swipeEnabled} activation={swipeRowActivation}>
           <GestureDetector gesture={homeScrollGesture}>
             <AnimatedLegendList
@@ -839,16 +767,10 @@ export function HomeScreen(props: HomeScreenProps) {
               {...scrollGateHandlers}
               scrollEventThrottle={16}
               contentContainerStyle={{
-                paddingLeft:
-                  (contentSideInsets?.left ?? 0) + (primaryColumn ? 8 : 0) + androidListGutter,
-                paddingRight:
-                  (contentSideInsets?.right ?? 0) + (primaryColumn ? 8 : 0) + androidListGutter,
+                paddingLeft: (contentSideInsets?.left ?? 0) + (primaryColumn ? 8 : 0),
+                paddingRight: (contentSideInsets?.right ?? 0) + (primaryColumn ? 8 : 0),
                 paddingBottom:
-                  Platform.OS === "ios"
-                    ? iosBottomClearance - (columnMetrics?.safeArea.bottom ?? insets.bottom)
-                    : (workspace?.bottomClearance ??
-                      Math.max(insets.bottom, 16) +
-                        (Platform.OS === "android" ? fabClearance : 88)),
+                  iosBottomClearance - (columnMetrics?.safeArea.bottom ?? insets.bottom),
               }}
             />
           </GestureDetector>

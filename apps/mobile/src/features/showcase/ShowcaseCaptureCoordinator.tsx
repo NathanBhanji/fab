@@ -232,7 +232,7 @@ export function installShowcaseCapture(
         const outcome =
           activity === null
             ? "fixture threads not loaded"
-            : await stageShowcaseAgentActivity(activity, now);
+            : await stageShowcaseAgentActivity(activity);
         if (outcome === true) return true;
         if (outcome !== lastOutcome) {
           console.warn(`[showcase] agent activity not staged: ${outcome}`);

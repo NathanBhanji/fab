@@ -29,7 +29,6 @@ import {
   recordHomeTransitionEnd,
   recordHomeTransitionStart,
 } from "./features/home/home-route-visibility";
-import { AndroidWorkspaceTabsProvider } from "./features/workspace/AndroidWorkspaceTabsProvider";
 import {
   PullRequestRouteScreen,
   PullRequestFileRouteScreen,
@@ -531,18 +530,16 @@ function RootStackLayout(props: {
         <ShowcaseReadyMarker />
         <SettingsEnvironmentFilterProvider open={settingsOpen}>
           <WorkspaceConnectionStatusProvider>
-            <AndroidWorkspaceTabsProvider state={props.state}>
-              <AdaptiveWorkspaceLayout
-                pathname={workspaceLocation.pathname}
-                workspaceRouteKey={workspaceLocation.routeKey}
-                workspaceRouteName={workspaceLocation.routeName}
-                workspaceRouteKeys={workspaceLocation.routeKeys}
-                selectedPullRequestKey={selectedPullRequestKey(props.state)}
-              >
-                {props.children}
-                <HardwareKeyboardCommandOverlay />
-              </AdaptiveWorkspaceLayout>
-            </AndroidWorkspaceTabsProvider>
+            <AdaptiveWorkspaceLayout
+              pathname={workspaceLocation.pathname}
+              workspaceRouteKey={workspaceLocation.routeKey}
+              workspaceRouteName={workspaceLocation.routeName}
+              workspaceRouteKeys={workspaceLocation.routeKeys}
+              selectedPullRequestKey={selectedPullRequestKey(props.state)}
+            >
+              {props.children}
+              <HardwareKeyboardCommandOverlay />
+            </AdaptiveWorkspaceLayout>
           </WorkspaceConnectionStatusProvider>
         </SettingsEnvironmentFilterProvider>
       </HardwareKeyboardCommandProvider>

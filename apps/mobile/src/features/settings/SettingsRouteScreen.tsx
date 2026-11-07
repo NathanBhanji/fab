@@ -28,12 +28,8 @@ import { useAdaptiveWorkspaceLayout } from "../layout/adaptive-workspace-context
 import { useSavedRemoteConnections } from "../../state/use-remote-environment-registry";
 import { SettingsRow } from "./components/SettingsRow";
 import { SettingsSection, SettingsSidebarContext } from "./components/SettingsSection";
-import { SettingsScreen } from "./components/SettingsScreen";
 import type { SettingsPageTarget } from "./components/settings-page-targets";
-import {
-  AndroidSettingsEnvironmentFilter,
-  SettingsEnvironmentFilterHeader,
-} from "./components/SettingsEnvironmentFilterHeader";
+import { SettingsEnvironmentFilterHeader } from "./components/SettingsEnvironmentFilterHeader";
 import { useSettingsEnvironmentFilter } from "./settings-environment-filter";
 import { filterSettingsSections } from "./settings-search";
 import { NativePrimaryColumnContext } from "../../native/v5-workspace-context";
@@ -58,7 +54,6 @@ export function SettingsListScreen(props: {
   readonly selected: string | null;
 }) {
   const surface = useWorkspaceSurface();
-  const workspace = useWorkspaceTabs();
   const inSidebar = props.sidebar;
   const selected = props.selected;
   const sidebar = inSidebar ? { selected } : null;
@@ -72,27 +67,7 @@ export function SettingsListScreen(props: {
     <SettingsSidebarContext value={sidebar}>
       <View className={`flex-1 ${inSidebar ? surface.className : "bg-screen"}`}>
         <SettingsEnvironmentFilterHeader />
-        {Platform.OS === "android" ? (
-          <SettingsScreen
-            title="Settings"
-            workspaceRoot={inSidebar}
-            trailing={<AndroidSettingsEnvironmentFilter />}
-            search={
-              workspace
-                ? {
-                    value: workspace.state.tabs.settings.query,
-                    onChangeText: (query) =>
-                      workspace.dispatch({ type: "query", tab: "settings", query }),
-                    placeholder: "Search settings",
-                  }
-                : undefined
-            }
-          >
-            {content}
-          </SettingsScreen>
-        ) : (
-          content
-        )}
+        {content}
       </View>
     </SettingsSidebarContext>
   );
@@ -283,9 +258,7 @@ function useSettingsIndexSections(): SettingsListSection[] {
 function useOverflowRows(): SettingsListRow[] {
   const order = useNavigationTabOrder();
   const hidden = useHiddenNavigationTabs();
-  const { layout } = useAdaptiveWorkspaceLayout();
-  const tabs =
-    Platform.OS === "android" && layout.usesSplitView ? [] : overflowNavigationTabs(order, hidden);
+  const tabs = overflowNavigationTabs(order, hidden);
   const selectTab = useSelectWorkspaceTab();
   return tabs.map((tab) => ({
     id: tab,

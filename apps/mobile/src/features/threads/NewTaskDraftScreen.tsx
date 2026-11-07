@@ -4,7 +4,7 @@ import { DraftThreadHeader } from "./DraftThreadHeader";
 import { threadHeaderAppearance } from "./thread-header-appearance";
 import { NATIVE_LIQUID_GLASS_SUPPORTED } from "../../native/native-glass";
 import { useComposerAttachmentActions } from "../../state/use-composer-attachment-actions";
-import { useWorkspaceBackNavigation } from "../workspace/useAndroidWorkspaceNavigation";
+import { useWorkspaceBackNavigation } from "../workspace/useWorkspaceBackNavigation";
 import { submittedThreadParams } from "./thread-route-state";
 import { ThreadScreenBinding, ThreadScreenFallback } from "./ThreadScreenHost";
 import { draftThreadShell } from "./draft-thread-shell";
@@ -113,24 +113,15 @@ function NewTaskWorkspaceIcon(props: {
     );
   }
 
-  const boxSize = (14 * props.size) / 16;
   return (
-    <View
-      className="size-4"
-      style={Platform.OS === "android" ? { width: boxSize, height: boxSize } : undefined}
-    >
+    <View className="size-4">
       <SymbolView
         name="folder"
         size={props.size}
         tintColorClassName="accent-icon-muted"
         type="monochrome"
       />
-      <View
-        className="absolute -right-1 -bottom-1"
-        style={
-          Platform.OS === "android" ? { right: -boxSize / 4, bottom: -boxSize / 4 } : undefined
-        }
-      >
+      <View className="absolute -right-1 -bottom-1">
         <SymbolView
           name="arrow.triangle.branch"
           size={Math.round((9 * props.size) / 16)}
@@ -158,7 +149,7 @@ export function NewTaskDraftScreen(props: {
   const flow = useNewTaskFlow();
   const navigation = useNavigation();
   const isFocused = useIsFocused();
-  const goBack = useWorkspaceBackNavigation("threads");
+  const goBack = useWorkspaceBackNavigation();
   const currentRoute = useRoute();
   const flowKey = newTaskFlowKey(currentRoute);
   const { getShare, isLoading: isIncomingShareInboxLoading } = useIncomingShare();

@@ -9,7 +9,7 @@ const checkout = vi.hoisted(() => ({
 }));
 
 vi.mock("react-native", () => ({
-  Platform: { OS: "android" },
+  Platform: { OS: "ios" },
   View: ({ children }: { children: ReactNode }) => <div>{children}</div>,
   ScrollView: ({ children }: { children: ReactNode }) => <div>{children}</div>,
   Pressable: ({ children, disabled }: { children: ReactNode; disabled: boolean }) => (
@@ -19,7 +19,6 @@ vi.mock("react-native", () => ({
 }));
 vi.mock("@react-navigation/native", () => ({ useNavigation: () => ({}) }));
 vi.mock("react-native-safe-area-context", () => ({ useSafeAreaInsets: () => ({ bottom: 0 }) }));
-vi.mock("../../../components/ui/AndroidScreenHeader", () => ({ AndroidSheetHeader: () => null }));
 vi.mock("../../../components/ui/SheetHeader", () => ({ SheetHeader: () => null }));
 vi.mock("../../../components/ui/ScreenContent", () => ({
   ScreenContent: ({ children }: { children: ReactNode }) => <div>{children}</div>,

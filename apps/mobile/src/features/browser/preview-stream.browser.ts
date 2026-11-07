@@ -197,7 +197,7 @@ export function start(configuration: PreviewStreamConfiguration) {
           probe = null;
           if (current.end === "panned") return;
           if (current.end === "acted" && current.editable === result.editable) return;
-          // Late answers can raise Android's keyboard; iOS needs another tap.
+          // Late answers cannot raise the iOS keyboard; it needs another tap.
           if (result.editable) input.focus({ preventScroll: true });
           else input.blur();
         },
@@ -535,7 +535,6 @@ export function start(configuration: PreviewStreamConfiguration) {
       ...(action === "down" && text !== undefined ? { text } : {}),
       modifiers: previewStreamModifiers(event),
     });
-    // Some Android keyboards edit the textarea even when keydown is prevented.
     keySent =
       action === "down" &&
       !shortcut &&

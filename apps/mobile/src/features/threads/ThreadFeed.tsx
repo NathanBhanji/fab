@@ -175,7 +175,6 @@ import { CopyTextButton } from "./CopyTextButton";
 import { getReviewSectionIdForCheckpoint } from "../review/reviewModel";
 import { setReviewSelectedSectionId } from "../review/reviewState";
 import { Menu } from "../../components/ui/Menu";
-import { useAndroidControlSizing } from "../../components/ui/useAndroidControlSizing";
 import { copyPromptLink } from "../prompt-links/prompt-link-actions";
 import { parseReviewCommentMessageSegments } from "../review/reviewCommentSelection";
 import {
@@ -292,8 +291,10 @@ import { useSelectWorkspaceDetail } from "../workspace/useSelectWorkspaceDetail"
 const WIDE_MARKDOWN_BLOCK_OPTIONS = {
   // iOS blockquotes and selectable text measure separately; definite bubble width matches UIKit's drawing width.
   includeBlockquotes: Platform.OS === "ios",
-  includeOrderedLists: Platform.OS === "android",
+  includeOrderedLists: false,
 } as const;
+
+const REPLY_ACTION_SIZE = { button: 28, icon: 13 } as const;
 
 const MESSAGE_TIME_FORMATTER = new Intl.DateTimeFormat(undefined, {
   hour: "numeric",
@@ -367,7 +368,6 @@ export interface ThreadFeedProps {
   readonly contentInsetEndAdjustment: SharedValue<number>;
   readonly keyboardOffset: number;
   readonly sendingWithKeyboard?: boolean;
-  readonly fitShortFeedToViewport?: boolean;
   readonly contentTopInset?: number;
   readonly contentBottomInset?: number;
   readonly historyControls?: ThreadFeedHistoryControls;
@@ -428,7 +428,6 @@ function UserMessageCopyButton(props: {
 function AssistantForkButton(props: {
   readonly environmentId: EnvironmentId;
   readonly iconColor: ColorValue;
-  readonly buttonSize: number;
   readonly iconSize: number;
   readonly projectedItem: OrchestrationV2ProjectedTurnItem;
   readonly sourceTitle: string;
@@ -486,11 +485,6 @@ function AssistantForkButton(props: {
           .finally(() => setBusy(false));
       }}
       className="h-7 w-7 items-center justify-center disabled:opacity-40"
-      style={
-        Platform.OS === "android"
-          ? { width: props.buttonSize, height: props.buttonSize }
-          : undefined
-      }
     >
       {busy ? (
         <AppActivityIndicator size="small" />
@@ -1878,7 +1872,6 @@ function renderFeedEntry(
     const timestampLabel = formatMessageTime(isUser ? message.createdAt : message.updatedAt);
     const attachments = message.attachments ?? [];
     const hasReviewCommentContext = presentation.text.includes("<review_comment");
-    // Android does not reposition children after maxWidth clamps bubbles; definite width prevents wide-block overlap.
     const hasWideBlock = hasWideMarkdownBlock(renderedText, WIDE_MARKDOWN_BLOCK_OPTIONS);
     const assistantTurnStillInProgress =
       message.role === "assistant" &&
@@ -2294,7 +2287,6 @@ function renderFeedEntry(
               <AssistantForkButton
                 environmentId={props.environmentId}
                 iconColor={iconSubtleColor}
-                buttonSize={props.replyActionSize.button}
                 iconSize={props.replyActionSize.icon}
                 projectedItem={message.projectedItem}
                 sourceTitle={props.threadTitle}
@@ -2728,7 +2720,7 @@ export const ThreadFeed = memo(function ThreadFeed({
     setEndFollow(resolveThreadFeedLiveFollow(endFollowEnabledRef.current, event));
   };
   // Capture the reader's anchor before width reflow; LegendList thresholds see only new geometry.
-  // iOS preserves it during re-measures. Android restores after because following disables MVCP.
+  // iOS preserves it during re-measures.
   // undefined means no reflow; null means reflow with nothing to restore.
   const reflowAnchorRef = useRef<ThreadFeedReflowAnchor | null | undefined>(undefined);
   const reflowAnchorsSizeChanges = Platform.OS === "ios";
@@ -2828,15 +2820,6 @@ export const ThreadFeed = memo(function ThreadFeed({
 
   const theme = useUniwindTheme();
   const iconSubtleColor = theme["--color-icon-subtle"];
-  const { buttonSize: androidButtonSize, smallIconSize: androidIconSize } =
-    useAndroidControlSizing();
-  const replyActionSize = useMemo(
-    () =>
-      Platform.OS === "android"
-        ? { button: androidButtonSize, icon: androidIconSize }
-        : { button: 28, icon: 13 },
-    [androidButtonSize, androidIconSize],
-  );
   const screenColor = theme["--color-screen"];
   const userBubbleColor = theme["--color-user-bubble"];
   const openSkillInstructions = (path: string) => {
@@ -3340,8 +3323,7 @@ export const ThreadFeed = memo(function ThreadFeed({
   });
   // The empty↔filled key below remounts the list and resets its imperative
   // content-inset override. Seed each fresh instance as it attaches with the
-  // current overlay height before the scroll integration's next reaction;
-  // on Android the declarative contentInset floor covers this same window.
+  // current overlay height before the scroll integration's next reaction.
   const listMountKey = `${feedThreadKey}:${presentedFeed.some((entry) => entry.type !== "thinking") ? "filled" : "empty"}`;
   const { contentInsetEndAdjustment } = props;
   const attachList = (list: LegendListRef | null) => {
@@ -3768,7 +3750,7 @@ export const ThreadFeed = memo(function ThreadFeed({
             renderViewedImage,
             renderReasoning,
             iconSubtleColor,
-            replyActionSize,
+            replyActionSize: REPLY_ACTION_SIZE,
             screenColor,
             userBubbleColor,
             markdownStyles,
@@ -3842,7 +3824,7 @@ export const ThreadFeed = memo(function ThreadFeed({
             // UIKit adds the safe-area bottom to raw contentInset; ThreadDetailScreen under-reports it.
             // Include that extra inset in LegendList's scroll math so end scrolls reach the resting offset.
             contentInsetEndStaticAdjustment={usesNativeAutomaticInsets ? insets.bottom : 0}
-            // Seed composer height until keyboard integration reports it, or Android's initial end scroll runs too early.
+            // Seed composer height until keyboard integration reports it, or the initial end scroll runs too early.
             {...(initialContentInset ? { contentInset: initialContentInset } : {})}
             adjustedInsetCompensation={usesNativeAutomaticInsets ? insets.bottom : 0}
             freeze={props.freeze}
@@ -3942,7 +3924,6 @@ export const ThreadFeed = memo(function ThreadFeed({
               ) : null
             }
             contentContainerStyle={{
-              ...(props.fitShortFeedToViewport ? { minHeight: "100%" } : {}),
               paddingTop: FEED_PADDING_TOP + disclosureTopSpace,
               paddingLeft: contentHorizontalPadding + contentLeftInset,
               paddingRight: contentHorizontalPadding + contentRightInset,

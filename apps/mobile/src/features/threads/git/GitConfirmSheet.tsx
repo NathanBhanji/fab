@@ -5,13 +5,11 @@ import * as Arr from "effect/Array";
 import * as Result from "effect/Result";
 import { StackActions, useNavigation, type StaticScreenProps } from "@react-navigation/native";
 import { useCallback, useMemo } from "react";
-import { Platform, ScrollView, useWindowDimensions, View } from "react-native";
+import { ScrollView, View } from "react-native";
 
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { AndroidSheetHeader } from "../../../components/ui/AndroidScreenHeader";
 import { ScreenContent } from "../../../components/ui/ScreenContent";
-import { NativeStackScreenOptions } from "../../../native/StackHeader";
 import { AppText as Text } from "../../../components/ui/AppText";
 import { useSelectedThreadGitActions } from "../../../state/use-selected-thread-git-actions";
 import { useSelectedThreadGitState } from "../../../state/use-selected-thread-git-state";
@@ -31,7 +29,6 @@ type GitConfirmSheetProps = StaticScreenProps<{
 export function GitConfirmSheet(props: GitConfirmSheetProps) {
   const navigation = useNavigation();
   const insets = useSafeAreaInsets();
-  const { height: windowHeight } = useWindowDimensions();
   const gitState = useSelectedThreadGitState();
   const gitActions = useSelectedThreadGitActions();
   const { canWriteSourceControl, canChangeThreadBranch } = gitActions;
@@ -116,62 +113,26 @@ export function GitConfirmSheet(props: GitConfirmSheetProps) {
   ]);
 
   return (
-    <View
-      collapsable={false}
-      className="bg-sheet ios:flex-1"
-      style={Platform.OS === "android" ? { maxHeight: windowHeight * 0.92 } : undefined}
-    >
-      {Platform.OS === "android" ? (
-        <NativeStackScreenOptions
-          options={{
-            sheetCornerRadius: 28,
-            sheetAllowedDetents: "fitToContents",
-          }}
-        />
-      ) : null}
-      {Platform.OS === "android" ? (
-        <AndroidSheetHeader
-          title="Confirm action"
-          onBack={() => navigation.goBack()}
-          hideBottomBorder
-        />
-      ) : (
-        <View className="min-h-4 pt-2" />
-      )}
+    <View collapsable={false} className="bg-sheet ios:flex-1">
+      <View className="min-h-4 pt-2" />
 
       <ScreenContent fitToContents>
-        <ScrollView
-          nestedScrollEnabled
-          className="android:shrink android:grow-0 ios:flex-1"
-          showsVerticalScrollIndicator={false}
-          contentContainerClassName="android:gap-2 android:p-2"
-          contentContainerStyle={
-            Platform.OS === "android"
-              ? { paddingBottom: Math.max(insets.bottom, 18) + 8 }
-              : undefined
-          }
-        >
-          <View className="android:gap-2 android:rounded-[20px] android:bg-card android:p-3 ios:items-center ios:gap-1 ios:px-5 ios:pb-3 ios:pt-4">
-            {Platform.OS !== "android" ? (
-              <Text className="text-xs font-fab-bold tracking-[1px] uppercase text-foreground-muted">
-                Confirm
-              </Text>
-            ) : null}
-            <Text className="android:text-xl android:font-fab-medium ios:text-center ios:text-3xl ios:font-fab-bold">
+        <ScrollView nestedScrollEnabled className="ios:flex-1" showsVerticalScrollIndicator={false}>
+          <View className="ios:items-center ios:gap-1 ios:px-5 ios:pb-3 ios:pt-4">
+            <Text className="text-xs font-fab-bold tracking-[1px] uppercase text-foreground-muted">
+              Confirm
+            </Text>
+            <Text className="ios:text-center ios:text-3xl ios:font-fab-bold">
               {copy?.title ?? "Run action on default branch?"}
             </Text>
-            <Text className="text-foreground-secondary leading-normal android:text-base ios:text-center ios:text-sm ios:font-medium">
+            <Text className="text-foreground-secondary leading-normal ios:text-center ios:text-sm ios:font-medium">
               {copy?.description ?? "Choose how to continue."}
             </Text>
           </View>
 
           <View
-            className="android:gap-2 ios:gap-3 ios:px-5 ios:pt-2"
-            style={
-              Platform.OS === "android"
-                ? undefined
-                : { paddingBottom: Math.max(insets.bottom, 18) + 8 }
-            }
+            className="ios:gap-3 ios:px-5 ios:pt-2"
+            style={{ paddingBottom: Math.max(insets.bottom, 18) + 8 }}
           >
             <SheetActionButton
               icon="arrow.right.circle"

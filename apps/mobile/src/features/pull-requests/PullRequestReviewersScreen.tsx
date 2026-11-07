@@ -177,17 +177,6 @@ export function PullRequestReviewersScreen({ route }: StaticScreenProps<PullRequ
               <Text className="text-xs text-foreground-muted">
                 Tap someone to request a review. Tap a requested reviewer to remove the request.
               </Text>
-              {Platform.OS === "android" ? (
-                <TextInput
-                  accessibilityLabel="Search reviewers"
-                  placeholder="Search reviewers"
-                  placeholderTextColorClassName="accent-foreground-muted"
-                  value={query}
-                  onChangeText={search}
-                  autoCapitalize="none"
-                  className="min-h-11 rounded-xl bg-grouped-card px-3 text-sm"
-                />
-              ) : null}
               {!allowed ? (
                 <Text className="text-xs text-foreground-muted">
                   Requesting reviews requires write access and an open {singular}.

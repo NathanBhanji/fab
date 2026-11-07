@@ -1,10 +1,6 @@
 import * as NodeModule from "node:module";
 import { describe, expect, it } from "vite-plus/test";
 import {
-  androidWorkspaceTabNavigationState,
-  type AndroidWorkspaceNavigationTab,
-} from "../features/workspace/android-workspace-tabs";
-import {
   linkedThreadStep,
   parentThreadIsBelow,
   resetAndroidWorkspace,
@@ -17,10 +13,7 @@ const nativePackage = require.resolve("@react-navigation/native/package.json");
 const requireFromNative = NodeModule.createRequire(nativePackage);
 const corePackage = requireFromNative.resolve("@react-navigation/core/package.json");
 const requireFromCore = NodeModule.createRequire(corePackage);
-const { CommonActions, StackActions, StackRouter } = requireFromCore(
-  "@react-navigation/routers",
-) as {
-  readonly CommonActions: typeof import("@react-navigation/native").CommonActions;
+const { StackActions, StackRouter } = requireFromCore("@react-navigation/routers") as {
   readonly StackActions: typeof import("@react-navigation/native").StackActions;
   readonly StackRouter: typeof import("@react-navigation/native").StackRouter;
 };
@@ -49,16 +42,6 @@ const thread = {
   name: "Thread",
   params: { environmentId: "environment-a", threadId: "thread-a" },
 } as const;
-const pullRequest = {
-  name: "PullRequest",
-  params: {
-    environmentId: "environment-a",
-    projectId: "project-a",
-    repository: "owner/repository",
-    number: 42,
-    host: "github.com",
-  },
-} as const;
 
 function apply(
   state: ReturnType<typeof router.getInitialState>,
@@ -71,13 +54,6 @@ function apply(
 
 function withThread() {
   return apply(router.getInitialState(options), StackActions.push(thread.name, thread.params));
-}
-
-function legacyHistory() {
-  let state = router.getInitialState(options);
-  state = apply(state, StackActions.push(thread.name, thread.params));
-  state = apply(state, StackActions.push(pullRequest.name, pullRequest.params));
-  return state;
 }
 
 function names(state: ReturnType<typeof router.getInitialState>) {
@@ -214,46 +190,5 @@ describe("Android workspace navigation", () => {
     const [action] = actions;
     expect(action?.target).toBe(root.key);
     expect(names(apply(root, action!))).toEqual(["Home"]);
-  });
-});
-
-describe("Android Settings tab", () => {
-  type State = ReturnType<typeof router.getInitialState>;
-  type Tab = AndroidWorkspaceNavigationTab;
-  const openTab = (state: State, tab: Tab, columns = false) =>
-    apply(state, CommonActions.reset(androidWorkspaceTabNavigationState(state, tab, columns)));
-
-  it("opens a default Settings page beside the category list in wide layouts", () => {
-    const settings = openTab(legacyHistory(), "settings", true);
-    expect(names(settings)).toEqual(["Home", "Settings", "SettingsEnvironments"]);
-    expect(names(apply(settings, StackActions.pop()))).toEqual(["Home", "Settings"]);
-  });
-
-  it("keeps the selected category mounted when reselecting wide Settings", () => {
-    let settings = openTab(legacyHistory(), "settings");
-    settings = apply(settings, StackActions.push("SettingsAppearance"));
-    const category = settings.routes.at(-1);
-    settings = apply(settings, StackActions.push("SettingsOpenSourceLicenses"));
-    const reselected = openTab(settings, "settings", true);
-    expect(names(reselected)).toEqual(["Home", "Settings", "SettingsAppearance"]);
-    expect(reselected.routes.at(-1)?.key).toBe(category?.key);
-  });
-
-  it("opens over Home alone, dropping chat and PR history, and Back returns to Home", () => {
-    const previous = legacyHistory();
-    const settings = openTab(previous, "settings");
-    expect(names(settings)).toEqual(["Home", "Settings"]);
-    expect(settings.routes[0]?.key).toBe(previous.routes[0]?.key);
-    const back = apply(settings, StackActions.pop());
-    expect(names(back)).toEqual(["Home"]);
-    expect(back.routes[0]?.key).toBe(previous.routes[0]?.key);
-  });
-
-  it("stays selected under a settings page until a list tab returns to Home", () => {
-    const previous = legacyHistory();
-    const usage = apply(openTab(previous, "settings"), StackActions.push("SettingsUsage"));
-    const list = openTab(usage, "pullRequests");
-    expect(names(list)).toEqual(["Home"]);
-    expect(list.routes[0]?.key).toBe(previous.routes[0]?.key);
   });
 });

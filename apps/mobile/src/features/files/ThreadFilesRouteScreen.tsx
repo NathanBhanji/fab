@@ -76,7 +76,6 @@ function FilesBrowserHeader(props: {
   readonly projectName: string;
   readonly searchQuery: string;
   readonly onSearchQueryChange: (query: string) => void;
-  readonly onRefresh: () => void;
   readonly onBack: () => void;
 }) {
   return (
@@ -93,17 +92,6 @@ function FilesBrowserHeader(props: {
         closeAccessibilityLabel: "Close file search",
         clearAccessibilityLabel: "Clear file search",
       }}
-      menus={
-        Platform.OS === "android"
-          ? [
-              {
-                title: "File options",
-                icon: "ellipsis",
-                items: [{ id: "refresh", title: "Refresh files", onPress: props.onRefresh }],
-              },
-            ]
-          : undefined
-      }
     />
   );
 }
@@ -554,7 +542,6 @@ export function ThreadFilesTreeScreen(props: ThreadFilesRouteScreenProps) {
         projectName={projectName}
         searchQuery={searchQuery}
         onSearchQueryChange={setSearchQuery}
-        onRefresh={entriesQuery.refresh}
         onBack={handleReturnToThread}
       />
       <ScreenContent insetHorizontal={layout.usesSplitView}>
@@ -585,7 +572,7 @@ export function ThreadFilesTreeScreen(props: ThreadFilesRouteScreenProps) {
     </>
   );
 
-  return Platform.OS === "android" ? <View className="flex-1 bg-header">{content}</View> : content;
+  return content;
 }
 
 export function ThreadFileScreen(props: ThreadFileRouteScreenProps) {
@@ -933,12 +920,11 @@ export function ThreadFileScreen(props: ThreadFileRouteScreenProps) {
   }
   if (directoryPath !== null) {
     return (
-      <View className={Platform.OS === "android" ? "flex-1 bg-header" : "flex-1 bg-sheet"}>
+      <View className="flex-1 bg-sheet">
         <FilesBrowserHeader
           projectName={directoryPath}
           searchQuery={searchQuery}
           onSearchQueryChange={setSearchQuery}
-          onRefresh={entriesQuery.refresh}
           onBack={handleBack}
         />
         <ScreenContent>

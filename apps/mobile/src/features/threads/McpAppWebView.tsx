@@ -76,16 +76,10 @@ const commandFailure = (result: {
 
 const confirm = (title: string, message: string, action: string) =>
   new Promise<boolean>((resolve) => {
-    Dialog.alert(
-      title,
-      message,
-      [
-        { text: "Cancel", style: "cancel", onPress: () => resolve(false) },
-        { text: action, onPress: () => resolve(true) },
-      ],
-      // Android dismisses earlier alerts when showing another; decline dismissed requests to release their slots.
-      { cancelable: true, onDismiss: () => resolve(false) },
-    );
+    Dialog.alert(title, message, [
+      { text: "Cancel", style: "cancel", onPress: () => resolve(false) },
+      { text: action, onPress: () => resolve(true) },
+    ]);
   });
 
 const MAX_DOWNLOAD_BYTES = 25 * 1024 * 1024;
@@ -533,11 +527,8 @@ export function ThreadMcpApp(props: {
           style={{ flex: 1, backgroundColor: "transparent" }}
           nestedScrollEnabled
           originWhitelist={["*"]}
-          // Android misreports nested frames as top-level; rely on iframe sandboxing there and gate navigation elsewhere.
           onShouldStartLoadWithRequest={(request) =>
-            Platform.OS === "android" ||
-            request.isTopFrame === false ||
-            request.url === "about:blank"
+            request.isTopFrame === false || request.url === "about:blank"
           }
           setSupportMultipleWindows={false}
           onLoadEnd={() => setLoaded(true)}

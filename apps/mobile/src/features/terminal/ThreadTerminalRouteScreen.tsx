@@ -38,8 +38,6 @@ import { EmptyState } from "../../components/ui/EmptyState";
 import { GlassSurface } from "../../components/ui/GlassSurface";
 import { LoadingScreen } from "../../components/LoadingScreen";
 import { ScreenContent } from "../../components/ui/ScreenContent";
-import { Button } from "../../components/ui/Button";
-import { IconButton } from "../../components/ui/IconButton";
 import { environmentCatalog } from "../../connection/catalog";
 import { useEnvironmentPresentation } from "../../state/presentation";
 import { terminalEnvironment } from "../../state/terminal";
@@ -422,7 +420,6 @@ function ThreadTerminal(props: {
     themeAppearance: appearanceScheme,
     themeId,
     setTerminalFontSize,
-    themeVariables,
   } = useAppearancePreferences();
   const fontSize = appearance.terminalFontSize;
   const terminalKey = `${selectedThread.environmentId}:${selectedThread.id}:${terminalId}`;
@@ -598,12 +595,7 @@ function ThreadTerminal(props: {
   }
   const isAccessoryDismissed = accessory.dismissed;
   const isAccessoryVisible = canOperateTerminal && keyboardState.isVisible && !isAccessoryDismissed;
-  // Android's terminal owns an EditText; turning off autoFocus also clears its native focus.
-  const terminalAutoFocus =
-    Platform.OS === "android"
-      ? !isAccessoryDismissed &&
-        (!SHOWCASE_ENABLED || keyboardFocusRequest > 0 || keyboardState.isVisible)
-      : !SHOWCASE_ENABLED;
+  const terminalAutoFocus = !SHOWCASE_ENABLED;
   const terminalBottomInset =
     (keyboardState.isVisible ? keyboardState.height : 0) +
     (isAccessoryVisible ? TERMINAL_ACCESSORY_HEIGHT : 0);
@@ -853,15 +845,10 @@ function ThreadTerminal(props: {
         <View
           className="flex-1"
           style={{
-            backgroundColor:
-              Platform.OS === "android"
-                ? themeVariables["--color-card-alt"]
-                : terminalTheme.background,
+            backgroundColor: terminalTheme.background,
             // Measured top reservation is zero when UIKit already inset the body or moved the bar.
             paddingTop:
               Platform.OS === "ios" ? (nativeColumnMetrics?.safeArea.top ?? insets.top) : 0,
-            paddingBottom:
-              Platform.OS === "android" && !keyboardState.isVisible ? insets.bottom : 0,
           }}
         >
           {!isEnvironmentReady ? (
@@ -956,20 +943,7 @@ function ThreadTerminal(props: {
                 />
               </View>
 
-              {Platform.OS === "android" && !keyboardState.isVisible ? (
-                <View className="min-h-14 flex-row items-center gap-2 bg-card-alt px-2">
-                  {hasNativeTerminalSurface() ? (
-                    <Button label="Attach output" tone="text" onPress={requestCapture} />
-                  ) : null}
-                  <View className="flex-1" />
-                  <IconButton
-                    accessibilityLabel="Show keyboard"
-                    disabled={!canOperateTerminal}
-                    icon="keyboard"
-                    onPress={handleShowKeyboard}
-                  />
-                </View>
-              ) : Platform.OS !== "android" && hasNativeTerminalSurface() ? (
+              {hasNativeTerminalSurface() ? (
                 <Pressable
                   accessibilityRole="button"
                   onPress={() => {
@@ -1038,7 +1012,7 @@ function ThreadTerminal(props: {
                     </ComposerToolbarRow>
                   </View>
                 </KeyboardStickyView>
-              ) : canOperateTerminal && !keyboardState.isVisible && Platform.OS !== "android" ? (
+              ) : canOperateTerminal && !keyboardState.isVisible ? (
                 <Pressable
                   accessibilityLabel="Show keyboard"
                   accessibilityRole="button"

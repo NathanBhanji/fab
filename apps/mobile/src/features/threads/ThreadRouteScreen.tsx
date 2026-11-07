@@ -5,7 +5,6 @@ import { makeTurnCommandMetadata } from "../../lib/commandMetadata";
 import { buildProjectThreadStartTurnInput } from "../../lib/projectThreadStartTurn";
 import { useWorktreeSetup } from "./use-worktree-setup";
 import { worktreeSetupAgentStarted } from "@fab/client-runtime/worktree-setup";
-import { AppBar } from "../../components/ui/AppBar";
 import {
   StackActions,
   useNavigation,
@@ -107,10 +106,6 @@ import {
 } from "./thread-route-hydration";
 import { ThreadHeader } from "./ThreadHeader";
 import { resumeThread } from "./resume-thread";
-import {
-  useAndroidWorkspaceBack,
-  useWorkspaceBackNavigation,
-} from "../workspace/useAndroidWorkspaceNavigation";
 import { openSettings } from "../settings/settings-navigation";
 import {
   InspectorContentScope,
@@ -132,33 +127,13 @@ function firstRouteParam(value: string | string[] | undefined): string | null {
 }
 
 function ThreadRouteFallbackLayout(props: { readonly children: ReactNode }) {
-  const goBack = useWorkspaceBackNavigation("threads");
-  const { layout } = useAdaptiveWorkspaceLayout();
-  const { themeVariables } = useAppearancePreferences();
-  if (Platform.OS !== "android")
-    return <ThreadScreenFallback>{props.children}</ThreadScreenFallback>;
-
-  return (
-    <>
-      <AppBar
-        title="Thread"
-        options={{ contentStyle: { backgroundColor: themeVariables["--color-header"] } }}
-        onBack={layout.usesSplitView ? undefined : goBack}
-        hideBottomBorder
-      />
-      <ThreadScreenFallback>{props.children}</ThreadScreenFallback>
-    </>
-  );
+  return <ThreadScreenFallback>{props.children}</ThreadScreenFallback>;
 }
 
 function OpeningThreadLoadingScreen() {
   return (
     <ThreadRouteFallbackLayout>
-      <LoadingScreen
-        message="Opening thread…"
-        messagePlacement="above-spinner"
-        embedded={Platform.OS === "android"}
-      />
+      <LoadingScreen message="Opening thread…" messagePlacement="above-spinner" />
     </ThreadRouteFallbackLayout>
   );
 }
@@ -191,7 +166,7 @@ function ThreadUnavailableScreen(props: {
           paddingHorizontal: 24,
           paddingVertical: 32,
         }}
-        className="bg-screen flex-1 android:bg-transparent"
+        className="bg-screen flex-1"
       >
         <EmptyState
           title="Thread unavailable"
@@ -245,7 +220,6 @@ export function ThreadRouteScreen(props: ThreadRouteScreenProps) {
 }
 
 function LiveThreadRouteController(props: ThreadRouteScreenProps) {
-  useAndroidWorkspaceBack("threads");
   const connectionsReady = useConnectionsReady();
   const { connectionState } = useRemoteConnectionStatus();
   const { selectedThread } = useThreadSelection();

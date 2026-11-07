@@ -2,7 +2,6 @@ import { Toolbar } from "../../components/ui/Toolbar";
 import * as Dialog from "../../components/ui/Dialog";
 import { NativeStackScreenOptions } from "../../native/StackHeader";
 import { useNavigation, type StaticScreenProps } from "@react-navigation/native";
-import type { MenuAction } from "@react-native-menu/menu";
 import { EnvironmentId, ThreadId } from "@fab/contracts";
 import {
   clampFileAttachmentUploadBytes,
@@ -11,11 +10,6 @@ import {
 import { useRef, useState } from "react";
 import { Platform, View } from "react-native";
 
-import {
-  AndroidHeaderIconButton,
-  AndroidScreenHeader,
-} from "../../components/ui/AndroidScreenHeader";
-import { Menu } from "../../components/ui/Menu";
 import { FilePreviewModal, type FilePreviewSource } from "../../components/FilePreviewModal";
 import { useAttachmentDocument } from "../../lib/attachmentDocument";
 import { nativeViewerErrorMessage } from "../../lib/attachmentDownload";
@@ -47,7 +41,6 @@ export function AttachmentFileScreen(props: AttachmentFileScreenProps) {
   const navigation = useNavigation();
   const { appearance, setCodeWordBreak } = useAppearancePreferences();
   const iconColor = useUniwindTheme()["--color-icon"];
-  const isAndroid = Platform.OS === "android";
   const params = props.route.params;
   const environmentId = params.environmentId?.trim()
     ? EnvironmentId.make(params.environmentId)
@@ -187,16 +180,6 @@ export function AttachmentFileScreen(props: AttachmentFileScreenProps) {
       : null,
   ].filter((action) => action !== null);
   const selectedAction = activeMode === "source" ? "source" : "preview";
-  const androidMenuActions = menuActions.map((action) => ({
-    id: action.id,
-    title: action.title,
-    image: action.icon,
-    state: action.inline ? (action.id === selectedAction ? "on" : "off") : undefined,
-    ...("destructive" in action ? { attributes: { destructive: true } } : {}),
-  })) satisfies MenuAction[];
-  const handleAndroidMenuAction = (event: { nativeEvent: { event: string } }) => {
-    menuActions.find(({ id }) => id === event.nativeEvent.event)?.onPress();
-  };
   const subtitle = `${draftKey ? "Draft attachment" : "Attachment"}${sizeBytes > 0 ? ` · ${formatAttachmentSize(sizeBytes)}` : ""}`;
   const refresh = useRefreshAssetUrl(environmentId, resource);
   const capabilities = useEnvironmentServerConfig(environmentId)?.environment.capabilities;
@@ -233,30 +216,13 @@ export function AttachmentFileScreen(props: AttachmentFileScreenProps) {
     <View className="flex-1 bg-sheet">
       <NativeStackScreenOptions
         options={{
-          headerShown: !isAndroid,
+          headerShown: true,
           headerTintColor: iconColor,
           headerTitle: params.name,
           title: params.name,
           unstable_headerSubtitle: Platform.OS === "ios" ? subtitle : undefined,
         }}
       />
-      {isAndroid ? (
-        <AndroidScreenHeader
-          title={params.name}
-          subtitle={subtitle}
-          onBack={handleBack}
-          trailing={
-            <Menu
-              actions={androidMenuActions}
-              isAnchoredToRight
-              title="File actions"
-              onPressAction={handleAndroidMenuAction}
-            >
-              <AndroidHeaderIconButton accessibilityLabel="File actions" icon="ellipsis" />
-            </Menu>
-          }
-        />
-      ) : null}
       <Toolbar placement="right">
         <Toolbar.Menu accessibilityLabel="File actions" icon="ellipsis">
           {renderedMode ? (

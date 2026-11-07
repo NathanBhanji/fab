@@ -1,16 +1,13 @@
-import { useNavigation, useRoute } from "@react-navigation/native";
+import { useNavigation } from "@react-navigation/native";
 import type { ReactNode } from "react";
-import { Platform, View } from "react-native";
+import { View } from "react-native";
 
-import { AndroidSheetHeader } from "../../../components/ui/AndroidScreenHeader";
 import type { AppBarProps } from "../../../components/ui/AppBar.types";
 import { AppBar } from "../../../components/ui/AppBar";
 import { ScreenContent as SettingsScreenContent } from "../../../components/ui/ScreenContent";
-import { useWorkspaceTabs } from "../../workspace/WorkspaceTabsContext";
 import { useWorkspaceSurface } from "../../workspace/useWorkspaceSurface";
 import { useDeviceType } from "../../../native/native-layout-metrics";
 import { useCompactWorkspaceTabs } from "../../workspace/useSystemWorkspaceTabBar";
-import { useAdaptiveWorkspaceLayout } from "../../layout/adaptive-workspace-context";
 import {
   ScreenScrollViewBottomInset,
   ScreenScrollViewSurface,
@@ -19,24 +16,18 @@ import {
 export { SettingsScreenContent };
 
 export function SettingsScreen(
-  props: Pick<AppBarProps, "title" | "actions" | "trailing" | "search"> & {
+  props: Pick<AppBarProps, "title" | "actions" | "search"> & {
     readonly children: ReactNode;
     readonly formSheet?: boolean;
     readonly workspaceRoot?: boolean;
   },
 ) {
   const navigation = useNavigation();
-  const route = useRoute();
-  const workspace = useWorkspaceTabs();
   const surface = useWorkspaceSurface();
   const deviceType = useDeviceType();
   const compactTabs = useCompactWorkspaceTabs();
-  const { layout } = useAdaptiveWorkspaceLayout();
   const cover = deviceType === "duo-folded";
-  // Android opens Settings as a workspace tab; its root page has nothing to go back to.
-  const workspaceRoot =
-    props.workspaceRoot ||
-    (Platform.OS === "android" && workspace !== null && route.name === "Settings");
+  const workspaceRoot = props.workspaceRoot;
 
   // Settings' grouped cards only lift off the screen surface, so the folded Duo doesn't take
   // the workspace's drawer surface here.
@@ -44,35 +35,20 @@ export function SettingsScreen(
 
   return (
     <View collapsable={false} className={`flex-1 ${surfaceClassName}`}>
-      {Platform.OS === "android" && props.formSheet ? (
-        <AndroidSheetHeader
-          title={props.title}
-          actions={props.actions}
-          trailing={props.trailing}
-          onBack={() => navigation.goBack()}
-          hideBottomBorder
-        />
-      ) : (
-        <AppBar
-          title={props.title}
-          actions={props.actions}
-          search={props.search}
-          trailing={Platform.OS === "android" ? props.trailing : undefined}
-          sidebar={false}
-          onBack={workspaceRoot ? undefined : () => navigation.goBack()}
-          hideBottomBorder={!props.formSheet}
-        />
-      )}
+      <AppBar
+        title={props.title}
+        actions={props.actions}
+        search={props.search}
+        sidebar={false}
+        onBack={workspaceRoot ? undefined : () => navigation.goBack()}
+        hideBottomBorder={!props.formSheet}
+      />
       <ScreenScrollViewBottomInset value={deviceType === "pad" || compactTabs ? 80 : 0}>
         <ScreenScrollViewSurface value={surfaceClassName}>
-          {props.formSheet && Platform.OS !== "android" ? (
+          {props.formSheet ? (
             props.children
           ) : (
-            <SettingsScreenContent
-              insetHorizontal={Platform.OS === "android" && layout.usesSplitView}
-            >
-              {props.children}
-            </SettingsScreenContent>
+            <SettingsScreenContent>{props.children}</SettingsScreenContent>
           )}
         </ScreenScrollViewSurface>
       </ScreenScrollViewBottomInset>

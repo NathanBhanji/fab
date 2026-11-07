@@ -1,7 +1,4 @@
-/**
- * Root routes listed as presented over the workspace, including ones that are plain cards on
- * Android but still sit above the workspace there.
- */
+/** Root routes listed as presented over the workspace. */
 const LISTED_OVERLAY_ROUTES: ReadonlySet<string> = new Set([
   "PullRequestReview",
   "PullRequestInlineComment",

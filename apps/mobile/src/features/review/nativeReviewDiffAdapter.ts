@@ -177,7 +177,7 @@ export function createNativeReviewDiffTheme(
 ): NativeReviewDiffTheme {
   const terminalTheme = getMobileTerminalTheme(themeId, scheme);
   const [, terminalRed] = terminalTheme.palette;
-  // Swift and Android disagree on alpha-byte order; flatten to shared opaque #RRGGBB.
+  // The native view takes opaque #RRGGBB, so flatten any alpha.
   const screen = opaqueNativeHexColor(
     appTheme["--color-screen"],
     scheme === "dark" ? "#000000" : "#ffffff",

@@ -15,7 +15,6 @@ import Animated, {
 import { AppActivityIndicator } from "../../components/ui/AppActivityIndicator";
 import { AppText as Text } from "../../components/ui/AppText";
 import { SymbolView, type AppSymbolName } from "../../components/ui/AppSymbol";
-import { useAndroidControlSizing } from "../../components/ui/useAndroidControlSizing";
 import { cn } from "../../lib/cn";
 import type { VoiceComposerPresentation } from "./voiceInputPresentation";
 import { VOICE_WAVEFORM_SAMPLE_COUNT } from "./voiceInputMetering";
@@ -122,7 +121,6 @@ export function ComposerDictationToolbar(props: {
   readonly showsDictation: boolean;
   readonly visible?: boolean;
 }) {
-  // Android can drop the reduced-motion flip's final frame, leaving the toolbar invisible.
   const reducedMotion = useReducedMotion();
   const entering = props.showsDictation ? DICTATION_TOOLBAR_ENTERING : DRAFT_TOOLBAR_ENTERING;
   const exiting = props.showsDictation ? DICTATION_TOOLBAR_EXITING : DRAFT_TOOLBAR_EXITING;
@@ -259,14 +257,11 @@ function VoiceActionButton(props: {
   readonly onPress: () => void;
   readonly variant?: "plain" | "primary";
 }) {
-  const { scale } = useAndroidControlSizing();
   const variant = props.variant ?? "plain";
   const loading = props.loading === true;
   const large = props.size === "large";
-  const circleSize = Math.round((large ? 44 : 30) * scale);
-  const iconSize = Math.round(
-    (variant === "primary" ? (large ? 20 : 16) : large ? 24 : 20) * scale,
-  );
+  const circleSize = large ? 44 : 30;
+  const iconSize = variant === "primary" ? (large ? 20 : 16) : large ? 24 : 20;
   const primaryStyle = useAnimatedStyle(() => ({
     opacity: withTiming(loading ? 0 : 1, DICTATION_TIMING),
   }));

@@ -2,11 +2,7 @@ import { useSidebarWorkspaceTabs } from "../workspace/useSystemWorkspaceTabBar";
 import { Button } from "../../components/ui/Button";
 import * as Dialog from "../../components/ui/Dialog";
 import type { ComposerTextPaste } from "../../native/FabComposerEditor.types";
-import { useAdaptiveWorkspaceLayout } from "../layout/AdaptiveWorkspaceLayout";
-import {
-  useAppearancePreferences,
-  useAndroidFloatingTabs,
-} from "../settings/appearance/AppearancePreferencesProvider";
+import { useAppearancePreferences } from "../settings/appearance/AppearancePreferencesProvider";
 import type { EnvironmentThreadShell } from "@fab/client-runtime/state/shell";
 import { settlePromise, squashAtomCommandFailure } from "@fab/client-runtime/state/runtime";
 import { AsyncResult } from "effect/reactivity";
@@ -52,7 +48,6 @@ import Animated, {
   withTiming,
 } from "react-native-reanimated";
 import { useUniwindTheme } from "../../lib/useUniwindTheme";
-import { themeColorWithAlpha } from "../../lib/mobileTheme";
 import { armAgentAwarenessLiveActivityForLocalWork } from "../agent-awareness/remoteRegistration";
 import { scopedThreadKey } from "../../lib/scopedEntities";
 import {
@@ -145,8 +140,7 @@ function useCompactComposerEditor(text: ScaledTextRole, value: string) {
   const rowWidth = useSharedValue(0);
   const editorX = useSharedValue(0);
   const editorWidth = useSharedValue(0);
-  const inset =
-    Platform.OS === "android" ? COLLAPSED_EDITOR_DEFAULT_INSET : collapsedEditorInset(text);
+  const inset = collapsedEditorInset(text);
   const minimum = Math.max(INLINE_EDITOR_HEIGHT, Math.ceil(text.lineHeight) + 2 * inset);
   const height = Math.max(
     minimum,
@@ -193,7 +187,7 @@ function useCompactComposerEditor(text: ScaledTextRole, value: string) {
     },
     editorProps: {
       singleLineCentered: !isExpanded,
-      scrollEnabled: Platform.OS === "android" || contentHeight >= text.lineHeight * 4,
+      scrollEnabled: contentHeight >= text.lineHeight * 4,
       contentInsetVertical: inset,
       onContentSizeChange: (size: { width: number; height: number }) => {
         setContentSize(size);
@@ -254,7 +248,6 @@ export interface ThreadComposerProps {
   readonly onEditorFocusChange?: (focused: boolean) => void;
 }
 
-// Android KeyboardStickyView tracks the IME; concurrent timed layout morphs cause jitter.
 const COMPOSER_TRANSITION_DURATION_MS = 220;
 // Side panes animate dock width; nested horizontal transitions would make the surface trail the toolbar.
 const composerHeightTransition: LayoutAnimationFunction = (values) => {
@@ -278,15 +271,13 @@ const composerHeightTransition: LayoutAnimationFunction = (values) => {
     },
   };
 };
-const COMPOSER_LAYOUT_TRANSITION = Platform.OS === "android" ? undefined : composerHeightTransition;
 // Share of the one-row composer the draft keeps; a long model name truncates first.
 const INLINE_EDITOR_MIN_WIDTH = "40%";
 const INLINE_EDITOR_HEIGHT = 36;
 
-const COMPOSER_ATTACHMENT_ENTERING =
-  Platform.OS === "android"
-    ? FadeIn.duration(160)
-    : FadeIn.delay(COMPOSER_TRANSITION_DURATION_MS).duration(160).reduceMotion(ReduceMotion.System);
+const COMPOSER_ATTACHMENT_ENTERING = FadeIn.delay(COMPOSER_TRANSITION_DURATION_MS)
+  .duration(160)
+  .reduceMotion(ReduceMotion.System);
 
 const AnimatedGlassSurface = Animated.createAnimatedComponent(GlassSurface);
 
@@ -353,7 +344,7 @@ function ComposerSurface(props: {
   const colors = useUniwindTheme();
   const targetBorderRadius =
     typeof props.style.borderRadius === "number" ? props.style.borderRadius : 0;
-  const shouldAnimate = props.animateLayout !== false && Platform.OS !== "android";
+  const shouldAnimate = props.animateLayout !== false;
   const animatedBorderRadius = useDerivedValue(() =>
     shouldAnimate
       ? withTiming(targetBorderRadius, {
@@ -367,14 +358,12 @@ function ComposerSurface(props: {
     borderRadius: animatedBorderRadius.value,
     ...(borderCurve ? { borderCurve } : {}),
   }));
-  const layoutTransition = shouldAnimate ? COMPOSER_LAYOUT_TRANSITION : undefined;
+  const layoutTransition = shouldAnimate ? composerHeightTransition : undefined;
 
   // Animate every native frame or glass and content jump to final height inside the clip.
   return (
     <Animated.View
-      className={
-        Platform.OS === "android" ? undefined : "shadow-[0_6px_28px] shadow-adaptive-black-a15-a35"
-      }
+      className="shadow-[0_6px_28px] shadow-adaptive-black-a15-a35"
       layout={layoutTransition}
       style={[
         animatedShapeStyle,
@@ -579,11 +568,9 @@ export const ThreadComposer = function ThreadComposer(props: ThreadComposerProps
   );
   const isVoiceInputPresented = voicePresentation.statusKind === "active";
   const isExpanded = isFocused || settingsSheetPresentation.keepsComposerExpanded;
-  const { layout, setComposerEditing } = useAdaptiveWorkspaceLayout();
-  const floatingSidebarComposer = useAndroidFloatingTabs() && layout.usesSplitView;
   const usesLargeControls =
     useSidebarWorkspaceTabs() === "picker" || (Platform.OS === "ios" && Platform.isPad);
-  const surfacePaddingVertical = usesLargeControls ? 9 : floatingSidebarComposer ? 6 : 2;
+  const surfacePaddingVertical = usesLargeControls ? 9 : 2;
   const [compactRowWidth, setCompactRowWidth] = useState(0);
   const compactAttachmentLimit = compactRowWidth >= 500 ? 3 : 1;
   const compactEditor = useCompactComposerEditor(bodyText, draftMessage);
@@ -613,8 +600,6 @@ export const ThreadComposer = function ThreadComposer(props: ThreadComposerProps
     sendBlockedReason === null &&
     !modelUnavailable;
 
-  // oxlint-disable-next-line fab/no-unreasoned-state-sync -- clears the workspace layout's composer-editing flag when the composer unmounts
-  useEffect(() => () => setComposerEditing(false), [setComposerEditing]);
   // A pending sheet presentation or focus restore has no composer left to act on.
   // oxlint-disable-next-line fab/no-unreasoned-state-sync -- disposes the pending settings sheet presentation and focus restore on unmount
   useEffect(() => () => disposeSettingsSheetPresentation(), []);
@@ -652,14 +637,12 @@ export const ThreadComposer = function ThreadComposer(props: ThreadComposerProps
     setIsFocused(true);
     settingsSheetPresentation.onEditorFocusChange(true);
     onEditorFocusChange?.(true);
-    setComposerEditing(true);
   };
 
   const handleBlur = () => {
     setIsFocused(false);
     settingsSheetPresentation.onEditorFocusChange(false);
     onEditorFocusChange?.(false);
-    setComposerEditing(false);
   };
   const handleSend = async (followUp?: ActiveTurnComposerAction) => {
     if (
@@ -812,17 +795,10 @@ export const ThreadComposer = function ThreadComposer(props: ThreadComposerProps
       style={{
         paddingTop: 6,
         paddingBottom: (props.bottomInset ?? 0) + THREAD_COMPOSER_BOTTOM_GUTTER,
-        backgroundColor:
-          Platform.OS === "android" ? themeColorWithAlpha(composerPanel, 1) : undefined,
       }}
     >
-      {/* Use a plain View: Reanimated Animated.View drops experimental_backgroundImage on Android. */}
       <View
-        className={
-          Platform.OS === "android"
-            ? "hidden"
-            : "absolute inset-0 bg-linear-to-b from-screen/0 via-screen/60 to-screen/90"
-        }
+        className="absolute inset-0 bg-linear-to-b from-screen/0 via-screen/60 to-screen/90"
         pointerEvents="none"
       />
       <Animated.View

@@ -4,14 +4,10 @@ import { PR_ROW_LAYOUT } from "./pullRequestAnimations";
 import { useNavigation } from "@react-navigation/native";
 import type { PullRequestDetail } from "@fab/contracts";
 import type { ReactNode } from "react";
-import { Platform, Pressable, View } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { Pressable, View } from "react-native";
 import { AppText as Text } from "../../components/ui/AppText";
 import { SymbolView, type AppSymbolName } from "../../components/ui/AppSymbol";
-import { Button } from "../../components/ui/Button";
-import { IconButton } from "../../components/ui/IconButton";
 import { Toolbar } from "../../components/ui/Toolbar";
-import { Menu } from "../../components/ui/Menu";
 
 import { useNativeLayoutMetrics } from "../../native/native-layout-metrics";
 import { type PullRequestParams } from "./usePullRequestDiff";
@@ -109,12 +105,10 @@ export function PullRequestActionToolbar(props: {
   readonly params: PullRequestParams;
   readonly filePath?: string;
   readonly onOpenFiles?: () => void;
-  readonly onHeightChange?: (height: number) => void;
 }) {
   const navigation = useNavigation();
   const { draft } = usePullRequestReviewDraft(props.params);
   const { themeVariables: colors } = useAppearancePreferences();
-  const insets = useSafeAreaInsets();
   const nativeMetrics = useNativeLayoutMetrics();
   const verticalControls = nativeMetrics !== null && nativeMetrics.verticalBarEdge !== "none";
   const permissions = usePullRequestPermissions(props.params, props.pr);
@@ -139,60 +133,6 @@ export function PullRequestActionToolbar(props: {
   if (!props.pr) return null;
   const primaryDisabled = pendingReview ? false : agent.disabled;
   const showPrimary = pendingReview || canOpenThread;
-  if (Platform.OS === "android") {
-    const primary = (
-      <Button
-        label={primaryLabel}
-        tone="primary"
-        disabled={primaryDisabled}
-        onPress={primaryPress}
-      />
-    );
-    return (
-      <View
-        pointerEvents="box-none"
-        className="absolute inset-x-0 bottom-0 z-10 items-center px-4 pt-2"
-        style={{ paddingBottom: insets.bottom + 16 }}
-        onLayout={(event) => props.onHeightChange?.(event.nativeEvent.layout.height)}
-      >
-        <Toolbar>
-          <View className="flex-row items-center gap-2">
-            {showAgentControls ? (
-              <Menu
-                title="AI helpers"
-                actions={agentActions.map((action) => agent.menuAction(action.task))}
-                onPressAction={({ nativeEvent }) => agent.select(nativeEvent.event)}
-              >
-                <View pointerEvents="none">
-                  <IconButton
-                    icon="sparkles"
-                    accessibilityLabel={`${shortLabel} agent actions`}
-                    disabled={agent.disabled}
-                  />
-                </View>
-              </Menu>
-            ) : null}
-            {showPrimary ? (
-              <View className="min-w-0 shrink">
-                {!pendingReview && chooseThread ? (
-                  <Menu
-                    title="Open thread"
-                    actions={threadMenuItems}
-                    onPressAction={({ nativeEvent }) => agent.select(nativeEvent.event)}
-                  >
-                    <View pointerEvents="none">{primary}</View>
-                  </Menu>
-                ) : (
-                  primary
-                )}
-              </View>
-            ) : null}
-            <IconButton icon="file.diff" accessibilityLabel="Changed files" onPress={openFiles} />
-          </View>
-        </Toolbar>
-      </View>
-    );
-  }
   const nativeThreadItems = threadMenuItems.map((item) => (
     <Toolbar.MenuAction
       key={item.id}

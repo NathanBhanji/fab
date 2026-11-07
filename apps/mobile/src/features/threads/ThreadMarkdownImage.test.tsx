@@ -73,8 +73,7 @@ it("keeps the frame size when the same image reports a different decoded width",
         </MarkdownImageAvailableWidthContext>,
       ),
     );
-    // Android reports the bitmap downsampled for the current frame, so the same file
-    // alternates between widths (969 and 970 of 1000) as the frame changes size.
+    // The same file can report widths that differ by a pixel (969 and 970 of 1000) as the frame changes size.
     await act(async () => harness.loadImage({ source: { width: 970, height: 567 } }));
     const first = frameSize();
     expect(first).toBeDefined();

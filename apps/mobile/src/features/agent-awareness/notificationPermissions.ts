@@ -34,19 +34,8 @@ export const requestAgentNotificationPermission: Effect.Effect<
   NotificationPermissionResult,
   NotificationPermissionReadError | NotificationPermissionRequestError
 > = Effect.gen(function* () {
-  if (Platform.OS !== "ios" && Platform.OS !== "android") {
+  if (Platform.OS !== "ios") {
     return { type: "unsupported" };
-  }
-
-  if (Platform.OS === "android") {
-    yield* Effect.tryPromise({
-      try: () =>
-        Notifications.setNotificationChannelAsync("agent-alerts", {
-          name: "Agent alerts",
-          importance: Notifications.AndroidImportance.HIGH,
-        }),
-      catch: (cause) => new NotificationPermissionRequestError({ cause }),
-    });
   }
 
   const existing = yield* Effect.tryPromise({

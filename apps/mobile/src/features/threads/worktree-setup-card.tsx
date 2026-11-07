@@ -7,7 +7,7 @@ import {
 import { worktreeSetupAgentStarted } from "@fab/client-runtime/worktree-setup";
 import { formatDuration } from "@fab/shared/orchestrationTiming";
 import { useState } from "react";
-import { Platform, Pressable, ScrollView, View } from "react-native";
+import { Pressable, ScrollView, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { AppActivityIndicator } from "../../components/ui/AppActivityIndicator";
 import { AppText as Text } from "../../components/ui/AppText";
@@ -100,12 +100,12 @@ export function WorktreeSetupCard(props: WorktreeSetupCardProps) {
           >
             {backgroundSetup ? (
               <AppActivityIndicator
-                size={Platform.OS === "android" ? 12 : "small"}
+                size="small"
                 colorClassName="accent-icon-muted"
                 style={{
                   width: 12,
                   height: 12,
-                  transform: Platform.OS === "android" ? undefined : [{ scale: 0.65 }],
+                  transform: [{ scale: 0.65 }],
                 }}
               />
             ) : failed ? (
@@ -363,8 +363,8 @@ function OutputTail({ lines, failed }: { lines: ReadonlyArray<string>; failed: b
           numberOfLines={1}
           className={
             failed
-              ? "text-2xs leading-5 text-danger-foreground ios:font-[family-name:Menlo] android:font-mono"
-              : "text-2xs leading-5 text-foreground-secondary ios:font-[family-name:Menlo] android:font-mono"
+              ? "text-2xs leading-5 text-danger-foreground ios:font-[family-name:Menlo]"
+              : "text-2xs leading-5 text-foreground-secondary ios:font-[family-name:Menlo]"
           }
         >
           {lines[lines.length - OUTPUT_TAIL_SLOTS.length + slot] || "\u00a0"}

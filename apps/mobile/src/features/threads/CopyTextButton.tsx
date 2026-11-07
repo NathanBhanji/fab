@@ -12,7 +12,6 @@ export const CopyTextButton = memo(function CopyTextButton(props: {
   readonly accessibilityLabel: string;
   readonly text: string;
   readonly onCopy?: () => Promise<void>;
-  /** Lets a long-press menu wrap the button (`Menu` injects it on Android). */
   readonly onLongPress?: () => void;
   readonly tintColor?: ColorValue;
   readonly copiedTintColor?: ColorValue;

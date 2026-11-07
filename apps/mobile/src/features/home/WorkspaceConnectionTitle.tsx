@@ -1,11 +1,10 @@
 import type { NativeStackNavigationOptions } from "@react-navigation/native-stack";
 import { createContext, use, useEffect, useState, type ReactNode } from "react";
-import { Animated, Platform, Pressable, View } from "react-native";
+import { Animated, Pressable, View } from "react-native";
 
 import { AppActivityIndicator } from "../../components/ui/AppActivityIndicator";
 import { SymbolView } from "../../components/ui/AppSymbol";
 import { AppText as Text } from "../../components/ui/AppText";
-import { useAndroidControlSizing } from "../../components/ui/useAndroidControlSizing";
 import {
   brandTitleOffset,
   CompactBrandTitle,
@@ -30,9 +29,7 @@ const ConnectionStatusContext = createContext<ConnectionStatus | null>(null);
 
 /**
  * The delay hides brief reconnects, so it is the workspace's, not each header's: every header
- * shows the status from the same moment. Headers read it from context instead of subscribing
- * themselves, because a hidden Android tab drops its subscriptions and showed a stale status for
- * a moment when it came back, while context still reaches it.
+ * shows the status from the same moment.
  */
 export function WorkspaceConnectionStatusProvider(props: { readonly children: ReactNode }) {
   const { state } = useWorkspaceState();
@@ -108,7 +105,6 @@ export function WorkspaceConnectionTitle(props: {
 }) {
   const status = use(ConnectionStatusContext);
   const size = props.size ?? "navbar";
-  const { scale } = useAndroidControlSizing();
 
   if (status === null) {
     return props.grow ? (
@@ -130,20 +126,14 @@ export function WorkspaceConnectionTitle(props: {
         hitSlop={8}
         onPress={props.onPress}
         className="flex-row items-center gap-2"
-        style={[
-          { flexShrink: 1, marginLeft: props.statusOffset ?? 0 },
-          Platform.OS === "android" && { gap: 7 * scale },
-        ]}
+        style={{ flexShrink: 1, marginLeft: props.statusOffset ?? 0 }}
       >
         {status.showsProgress ? (
-          <AppActivityIndicator
-            colorClassName={"accent-icon-muted"}
-            size={Platform.OS === "android" ? Math.round(20 * scale) : "small"}
-          />
+          <AppActivityIndicator colorClassName={"accent-icon-muted"} size="small" />
         ) : (
           <SymbolView
             name="wifi.slash"
-            size={Math.round((size === "pageTitle" ? 17 : 15) * scale)}
+            size={size === "pageTitle" ? 17 : 15}
             tintColorClassName={"accent-icon-muted"}
             type="monochrome"
           />
@@ -151,7 +141,7 @@ export function WorkspaceConnectionTitle(props: {
         <Text
           className="font-fab-bold text-foreground-muted"
           numberOfLines={1}
-          style={{ flexShrink: 1, fontSize: (size === "pageTitle" ? 20 : 16) * scale }}
+          style={{ flexShrink: 1, fontSize: size === "pageTitle" ? 20 : 16 }}
         >
           {status.label}
         </Text>

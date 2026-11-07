@@ -140,12 +140,6 @@ export function workspaceSearchBottomClearance(input: {
   );
 }
 
-export function workspaceToolbarHeight(mode: WorkspaceSearchMode): number {
-  return mode === "expanded"
-    ? WORKSPACE_TOOLBAR.height * 2 + WORKSPACE_TOOLBAR.expandedGap
-    : WORKSPACE_TOOLBAR.height;
-}
-
 export const NATIVE_WORKSPACE_TAB_SLOTS = [
   "first",
   "second",

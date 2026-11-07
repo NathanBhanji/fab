@@ -23,10 +23,6 @@ import {
   squashAtomCommandFailure,
 } from "@fab/client-runtime/state/runtime";
 import { supportsAgentAwarenessPush } from "../agent-awareness/capabilities";
-import {
-  openAndroidLiveUpdateSettings,
-  supportsAndroidLiveUpdateSettings,
-} from "../agent-awareness/androidNotifications";
 import { setLiveActivityUpdatesEnabled } from "../agent-awareness/liveActivityPreferences";
 import { requestAgentNotificationPermission } from "../agent-awareness/notificationPermissions";
 import {
@@ -67,7 +63,7 @@ const notificationStatusAtom = makePermissionStatusAtom<NotificationStatus>({
   label: "mobile:notification-permission",
   initial: "checking",
   read: async () => {
-    if (Platform.OS !== "ios" && Platform.OS !== "android") return "unsupported";
+    if (Platform.OS !== "ios") return "unsupported";
     const result = await settlePromise(() => Notifications.getPermissionsAsync());
     if (result._tag === "Failure") {
       reportAtomCommandResult(result, { label: "notification permission refresh" });
@@ -128,10 +124,7 @@ function ConfiguredSettingsNotificationsRouteScreen() {
   const savePreferences = useAtomSet(updateMobilePreferencesAtom);
   const agentAwarenessPushAvailable = supportsAgentAwarenessPush();
   const agentAwarenessPlatform = resolveAgentAwarenessPlatformPresentation(Platform.OS);
-  const agentAwarenessSubtitle =
-    Platform.OS === "android" && !agentAwarenessPushAvailable
-      ? "Install a newer app build to enable notifications"
-      : agentAwarenessPlatform.subtitle;
+  const agentAwarenessSubtitle = agentAwarenessPlatform.subtitle;
   const insets = useSafeAreaInsets();
   const navigation = useNavigation();
   const { getToken, isLoaded, isSignedIn } = useAuth({ treatPendingAsSignedOut: false });
@@ -242,39 +235,12 @@ function ConfiguredSettingsNotificationsRouteScreen() {
     }
 
     setLiveActivityStatus("linking");
-    if (Platform.OS === "android") {
-      const permission = await settleAsyncResult(() =>
-        runtime.runPromiseExit(requestAgentNotificationPermission),
-      );
-      if (permission._tag === "Failure") {
-        setLiveActivityStatus("disabled");
-        const error = squashAtomCommandFailure(permission);
-        Dialog.alert(
-          "Ongoing activity unavailable",
-          error instanceof Error ? error.message : "Could not enable agent notifications.",
-        );
-        return;
-      }
-      if (permission.value.type !== "granted") {
-        setLiveActivityStatus("disabled");
-        Dialog.alert(
-          "Notification permission needed",
-          "Enable notifications in system Settings to show ongoing agent activity.",
-          [
-            { text: "Cancel", style: "cancel" },
-            { text: "Open Settings", onPress: () => void Linking.openSettings() },
-          ],
-        );
-        return;
-      }
-      setNotificationStatus("enabled");
-    }
     const tokenResult = await settlePromise(() => getToken(resolveRelayClerkTokenOptions()));
     if (tokenResult._tag === "Failure") {
       setLiveActivityStatus("disabled");
       const error = squashAtomCommandFailure(tokenResult);
       Dialog.alert(
-        Platform.OS === "android" ? "Ongoing activity unavailable" : "Live Activities unavailable",
+        "Live Activities unavailable",
         error instanceof Error ? error.message : "Could not enable agent activity updates.",
       );
       return;
@@ -301,9 +267,7 @@ function ConfiguredSettingsNotificationsRouteScreen() {
       if (!isAtomCommandInterrupted(updateResult)) {
         const error = squashAtomCommandFailure(updateResult);
         Dialog.alert(
-          Platform.OS === "android"
-            ? "Ongoing activity unavailable"
-            : "Live Activities unavailable",
+          "Live Activities unavailable",
           error instanceof Error ? error.message : "Could not enable agent activity updates.",
         );
       }
@@ -316,7 +280,7 @@ function ConfiguredSettingsNotificationsRouteScreen() {
     // Environment linking can precede device registration; only registered devices can receive Live Activities.
     if (getAgentAwarenessRegistrationStatus() === "registered") {
       Dialog.alert(
-        Platform.OS === "android" ? "Ongoing activity enabled" : "Live Activities enabled",
+        "Live Activities enabled",
         environmentCount > 0
           ? "Agent activity updates are enabled for environments this connection can configure."
           : "Agent activity updates are enabled. Add an environment to start receiving updates.",
@@ -443,13 +407,7 @@ function ConfiguredSettingsNotificationsRouteScreen() {
               liveActivityStatus === "linking"
             }
             icon="bolt.circle"
-            label={
-              Platform.OS === "android"
-                ? supportsAndroidLiveUpdateSettings()
-                  ? "Agent Live Updates"
-                  : "Ongoing Agent Activity"
-                : "Live Activity Updates"
-            }
+            label="Live Activity Updates"
             subtitle={agentAwarenessSubtitle}
             value={
               agentAwarenessPushAvailable &&
@@ -463,20 +421,6 @@ function ConfiguredSettingsNotificationsRouteScreen() {
               icon="bolt.circle"
               label="Turn off Live Activity preference"
               onPress={() => void handleLiveActivitiesChange(false)}
-            />
-          ) : null}
-          {supportsAndroidLiveUpdateSettings() ? (
-            <SettingsRow
-              icon="bolt.circle"
-              label="Live Update Settings"
-              onPress={() => {
-                void openAndroidLiveUpdateSettings().catch(() => {
-                  Dialog.alert(
-                    "Couldn't open Settings",
-                    "Open Android Settings, select Fab, then enable Live Updates in Notifications.",
-                  );
-                });
-              }}
             />
           ) : null}
         </SettingsSection>

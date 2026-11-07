@@ -3,7 +3,7 @@ import { useAtomSet, useAtomValue } from "@effect/atom-react";
 import { AsyncResult } from "effect/reactivity";
 import { getRecordingPermissionsAsync, requestRecordingPermissionsAsync } from "expo-audio";
 import { useState } from "react";
-import { Linking, Platform, useWindowDimensions, View } from "react-native";
+import { Linking, useWindowDimensions, View } from "react-native";
 import Reanimated, { ReduceMotion, useAnimatedStyle, withTiming } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -74,10 +74,7 @@ const KINDS: Record<
   bluetooth: {
     label: "Bluetooth",
     row: "Other Bluetooth",
-    rowDescription:
-      Platform.OS === "android"
-        ? "Earbuds, headsets, and cars, including Android Auto, not listed"
-        : "AirPods, headsets, and cars not listed",
+    rowDescription: "AirPods, headsets, and cars not listed",
     icon: "headphones",
   },
   builtIn: {
@@ -95,13 +92,11 @@ const KINDS: Record<
 };
 
 const UNAVAILABLE_EXPLANATION =
-  Platform.OS === "android"
-    ? "Fab's voice input uses Google's on-device speech recognition, which needs Android 12 or later with compatible Google speech services for the device language. Without it, the composer has no microphone button, and allowing microphone access won't add one. Keyboard voice typing is separate and isn't affected."
-    : "Fab's voice input uses Apple's on-device speech transcription, which needs iOS 26 or later on a device that supports it. Without it, the composer has no microphone button, and allowing microphone access won't add one. Apple keyboard dictation is separate and isn't affected.";
+  "Fab's voice input uses Apple's on-device speech transcription, which needs iOS 26 or later on a device that supports it. Without it, the composer has no microphone button, and allowing microphone access won't add one. Apple keyboard dictation is separate and isn't affected.";
 
 export function SettingsMicrophoneRouteScreen() {
   const transcriber = useAtomValue(localVoiceTranscriberAtom);
-  // Android's probe is asynchronous; an empty sheet avoids flashing "unavailable" first.
+  // An empty sheet avoids flashing "unavailable" before the first probe settles.
   if (transcriber === "checking") return <View collapsable={false} className="flex-1 bg-sheet" />;
   return transcriber === null ? <VoiceInputUnavailable /> : <MicrophoneSettings />;
 }
@@ -238,9 +233,6 @@ function MicrophoneSettings() {
           Voice input prefers the first connected microphone in this list. Wired and Bluetooth
           devices are added by name after you use voice input with them connected; until then, the
           Other row ranks them. Swipe a device left to forget it.
-          {Platform.OS === "android"
-            ? " Android may use another input when the preferred microphone cannot be routed."
-            : null}
         </Text>
       </ScrollView>
     </View>

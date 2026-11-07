@@ -2,7 +2,7 @@ import { useAtomValue } from "@effect/atom-react";
 import { sortProjectsByGroupOrder } from "@fab/client-runtime/state/project-grouping";
 import type { ScopedProjectRef, SidebarProjectGroupingMode } from "@fab/contracts";
 import { Atom } from "effect/reactivity";
-import { Platform, ScrollView } from "react-native";
+import { ScrollView } from "react-native";
 import type { MenuProps } from "../../components/ui/Menu.types";
 import { ListFilterMenu } from "../workspace/ListFilterMenu";
 import { environmentProjects } from "../../state/projects";
@@ -27,11 +27,7 @@ const SORTS = {
   created: "Newest created",
   oldest: "Oldest updated",
 } as const;
-// A 12dp inset keeps 16dp chips concentric with Android's 28dp ScreenContent corner.
-const ROW_STYLE =
-  Platform.OS === "android"
-    ? { paddingHorizontal: 12, paddingTop: 12, paddingBottom: 8, gap: 8 }
-    : { paddingHorizontal: 16, paddingTop: 2, paddingBottom: 10, gap: 8 };
+const ROW_STYLE = { paddingHorizontal: 16, paddingTop: 2, paddingBottom: 10, gap: 8 };
 const id = (field: string, value: string) => JSON.stringify([field, value]);
 function choices(field: string, options: Readonly<Record<string, string>>, selected: string) {
   return Object.entries(options).map(([value, title]) => ({
@@ -81,16 +77,8 @@ function useProjectsInSidebarOrder<Project extends { id: string; environmentId: 
   return sortProjectsByGroupOrder(projects, scopes);
 }
 
-export interface PullRequestFilterMenu {
-  readonly actions: MenuProps["actions"];
-  readonly onSelect: (id: string) => void;
-  /** Whether any filter, the environment, or a non-default sort is active. */
-  readonly customized: boolean;
-}
-
 /**
- * Builds the filter pills and, on Android, the header's full filter menu. The list screen owns
- * the call so both the pills and the header it frames read the same menu.
+ * Builds the filter pills. The list screen owns the call so the pills read its controls.
  */
 export function usePullRequestListFilters(props: {
   readonly environments: readonly { id: string; label: string }[];
@@ -134,8 +122,6 @@ export function usePullRequestListFilters(props: {
         break;
       case "reset":
         props.onChange(DEFAULT_PR_LIST_CONTROLS);
-        // The Android header menu also holds the environment, so its reset clears that too.
-        if (next === "environment") props.onEnvironmentChange(null);
         break;
       case "state":
         props.onChange({ ...value, state: next as PullRequestListControls["state"] });
@@ -257,16 +243,11 @@ export function usePullRequestListFilters(props: {
     },
     { id: "sort", title: SORTS[value.sort], subactions: choices("sort", SORTS, value.sort) },
   ];
-  const reset = (withEnvironment: boolean): MenuProps["actions"][number] => ({
-    id: id("reset", withEnvironment ? "environment" : ""),
+  const reset: MenuProps["actions"][number] = {
+    id: id("reset", ""),
     title: "Reset filters",
-    attributes: {
-      disabled:
-        count === 0 &&
-        value.sort === "updated" &&
-        (!withEnvironment || props.environmentId === null),
-    },
-  });
+    attributes: { disabled: count === 0 && value.sort === "updated" },
+  };
   const labels = [...new Set([...selectedLabels, ...props.labels])].slice(0, 60);
   const authors = [
     ...new Set([...(author && author !== "me" ? [author] : []), ...props.authors]),
@@ -306,26 +287,7 @@ export function usePullRequestListFilters(props: {
       author ?? "",
     ),
   ];
-  const customized = count > 0 || value.sort !== "updated" || props.environmentId !== null;
-  // The Android header's filter button opens every filter.
-  const headerMenu: PullRequestFilterMenu | null =
-    Platform.OS === "android"
-      ? {
-          actions: [
-            { id: "environment", title: "Environment", subactions: environmentActions },
-            { id: "state", title: "State", subactions: stateActions },
-            { id: "involvement", title: "Involvement", subactions: involvementActions },
-            { id: "labels", title: "Labels", subactions: labelActions },
-            { id: "author", title: "Author", subactions: authorActions },
-            ...more,
-            reset(true),
-          ],
-          onSelect: select,
-          customized,
-        }
-      : null;
   return {
-    headerMenu,
     select,
     count,
     more,
@@ -348,33 +310,19 @@ export function usePullRequestListFilters(props: {
 }
 
 export function PullRequestListFilters(props: {
-  /** Android sidebar rows sit further in than full-width rows; the pills follow them. */
-  readonly sidebar?: boolean;
   readonly filters: ReturnType<typeof usePullRequestListFilters>;
 }) {
   const { count, more, reset, select, author, selectedLabelCount } = props.filters;
   return (
-    <ScrollView
-      horizontal
-      showsHorizontalScrollIndicator={false}
-      // In the Android sidebar the first pill lines up with the rows' content instead
-      // (8dp row margin + 12dp padding).
-      contentContainerStyle={
-        props.sidebar && Platform.OS === "android"
-          ? { ...ROW_STYLE, paddingHorizontal: 20 }
-          : ROW_STYLE
-      }
-    >
-      {Platform.OS === "android" ? null : (
-        <ListFilterMenu
-          label={count ? String(count) : "Filters"}
-          icon
-          active={count > 0}
-          accessibilityLabel={count ? `Filters, ${count} active` : "More filters"}
-          actions={[...more, reset(false)]}
-          onSelect={select}
-        />
-      )}
+    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={ROW_STYLE}>
+      <ListFilterMenu
+        label={count ? String(count) : "Filters"}
+        icon
+        active={count > 0}
+        accessibilityLabel={count ? `Filters, ${count} active` : "More filters"}
+        actions={[...more, reset]}
+        onSelect={select}
+      />
       {props.filters.environmentLabel !== null ? (
         <ListFilterMenu
           label={props.filters.environmentLabel}

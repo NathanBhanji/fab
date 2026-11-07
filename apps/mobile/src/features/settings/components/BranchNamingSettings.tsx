@@ -26,7 +26,7 @@ export function BranchNamingSettings(props: {
   disabled: Readonly<Record<"mode" | "prefix" | "instructions", boolean>>;
   onChange: (patch: ServerSettingsPatch) => void;
 }) {
-  // Save on exit too: Android Back hides the keyboard without ending editing.
+  // Save on exit too, in case leaving the screen does not end editing.
   type Field = "branchNamePrefix" | "branchNameInstructions";
   const drafts = useRef<Partial<Record<Field, { text: string; over: string | null }>>>({});
   const savedValue = (field: Field) =>

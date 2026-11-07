@@ -141,7 +141,6 @@ function AccountSegment({
       }}
     >
       {size.width > 0 && size.height > 0 ? (
-        // Numeric canvas dimensions clear Android SVG geometry cached before a segment resized.
         <Svg width={size.width} height={size.height} accessible={false}>
           <Defs>
             <Pattern id={patternId} width={6} height={6} patternUnits="userSpaceOnUse">
