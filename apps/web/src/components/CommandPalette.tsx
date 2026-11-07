@@ -142,7 +142,6 @@ import {
   inferProjectTitleFromPath,
   isExplicitRelativeProjectPath,
   isScratchProject,
-  isUnsupportedWindowsProjectPath,
   resolveProjectPathForDispatch,
 } from "@fab/client-runtime/state/projects";
 import { resolvePastedPath } from "@fab/shared/path";
@@ -154,13 +153,7 @@ import {
 } from "../commandPaletteStore";
 import { PULL_REQUESTS_PANEL_REF, useRightPanelStore } from "../rightPanelStore";
 import { getLatestThreadForProject, sortThreads } from "@fab/client-runtime/state/thread-sort";
-import {
-  cn,
-  getLocalFileManagerName,
-  isMacPlatform,
-  isWindowsPlatform,
-  newProjectId,
-} from "../lib/utils";
+import { cn, getLocalFileManagerName, isMacPlatform, newProjectId } from "../lib/utils";
 import { buildThreadRouteParams } from "../threadRoutes";
 import { useAvailableSettingsSearchItems } from "./settings/useAvailableSettingsSearchItems";
 import {
@@ -619,7 +612,7 @@ function OpenCommandPaletteDialog(props: {
       : "";
   const canBrowsePaths =
     browseEnvironmentId !== null && !isRemoteProjectRepositoryStep && newProjectFlow === null;
-  const browsePath = getFilesystemBrowsePath(query, browseEnvironmentPlatform, canBrowsePaths);
+  const browsePath = getFilesystemBrowsePath(query, canBrowsePaths);
   const isBrowsing = browsePath.isBrowsing;
   const browseDirectoryPath = browsePath.directoryPath;
   const paletteMode = getCommandPaletteMode({ currentView, isBrowsing });
@@ -703,7 +696,6 @@ function OpenCommandPaletteDialog(props: {
           browseEntries,
           filterQuery: browsePath.filterQuery,
           pinnedDirectoryName: pinnedCloneDirectoryName,
-          caseSensitive: !isWindowsPlatform(browseEnvironmentPlatform),
         })
       : filterFilesystemBrowseEntries(browseEntries, browsePath.filterQuery);
 
@@ -1737,17 +1729,6 @@ function OpenCommandPaletteDialog(props: {
     }
     const rawCwd = input.rawCwd;
 
-    if (isUnsupportedWindowsProjectPath(rawCwd.trim(), input.platform)) {
-      toastManager.add(
-        stackedThreadToast({
-          type: "error",
-          title: "Failed to add project",
-          description: "Windows-style paths are only supported on Windows.",
-        }),
-      );
-      return;
-    }
-
     if (isExplicitRelativeProjectPath(rawCwd.trim()) && !input.currentProjectCwd) {
       toastManager.add(
         stackedThreadToast({
@@ -2018,17 +1999,6 @@ function OpenCommandPaletteDialog(props: {
     }
     if (rawDestination.length === 0 || isRemoteProjectCloning) return;
 
-    if (isUnsupportedWindowsProjectPath(rawDestination, browseEnvironmentPlatform)) {
-      toastManager.add(
-        stackedThreadToast({
-          type: "error",
-          title: "Clone failed",
-          description: "Windows-style paths are only supported on Windows.",
-        }),
-      );
-      return;
-    }
-
     if (isExplicitRelativeProjectPath(rawDestination) && !currentProjectCwdForBrowse) {
       toastManager.add(
         stackedThreadToast({
@@ -2100,7 +2070,6 @@ function OpenCommandPaletteDialog(props: {
           browseDirectoryPath: browsePath.directoryPath,
           selectedDirectoryName: name,
           cloneDirectoryName: pinnedCloneDirectoryName,
-          caseSensitive: !isWindowsPlatform(browseEnvironmentPlatform),
         })
       : appendBrowsePathSegment(query, name);
     await browseNavigation.run(

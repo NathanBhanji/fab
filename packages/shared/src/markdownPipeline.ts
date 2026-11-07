@@ -1,5 +1,4 @@
 import type { Paragraph, PhrasingContent, Root, RootContent } from "mdast";
-import { remarkKeepWindowsPaths } from "./markdownWindowsPaths.ts";
 import { type PluggableList, type Processor, type Transformer, unified } from "unified";
 import remarkParse from "remark-parse";
 import remarkRehype from "remark-rehype";
@@ -14,7 +13,7 @@ import {
   CODEX_ARTIFACT_TEMPLATE_HAST_PROPERTIES,
   remarkCodexDirectives,
 } from "./codexMarkdownDirectives.ts";
-import { isWindowsDrivePathHref, normalizeMarkdownLinkDestination } from "./markdownLinks.ts";
+import { normalizeMarkdownLinkDestination } from "./markdownLinks.ts";
 import { THREAD_LINK_PROTOCOL } from "./threadLinks.ts";
 
 type MarkdownImageHastNode = {
@@ -131,9 +130,7 @@ function moveColorSchemeSourcesToImage(picture: MarkdownImageHastNode) {
     const key = scheme?.toLowerCase() === "dark" ? "dataDarkSrc" : "dataLightSrc";
     // As in a browser, the first source that matches a scheme is the one shown.
     if (scheme && url && image.properties?.[key] === undefined) {
-      // The sanitizer reads a drive letter as a protocol; as a file URL it resolves to the same path.
-      const value = isWindowsDrivePathHref(url) ? `file:///${url.replaceAll("\\", "/")}` : url;
-      image.properties = { ...image.properties, [key]: value };
+      image.properties = { ...image.properties, [key]: url };
     }
   }
   picture.children = picture.children.filter((child) => child.tagName !== "source");
@@ -142,7 +139,6 @@ function moveColorSchemeSourcesToImage(picture: MarkdownImageHastNode) {
 function rehypePreserveImageSourceMeta() {
   return (tree: MarkdownImageHastNode) => {
     const visit = (node: MarkdownImageHastNode) => {
-      const src = node.properties?.src;
       const title = node.properties?.title;
       if (node.type === "element" && node.tagName === "picture") {
         moveColorSchemeSourcesToImage(node);
@@ -150,7 +146,6 @@ function rehypePreserveImageSourceMeta() {
       if (node.type === "element" && node.tagName === "img") {
         node.properties = {
           ...node.properties,
-          ...(typeof src === "string" && isWindowsDrivePathHref(src) ? { dataLocalSrc: src } : {}),
           ...(typeof title === "string" ? { dataMarkdownTitle: title } : {}),
         };
       }
@@ -182,7 +177,6 @@ const CHAT_MARKDOWN_SANITIZE_SCHEMA = {
       ...(defaultSchema.attributes?.img ?? []),
       "dataDarkSrc",
       "dataLightSrc",
-      "dataLocalSrc",
       "dataMarkdownTitle",
       "dataStandalone",
     ],
@@ -205,7 +199,6 @@ const CHAT_MARKDOWN_SANITIZE_SCHEMA = {
 export const CHAT_MARKDOWN_REMARK_PLUGINS: PluggableList = [
   remarkGfm,
   remarkKeepAutolinkSuffixes,
-  remarkKeepWindowsPaths,
   remarkGithubAlerts,
   remarkNormalizeListItemIndentation,
   remarkCodexDirectives,
@@ -217,7 +210,6 @@ export const CHAT_MARKDOWN_REMARK_PLUGINS: PluggableList = [
 export const CHAT_MARKDOWN_REMARK_PLUGINS_WITH_BREAKS: PluggableList = [
   remarkGfm,
   remarkKeepAutolinkSuffixes,
-  remarkKeepWindowsPaths,
   remarkGithubAlerts,
   remarkNormalizeListItemIndentation,
   remarkCodexDirectives,
@@ -477,7 +469,6 @@ interface ImageSourceNode {
   readonly tagName?: string;
   readonly properties?: {
     readonly src?: unknown;
-    readonly dataLocalSrc?: unknown;
     readonly dataDarkSrc?: unknown;
     readonly dataLightSrc?: unknown;
   };
@@ -492,11 +483,8 @@ export function chatMarkdownImageSources(markdown: string): Array<string> {
   const sources: Array<string> = [];
   const visit = (node: ImageSourceNode) => {
     if (node.type === "element" && node.tagName === "img") {
-      const { src, dataLocalSrc, dataDarkSrc, dataLightSrc } = node.properties ?? {};
-      // The sanitizer drops a Windows drive path from `src`; the renderer reads it from here.
-      if (typeof dataLocalSrc === "string") {
-        sources.push(normalizeMarkdownLinkDestination(dataLocalSrc).replaceAll("\\", "/"));
-      } else if (typeof src === "string") {
+      const { src, dataDarkSrc, dataLightSrc } = node.properties ?? {};
+      if (typeof src === "string") {
         sources.push(normalizeMarkdownLinkDestination(src));
       }
       // A `<picture>` shows one of these instead, by the viewer's theme.

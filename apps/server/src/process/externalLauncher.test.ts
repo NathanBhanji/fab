@@ -3,10 +3,8 @@ import * as NodeServices from "@effect/platform-node/NodeServices";
 import { assert, it } from "@effect/vitest";
 import * as ConfigProvider from "effect/ConfigProvider";
 import * as Deferred from "effect/Deferred";
-import * as Cause from "effect/Cause";
 import * as Effect from "effect/Effect";
 import * as TestClock from "effect/testing/TestClock";
-import * as Exit from "effect/Exit";
 import * as Fiber from "effect/Fiber";
 import * as FileSystem from "effect/FileSystem";
 import * as Layer from "effect/Layer";
@@ -212,49 +210,6 @@ it.effect.skipIf(windowsHost)(
         { PATH: binDir },
       );
     }).pipe(Effect.scoped, Effect.provide(NodeServices.layer)),
-);
-
-it.effect("launches an installed editor with platform-safe arguments", () =>
-  Effect.gen(function* () {
-    const fileSystem = yield* FileSystem.FileSystem;
-    const path = yield* Path.Path;
-    const binDir = yield* fileSystem.makeTempDirectoryScoped({ prefix: "fab-editors-" });
-    yield* fileSystem.writeFileString(path.join(binDir, "code.CMD"), "@echo off\r\n");
-
-    let spawned: ChildProcess.StandardCommand | undefined;
-    yield* Effect.gen(function* () {
-      const launcher = yield* ExternalLauncher.ExternalLauncher;
-      yield* launcher.launchEditor({
-        editor: "vscode",
-        cwd: "C:\\workspace with spaces\\src\\index.ts:12:4",
-      });
-    }).pipe(
-      Effect.provide(
-        layerTest({
-          platform: "win32",
-          env: { PATH: binDir, PATHEXT: ".COM;.EXE;.BAT;.CMD" },
-          resolveExecutable: (command) =>
-            command === "code" ? "C:\\Program Files\\Microsoft VS Code\\bin\\code.CMD" : command,
-          onSpawn: (command) => {
-            spawned = command;
-          },
-        }),
-      ),
-    );
-
-    assert.ok(spawned);
-    assert.equal(
-      spawned.command,
-      [
-        '^"C:\\Program^ Files\\Microsoft^ VS^ Code\\bin\\code.CMD^"',
-        '^"--goto^"',
-        '^"C:\\workspace^ with^ spaces\\src\\index.ts:12:4^"',
-      ].join(" "),
-    );
-    assert.deepEqual(spawned.args, []);
-    assert.equal(spawned.options.shell, true);
-    assert.equal(spawned.options.detached, true);
-  }).pipe(Effect.scoped, Effect.provide(NodeServices.layer)),
 );
 
 it.effect.skipIf(windowsHost)(
@@ -715,6 +670,16 @@ it.effect.skipIf(windowsHost)("ignores unusable app bundles and keeps PATH launc
   }).pipe(Effect.scoped, Effect.provide(NodeServices.layer)),
 );
 
+const withCodeOnPath = <A, E, R>(use: (binDir: string) => Effect.Effect<A, E, R>) =>
+  Effect.gen(function* () {
+    const fileSystem = yield* FileSystem.FileSystem;
+    const path = yield* Path.Path;
+    const binDir = yield* fileSystem.makeTempDirectoryScoped({ prefix: "fab-editors-" });
+    yield* fileSystem.writeFileString(path.join(binDir, "code"), "");
+    yield* fileSystem.chmod(path.join(binDir, "code"), 0o755);
+    return yield* use(binDir);
+  }).pipe(Effect.scoped, Effect.provide(NodeServices.layer));
+
 it.effect(
   "memoizes editor discovery and refreshes in the background after the cache window",
   () => {
@@ -745,43 +710,38 @@ it.effect(
       ),
     );
 
-    return Effect.gen(function* () {
-      const launcher = yield* ExternalLauncher.ExternalLauncher;
+    return withCodeOnPath((binDir) =>
+      Effect.gen(function* () {
+        const launcher = yield* ExternalLauncher.ExternalLauncher;
 
-      const first = yield* launcher.resolveAvailableEditors();
-      assert.equal(first.includes("vscode"), true);
-      const statCallsAfterFirstScan = statCalls;
-      initialScanDone = true;
-      assert.isAbove(statCallsAfterFirstScan, 0);
+        const first = yield* launcher.resolveAvailableEditors();
+        assert.equal(first.includes("vscode"), true);
+        const statCallsAfterFirstScan = statCalls;
+        initialScanDone = true;
+        assert.isAbove(statCallsAfterFirstScan, 0);
 
-      // Past the shared command-resolution cache TTL (30s) but within the
-      // discovery cache window: the memoized set is reused without any scan.
-      yield* TestClock.adjust("31 seconds");
-      const second = yield* launcher.resolveAvailableEditors();
-      assert.deepEqual([...second], [...first]);
-      assert.equal(statCalls, statCallsAfterFirstScan);
+        // Past the shared command-resolution cache TTL (30s) but within the
+        // discovery cache window: the memoized set is reused without any scan.
+        yield* TestClock.adjust("31 seconds");
+        const second = yield* launcher.resolveAvailableEditors();
+        assert.deepEqual([...second], [...first]);
+        assert.equal(statCalls, statCallsAfterFirstScan);
 
-      // Past the discovery cache window the next call still answers from the
-      // memoized set and rescans in the background.
-      yield* TestClock.adjust("30 seconds");
-      const third = yield* launcher.resolveAvailableEditors();
-      assert.deepEqual([...third], [...first]);
-      yield* Deferred.await(rescanned);
-      assert.isAbove(statCalls, statCallsAfterFirstScan);
-    }).pipe(
-      Effect.provide(
-        Layer.mergeAll(
-          layerLauncher,
-          Layer.succeed(HostProcess.Platform, "win32"),
-          ConfigProvider.layer(
-            ConfigProvider.fromEnv({
-              env: {
-                PATH: "C:\\fab-editor-discovery-cache-test",
-                PATHEXT: ".COM;.EXE;.BAT;.CMD",
-              },
-            }),
+        // Past the discovery cache window the next call still answers from the
+        // memoized set and rescans in the background.
+        yield* TestClock.adjust("30 seconds");
+        const third = yield* launcher.resolveAvailableEditors();
+        assert.deepEqual([...third], [...first]);
+        yield* Deferred.await(rescanned);
+        assert.isAbove(statCalls, statCallsAfterFirstScan);
+      }).pipe(
+        Effect.provide(
+          Layer.mergeAll(
+            layerLauncher,
+            Layer.succeed(HostProcess.Platform, "linux"),
+            ConfigProvider.layer(ConfigProvider.fromEnv({ env: { PATH: binDir } })),
+            TestClock.layer(),
           ),
-          TestClock.layer(),
         ),
       ),
     );
@@ -814,95 +774,29 @@ it.effect("keeps scanning after the caller is interrupted and shares that scan",
     ),
   );
 
-  return Effect.gen(function* () {
-    const launcher = yield* ExternalLauncher.ExternalLauncher;
+  return withCodeOnPath((binDir) =>
+    Effect.gen(function* () {
+      const launcher = yield* ExternalLauncher.ExternalLauncher;
 
-    const interrupted = yield* Effect.forkChild(launcher.resolveAvailableEditors());
-    yield* Effect.yieldNow;
-    yield* Fiber.interrupt(interrupted);
+      const interrupted = yield* Effect.forkChild(launcher.resolveAvailableEditors());
+      yield* Effect.yieldNow;
+      yield* Fiber.interrupt(interrupted);
 
-    const next = yield* Effect.forkChild(launcher.resolveAvailableEditors());
-    yield* Effect.yieldNow;
-    assert.equal(parkedStats, 1);
+      const next = yield* Effect.forkChild(launcher.resolveAvailableEditors());
+      yield* Effect.yieldNow;
+      assert.equal(parkedStats, 1);
 
-    yield* Deferred.succeed(release, undefined);
-    const editors = yield* Fiber.join(next);
-    assert.equal(editors.includes("vscode"), true);
-  }).pipe(
-    Effect.provide(
-      Layer.mergeAll(
-        layerLauncher,
-        Layer.succeed(HostProcess.Platform, "win32"),
-        ConfigProvider.layer(
-          ConfigProvider.fromEnv({
-            env: {
-              PATH: "C:\\fab-editor-discovery-interrupt-test",
-              PATHEXT: ".COM;.EXE;.BAT;.CMD",
-            },
-          }),
+      yield* Deferred.succeed(release, undefined);
+      const editors = yield* Fiber.join(next);
+      assert.equal(editors.includes("vscode"), true);
+    }).pipe(
+      Effect.provide(
+        Layer.mergeAll(
+          layerLauncher,
+          Layer.succeed(HostProcess.Platform, "linux"),
+          ConfigProvider.layer(ConfigProvider.fromEnv({ env: { PATH: binDir } })),
         ),
       ),
     ),
   );
 });
-
-const launchWindowsShimEditor = (cwd: string) =>
-  Effect.gen(function* () {
-    const fileSystem = yield* FileSystem.FileSystem;
-    const path = yield* Path.Path;
-    const binDir = yield* fileSystem.makeTempDirectoryScoped({ prefix: "fab-editors-" });
-    yield* fileSystem.writeFileString(path.join(binDir, "code.CMD"), "@echo off\r\n");
-    let spawned: ChildProcess.StandardCommand | undefined;
-    const exit = yield* Effect.gen(function* () {
-      const launcher = yield* ExternalLauncher.ExternalLauncher;
-      return yield* launcher.launchEditor({ editor: "vscode", cwd }).pipe(Effect.exit);
-    }).pipe(
-      Effect.provide(
-        layerTest({
-          platform: "win32",
-          env: { PATH: binDir, PATHEXT: ".COM;.EXE;.BAT;.CMD" },
-          resolveExecutable: (command) =>
-            command === "code" ? "C:\\Program Files\\Microsoft VS Code\\bin\\code.CMD" : command,
-          onSpawn: (command) => {
-            spawned = command;
-          },
-        }),
-      ),
-    );
-    return { exit, spawned };
-  }).pipe(Effect.scoped, Effect.provide(NodeServices.layer));
-
-it.effect.each([
-  ["CRLF", "C:\\workspace\\file.ts\r\ncalc.exe"],
-  ["LF", "C:\\workspace\\file.ts\ncalc.exe"],
-  ["double quote", 'C:\\workspace\\file.ts" & calc.exe & "'],
-] as const)("does not start a Windows command shim for a path with a $0", ([, cwd]) =>
-  Effect.gen(function* () {
-    const { exit, spawned } = yield* launchWindowsShimEditor(cwd);
-    assert.equal(spawned, undefined);
-    assert.isTrue(Exit.isFailure(exit));
-    if (Exit.isFailure(exit)) {
-      assert.instanceOf(
-        Cause.squash(exit.cause),
-        ExternalLauncher.ExternalLauncherUnsupportedTargetError,
-      );
-    }
-  }),
-);
-
-it.effect("starts a Windows command shim for unicode paths with cmd metacharacters", () =>
-  Effect.gen(function* () {
-    const { exit, spawned } = yield* launchWindowsShimEditor(
-      "C:\\Users\\jö\\R&D (100%)\\naïve ^file!.ts:3:7",
-    );
-    assert.isTrue(Exit.isSuccess(exit));
-    assert.ok(spawned);
-    assert.equal(spawned.options.shell, true);
-    assert.deepEqual(spawned.args, []);
-    assert.isTrue(
-      spawned.command.endsWith(
-        ' ^"--goto^" ^"C:\\Users\\jö\\R^&D^ ^(100^%^)\\naïve^ ^^file^!.ts:3:7^"',
-      ),
-    );
-  }),
-);

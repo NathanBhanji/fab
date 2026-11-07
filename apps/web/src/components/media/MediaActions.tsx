@@ -1,4 +1,4 @@
-import { formatFilePathForClipboard, type MediaActionId } from "@fab/client-runtime/media-actions";
+import type { MediaActionId } from "@fab/client-runtime/media-actions";
 import { mediaReferenceFileName, type MediaReference } from "@fab/client-runtime/media-reference";
 import { resolveAssetUrl } from "@fab/client-runtime/state/assets";
 import { settlePromise, squashAtomCommandFailure } from "@fab/client-runtime/state/runtime";
@@ -164,9 +164,7 @@ export function MediaActions({
               ? reference.url
               : undefined;
       if (text !== undefined) {
-        const clipboardText =
-          reference?.kind === "file" ? formatFilePathForClipboard(text, reference.path) : text;
-        await writeTextToClipboard(clipboardText, reference?.kind === "file" ? "file path" : "URL");
+        await writeTextToClipboard(text, reference?.kind === "file" ? "file path" : "URL");
         toastManager.add({
           type: "success",
           title: action === "copy-url" ? "URL copied" : "Path copied",

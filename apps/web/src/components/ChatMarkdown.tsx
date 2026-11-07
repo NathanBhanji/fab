@@ -1,6 +1,5 @@
 import { buildFileLinkParentSuffixByPath, fileLinkLabel } from "@fab/shared/fileLinks";
 import {
-  isWindowsDrivePathHref,
   normalizeMarkdownLinkDestination,
   extractInlineCodeSpans,
   extractMarkdownLinkHrefs,
@@ -406,7 +405,6 @@ function markdownUrlTransform(href: string) {
   if (parseAssistantCitationHref(href)) return href;
   if (parseComposerContextHref(href)) return href;
   if (parseThreadLinkHref(href)) return href;
-  if (isWindowsDrivePathHref(href)) return href;
   return rewriteMarkdownFileUriHref(href) ?? defaultUrlTransform(href);
 }
 
@@ -1394,26 +1392,22 @@ const CHAT_MARKDOWN_COMPONENTS = {
     }
     // A `<picture>`'s source for this theme, resolved like any other image.
     const themeSrc = node?.properties?.[resolvedTheme === "dark" ? "dataDarkSrc" : "dataLightSrc"];
-    const localSrc = typeof themeSrc === "string" ? undefined : node?.properties?.dataLocalSrc;
     const markdownTitle = node?.properties?.dataMarkdownTitle;
     const standalone = node?.properties?.dataStandalone === true;
-    const authoredSrc =
-      typeof themeSrc === "string" ? themeSrc : typeof localSrc === "string" ? localSrc : src;
+    const authoredSrc = typeof themeSrc === "string" ? themeSrc : src;
     const authoredTitle = typeof markdownTitle === "string" ? markdownTitle : title;
     const srcString =
       typeof authoredSrc === "string" ? normalizeMarkdownLinkDestination(authoredSrc) : "";
-    const classifiedSrc =
-      typeof localSrc === "string" ? srcString.replaceAll("\\", "/") : srcString;
     const altText = alt ?? "";
     const copyMarkdown = markdownImageCopy(altText, srcString, authoredTitle);
     const { className, style: _style, width, height, ...imageProps } = props;
     const authoredSizeStyle = authoredImageSizeStyle(width, height);
-    const imageSource = classifyMarkdownImageSource(classifiedSrc, imageBaseDir ?? cwd);
-    const mediaKind = mediaKindFromPath(classifiedSrc);
+    const imageSource = classifyMarkdownImageSource(srcString, imageBaseDir ?? cwd);
+    const mediaKind = mediaKindFromPath(srcString);
     if (mediaKind === "audio") {
       const filePath = imageSource._tag === "WorkspaceFile" ? imageSource.path : null;
       const name =
-        (filePath ?? classifiedSrc.split(/[?#]/, 1)[0] ?? "").split(/[\\/]/).at(-1) ||
+        (filePath ?? srcString.split(/[?#]/, 1)[0] ?? "").split(/[\\/]/).at(-1) ||
         altText ||
         "Audio";
       if (imageSource._tag !== "Direct" && !(filePath && threadRef)) {
@@ -1421,7 +1415,7 @@ const CHAT_MARKDOWN_COMPONENTS = {
       }
       return (
         <InlineAudioPreview
-          key={classifiedSrc}
+          key={srcString}
           name={name}
           copyMarkdown={copyMarkdown}
           {...(filePath && threadRef
@@ -1469,7 +1463,7 @@ const CHAT_MARKDOWN_COMPONENTS = {
           className={className}
           style={authoredSizeStyle}
           imageProps={imageProps}
-          srcFragment={markdownImageSourceFragment(classifiedSrc)}
+          srcFragment={markdownImageSourceFragment(srcString)}
           originalUrl={resolveProtocolRelativeMediaUrl(directUri)}
           framed={false}
           fallbackSrc={hostMediaUrl}
@@ -1546,7 +1540,7 @@ const CHAT_MARKDOWN_COMPONENTS = {
           alt={altText}
           kind={kind}
           copyMarkdown={copyMarkdown}
-          srcFragment={markdownImageSourceFragment(classifiedSrc)}
+          srcFragment={markdownImageSourceFragment(srcString)}
           standalone={standalone}
           style={authoredSizeStyle}
           workspaceRoot={cwd}

@@ -1,5 +1,3 @@
-import { isNetworkPath, isWindowsAbsolutePath, workspaceRelativeFilePath } from "@fab/shared/path";
-
 import {
   markdownDestinationHostPath,
   normalizeMarkdownLinkDestination,
@@ -19,20 +17,9 @@ export function markdownImageSourceFragment(source: string): string {
 }
 
 function joinWorkspacePath(workspaceRoot: string, relativePath: string): string {
-  const separator = isWindowsAbsolutePath(workspaceRoot) ? "\\" : "/";
-  const root = workspaceRoot.replace(/[\\/]+$/, "");
-  const path = relativePath.replace(/[\\/]/g, separator).replace(/^[\\/]+/, "");
-  return `${root}${separator}${path}`;
-}
-
-/** Rendering is not a click, so a network path loads only from the project's own share. */
-function hostFileSource(
-  path: string,
-  workspaceRoot: string | null | undefined,
-): MarkdownImageSource {
-  return isNetworkPath(path) && workspaceRelativeFilePath(path, workspaceRoot) === null
-    ? { _tag: "Blocked" }
-    : { _tag: "WorkspaceFile", path };
+  const root = workspaceRoot.replace(/\/+$/, "");
+  const path = relativePath.replace(/\\/g, "/").replace(/^\/+/, "");
+  return `${root}/${path}`;
 }
 
 /**
@@ -55,12 +42,10 @@ export function classifyMarkdownImageSource(
 
   const path = markdownDestinationHostPath(source);
   if (path === null) return { _tag: "Blocked" };
-  if (/^file:/i.test(source)) return hostFileSource(path, workspaceRoot);
+  if (/^file:/i.test(source)) return { _tag: "WorkspaceFile", path };
   if (path.length === 0) return { _tag: "Blocked" };
-  if (path.startsWith("/") || isWindowsAbsolutePath(path)) {
-    return hostFileSource(path, workspaceRoot);
-  }
-  if (URI_SCHEME_PATTERN.test(path) || path.startsWith("~/") || path.startsWith("~\\")) {
+  if (path.startsWith("/")) return { _tag: "WorkspaceFile", path };
+  if (URI_SCHEME_PATTERN.test(path) || path.startsWith("~/")) {
     return { _tag: "Blocked" };
   }
   if (!workspaceRoot) return { _tag: "Blocked" };

@@ -36,8 +36,6 @@ describe("inlineCodeFilePathCandidate", () => {
 
 describe("parseMarkdownFileLink", () => {
   it.each([
-    ["C:%5Crepo%5Cimage.png", "C:\\repo\\image.png"],
-    ["</D:/Programme/fab/ChatMarkdown.tsx:1>", "D:/Programme/fab/ChatMarkdown.tsx"],
     ["file://localhost/home/me/notes.md", "/home/me/notes.md"],
     ["app/routes/posts.$postId.tsx", "app/routes/posts.$postId.tsx"],
     ["src/routes/+page.svelte", "src/routes/+page.svelte"],
@@ -98,11 +96,6 @@ describe("parseMarkdownFileLink", () => {
       line: 42,
       column: 7,
     });
-    expect(parseMarkdownFileLink("file://server/share/src/main.ts#L42C7")).toMatchObject({
-      path: "\\\\server\\share\\src\\main.ts",
-      line: 42,
-      column: 7,
-    });
   });
 });
 
@@ -110,7 +103,6 @@ describe("workspaceRelativeFilePath", () => {
   // regression: #12449 workspace root links resolve to "."
   it.each([
     ["/repo/project", "/repo/project", "."],
-    ["C:/", "c:/", "."],
     ["/repo/project/a.ts", undefined, null],
   ])("relates %s to %s", (path, workspaceRoot, relativePath) => {
     expect(workspaceRelativeFilePath(path, workspaceRoot)).toBe(relativePath);
@@ -158,34 +150,9 @@ describe("resolveMarkdownFileLinkTarget", () => {
     );
   });
 
-  it("links a network path only inside the project's share", () => {
-    const cwd = "\\\\server\\share";
-    expect(resolveMarkdownFileLinkTarget("file://server/share/workspace-image.svg", cwd)).toBe(
-      "\\\\server\\share\\workspace-image.svg",
-    );
-    // Opening these sent the Windows user's NTLM credentials to attacker.test.
-    for (const href of ["file://attacker.test/s/x.ts", "\\\\attacker.test\\s\\x.ts"]) {
-      expect(resolveMarkdownFileLinkTarget(href, cwd)).toBeNull();
-    }
-  });
-
   it("keeps an encoded final space in the absolute target", () => {
     expect(resolveMarkdownFileLinkTarget("/tmp/repo/file.ts%20", "/tmp/repo")).toBe(
       "/tmp/repo/file.ts ",
-    );
-  });
-
-  it("normalizes slash-prefixed windows drive paths before resolving", () => {
-    expect(
-      resolveMarkdownFileLinkTarget(
-        "/D:/Programme/fab/apps/web/src/components/chat/OpenInPicker.tsx#L69",
-      ),
-    ).toBe("D:/Programme/fab/apps/web/src/components/chat/OpenInPicker.tsx:69");
-  });
-
-  it("decodes an encoded drive colon in a file uri before dropping its slash", () => {
-    expect(resolveMarkdownFileLinkTarget("file:///c%3A/Users/x/shot.png")).toBe(
-      "c:/Users/x/shot.png",
     );
   });
 });

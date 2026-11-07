@@ -1,8 +1,6 @@
 import type { ToolCallDiffTarget } from "../../diffPanelStore";
 import type { EnvironmentProject } from "@fab/client-runtime/state/shell";
 import type { ThreadPreviewState } from "../../previewStateStore";
-import { formatFilePathForClipboard } from "@fab/client-runtime/media-actions";
-import { resolvePathLinkTarget } from "@fab/shared/fileLinks";
 import { resolveExplicitDiffOpenOnActivate } from "../ChatView.logic";
 import { useStableCallback } from "../../hooks/useStableCallback";
 import { type ScopedThreadRef, type RunId } from "@fab/contracts";
@@ -57,8 +55,6 @@ interface RightPanelActionsInput {
   readonly rightPanelMaximized: boolean;
   readonly supportsPullRequests: boolean;
   readonly pullRequestsSurfaceAvailable: boolean;
-  readonly gitCwd: string | null;
-  readonly activeProjectCwd: string | null;
   readonly explicitDiffOpenRef: { current: ScopedThreadRef | null };
   readonly onDiffPanelOpen: (() => void) | undefined;
   readonly closeRightPanelSurface: (surface: RightPanelSurface) => void;
@@ -91,8 +87,6 @@ export function useRightPanelActions(input: RightPanelActionsInput) {
     rightPanelMaximized,
     supportsPullRequests,
     pullRequestsSurfaceAvailable,
-    gitCwd,
-    activeProjectCwd,
     explicitDiffOpenRef,
     onDiffPanelOpen,
   } = input;
@@ -267,16 +261,12 @@ export function useRightPanelActions(input: RightPanelActionsInput) {
       return;
     }
 
-    const clipboardPath = formatFilePathForClipboard(
-      relativePath,
-      resolvePathLinkTarget(relativePath, gitCwd ?? activeProjectCwd ?? ""),
-    );
-    void navigator.clipboard.writeText(clipboardPath).then(
+    void navigator.clipboard.writeText(relativePath).then(
       () => {
         toastManager.add({
           type: "success",
           title: "Path copied",
-          description: clipboardPath,
+          description: relativePath,
         });
       },
       (error) => {

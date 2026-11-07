@@ -163,16 +163,16 @@ describe("resolveOnboardingProjectId", () => {
           {
             id: ProjectId.make("remote-project"),
             environmentId: remoteEnvironmentId,
-            workspaceRoot: "C:\\Work\\Repo",
+            workspaceRoot: "/work/repo",
           },
           {
             id: localProjectId,
             environmentId: localEnvironmentId,
-            workspaceRoot: "C:\\Work\\Repo\\",
+            workspaceRoot: "/work/repo/",
           },
         ],
         localEnvironmentId,
-        candidate("c:/work/repo"),
+        candidate("/work/repo"),
       ),
     ).toBe(localProjectId);
   });

@@ -1,5 +1,3 @@
-import { formatFilePathForClipboard } from "@fab/client-runtime/media-actions";
-import { resolvePathLinkTarget } from "@fab/shared/fileLinks";
 import { resolveFilesystemReadAccess } from "@fab/client-runtime/state/filesystem";
 import { environmentSession } from "../../state/session";
 import { NativeStackScreenOptions } from "../../native/StackHeader";
@@ -828,13 +826,7 @@ export function ThreadFileScreen(props: ThreadFileRouteScreenProps) {
               title: "Copy path",
               icon: "doc.on.doc",
               inline: false,
-              onPress: () =>
-                copyTextWithHaptic(
-                  formatFilePathForClipboard(
-                    relativePath,
-                    resolvePathLinkTarget(relativePath, cwd ?? ""),
-                  ),
-                ),
+              onPress: () => copyTextWithHaptic(relativePath),
             } as const,
           ]),
       fileData?.contents != null

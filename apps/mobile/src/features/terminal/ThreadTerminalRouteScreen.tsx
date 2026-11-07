@@ -216,9 +216,6 @@ function inferHostPlatform(environmentLabel: string | null): HostPlatform {
   ) {
     return "mac";
   }
-  if (value.includes("windows") || value.includes("win")) {
-    return "windows";
-  }
   if (value.includes("linux") || value.includes("ubuntu") || value.includes("debian")) {
     return "linux";
   }

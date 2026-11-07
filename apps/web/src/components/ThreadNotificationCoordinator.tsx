@@ -18,7 +18,6 @@ import {
 } from "lucide-react";
 
 import { getClientSettings, subscribeClientSettings } from "../hooks/useSettings";
-import { isWindowsPlatform } from "../lib/utils";
 import { environmentSummaries } from "../state/presentation";
 import { environmentShell } from "../state/shell";
 import { environmentThreadShells } from "../state/threads";
@@ -198,8 +197,6 @@ export function startThreadNotifications(
         body: thread.title,
         tag: threadNotificationTag(environmentId, thread.id),
         silent: true,
-        // Windows drops clicks after a toast moves into Notification Center.
-        requireInteraction: kind === "completion" && isWindowsPlatform(navigator.platform),
       });
       trackNotification(environmentId, thread.id, notification);
       notification.addEventListener("click", () => {

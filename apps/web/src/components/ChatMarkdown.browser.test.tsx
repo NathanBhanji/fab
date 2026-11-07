@@ -430,11 +430,11 @@ describe("ChatMarkdown inline code selection", () => {
   });
 });
 
-describe("ChatMarkdown Windows file links", () => {
-  const environmentId = EnvironmentId.make("env-windows");
-  const renderWindows = (text: string, parseRawHtml: boolean) =>
+describe("ChatMarkdown unsafe links", () => {
+  const environmentId = EnvironmentId.make("env-unsafe-links");
+  const renderLinks = (text: string, parseRawHtml: boolean) =>
     renderText(text, {
-      cwd: "C:/Users/shawn/project",
+      cwd: "/Users/shawn/project",
       environmentId,
       lineBreaks: !parseRawHtml,
       parseRawHtml,
@@ -447,7 +447,7 @@ describe("ChatMarkdown Windows file links", () => {
   it("still rejects unsafe schemes", async () => {
     setup();
     for (const parseRawHtml of [true, false]) {
-      await using screen = await renderWindows(
+      await using screen = await renderLinks(
         "[unsafe](javascript:alert(1)) and [unknown](d:alert(1))",
         parseRawHtml,
       );

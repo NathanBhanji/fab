@@ -776,21 +776,20 @@ describe("buildThreadActionItems", () => {
 });
 
 describe("filterPinnedBrowseEntries", () => {
-  it("matches an existing pinned destination without Windows casing", () => {
-    const windowsEntries = [
-      { name: "Repo", fullPath: "C:\\projects\\Repo" },
-      { name: "work", fullPath: "C:\\projects\\work" },
+  it("shows every entry for the pinned destination and picks its exact match", () => {
+    const entries = [
+      { name: "repo", fullPath: "/projects/repo" },
+      { name: "work", fullPath: "/projects/work" },
     ];
     expect(
       filterPinnedBrowseEntries({
-        browseEntries: windowsEntries,
+        browseEntries: entries,
         filterQuery: "repo",
         pinnedDirectoryName: "repo",
-        caseSensitive: false,
       }),
     ).toEqual({
-      visibleEntries: windowsEntries,
-      exactEntry: windowsEntries[0],
+      visibleEntries: entries,
+      exactEntry: entries[0],
     });
   });
 });

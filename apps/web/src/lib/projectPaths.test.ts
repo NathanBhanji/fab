@@ -7,9 +7,9 @@ describe("projectPaths", () => {
     const existing = findProjectByPath(
       [
         { id: "project-1", cwd: "/repo/app" },
-        { id: "project-2", cwd: "C:\\Work\\Repo" },
+        { id: "project-2", cwd: "/work/repo" },
       ],
-      "C:/Work/Repo/",
+      "/work/repo/",
     );
 
     expect(existing?.id).toBe("project-2");

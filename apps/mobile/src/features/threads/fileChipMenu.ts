@@ -1,4 +1,3 @@
-import { formatFilePathForClipboard } from "@fab/client-runtime/media-actions";
 import { fileBasename } from "@fab/shared/path";
 import type { ThreadId } from "@fab/contracts";
 import { resolveMarkdownLinkPresentation } from "../../lib/markdownLinks";
@@ -21,8 +20,7 @@ export function fileChipClipboardPath(
   target: FileChipTarget,
   action: "copy-full-path" | "copy-relative-path",
 ): string | undefined {
-  const path = action === "copy-full-path" ? target.fullPath : target.relativePath;
-  return path === undefined ? undefined : formatFilePathForClipboard(path, target.fullPath);
+  return action === "copy-full-path" ? target.fullPath : target.relativePath;
 }
 
 export function resolveFileChipTarget(

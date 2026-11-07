@@ -24,26 +24,6 @@ describe("resolveCodexArtifactTemplate", () => {
       }),
     ).toEqual(HELLO_WORLD_TEMPLATE);
   });
-
-  it.each([
-    String.raw`C:\Users\test\.codex\skills\artifact-template-hello-world`,
-    String.raw`\\server\share\artifact-template-hello-world`,
-    "//server/share/artifact-template-hello-world",
-  ])("accepts absolute Windows skill directories: %s", (skillDirectory) => {
-    expect(
-      resolveCodexArtifactTemplate({
-        artifact_kind: "image",
-        display_name: "Reference image",
-        gallery_kind: "product-design",
-        skill_directory: skillDirectory,
-        skill_name: "artifact-template-reference-image",
-      }),
-    ).toMatchObject({
-      artifactKind: "image",
-      galleryKind: "product-design",
-      skillDirectory,
-    });
-  });
 });
 
 describe("appendCodexArtifactTemplateUsePrompt", () => {

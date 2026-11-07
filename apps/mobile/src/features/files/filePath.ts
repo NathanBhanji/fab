@@ -3,21 +3,13 @@ import { filePreviewDelimiter } from "@fab/shared/delimitedPreview";
 import { joinPath, resolvePathLinkTarget } from "@fab/shared/fileLinks";
 import { isWorkspaceAudioPreviewPath, isWorkspaceVideoPreviewPath } from "@fab/shared/filePreview";
 
-function isWindowsAbsolutePath(value: string): boolean {
-  return /^[A-Za-z]:[\\/]/.test(value) || value.startsWith("\\\\");
-}
-
 export function isAbsolutePath(value: string): boolean {
-  return value.startsWith("/") || isWindowsAbsolutePath(value);
+  return value.startsWith("/");
 }
 
 export function fileRoutePathSegments(path: string): string[] {
   const segments = path.split("/").filter((segment) => segment.length > 0);
   return path.startsWith("/") ? ["", ...segments] : segments;
-}
-
-function isWindowsPathStyle(value: string): boolean {
-  return isWindowsAbsolutePath(value) || /^[A-Za-z]:\\/.test(value);
 }
 
 export function basename(path: string): string {
@@ -30,8 +22,7 @@ export function resolveWorkspaceFilePath(cwd: string, relativePath: string): str
     return relativePath;
   }
 
-  const separator: "/" | "\\" = isWindowsPathStyle(cwd) ? "\\" : "/";
-  return joinPath(cwd, relativePath, separator);
+  return joinPath(cwd, relativePath);
 }
 
 function normalizeRelativePath(value: string): string | null {
@@ -56,7 +47,7 @@ export function resolveFileLinkPath(
   workspaceRoot: string | null | undefined,
   targetPath: string,
 ): string | null {
-  if (targetPath.startsWith("~/") || targetPath.startsWith("~\\")) {
+  if (targetPath.startsWith("~/")) {
     if (!workspaceRoot) return null;
     const expanded = resolvePathLinkTarget(targetPath, workspaceRoot);
     return isAbsolutePath(expanded) ? expanded : null;
@@ -76,16 +67,12 @@ export function resolveWorkspaceRelativeFilePath(
     return null;
   }
 
-  const normalizedTarget = targetPath.replaceAll("\\", "/");
-  const normalizedRoot = workspaceRoot.replaceAll("\\", "/").replace(/\/+$/, "");
-  const caseInsensitive = isWindowsAbsolutePath(targetPath) || isWindowsAbsolutePath(workspaceRoot);
-  const comparableTarget = caseInsensitive ? normalizedTarget.toLowerCase() : normalizedTarget;
-  const comparableRoot = caseInsensitive ? normalizedRoot.toLowerCase() : normalizedRoot;
-  if (!comparableTarget.startsWith(`${comparableRoot}/`)) {
+  const normalizedRoot = workspaceRoot.replace(/\/+$/, "");
+  if (!targetPath.startsWith(`${normalizedRoot}/`)) {
     return null;
   }
 
-  const relativePath = normalizedTarget.slice(normalizedRoot.length + 1);
+  const relativePath = targetPath.slice(normalizedRoot.length + 1);
   if (relativePath.split("/").includes("..")) {
     return null;
   }

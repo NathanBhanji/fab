@@ -17,15 +17,11 @@ function quoteProviderBinary(
   fallback: string,
   platform: ExecutionEnvironmentPlatformOs,
 ): string {
-  if (
-    SAFE_SHELL_BINARY_PATTERN.test(binaryPath) &&
-    (platform === "windows" || !binaryPath.includes("\\"))
-  ) {
+  if (SAFE_SHELL_BINARY_PATTERN.test(binaryPath) && !binaryPath.includes("\\")) {
     return binaryPath;
   }
-  if (platform === "windows") return `& '${binaryPath.replaceAll("'", "''")}'`;
   if (platform === "darwin" || platform === "linux") {
-    if (binaryPath.startsWith("~/") || binaryPath.startsWith("~\\")) {
+    if (binaryPath.startsWith("~/")) {
       return `~/'${binaryPath.slice(2).replaceAll("'", `'"'"'`)}'`;
     }
     return `'${binaryPath.replaceAll("'", `'"'"'`)}'`;
@@ -74,22 +70,15 @@ export function selectOnboardingProvidersByDriver(
 
 // These need no Node/npm and install where provider maintenance recognizes native binaries.
 const NATIVE_INSTALL_COMMANDS = {
-  claudeAgent: {
-    windows: "irm https://claude.ai/install.ps1 | iex",
-    posix: "curl -fsSL https://claude.ai/install.sh | bash",
-  },
-  codex: {
-    windows: "irm https://chatgpt.com/codex/install.ps1 | iex",
-    posix: "curl -fsSL https://chatgpt.com/codex/install.sh | sh",
-  },
+  claudeAgent: "curl -fsSL https://claude.ai/install.sh | bash",
+  codex: "curl -fsSL https://chatgpt.com/codex/install.sh | sh",
 } as const;
 
 export function resolveOnboardingProviderInstallCommand(
   driver: keyof typeof NATIVE_INSTALL_COMMANDS,
-  platform: ExecutionEnvironmentPlatformOs,
+  _platform: ExecutionEnvironmentPlatformOs,
 ): string {
-  const commands = NATIVE_INSTALL_COMMANDS[driver];
-  return platform === "windows" ? commands.windows : commands.posix;
+  return NATIVE_INSTALL_COMMANDS[driver];
 }
 
 export function resolveOnboardingProviderLoginCommand(

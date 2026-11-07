@@ -3,21 +3,14 @@ import { unified } from "unified";
 
 import { markdownDestinationHostPath } from "./markdownLinks.ts";
 import { chatMarkdownImageSources } from "./markdownPipeline.ts";
-import { isUncPath, isWindowsDrivePath, normalizeProjectPathForComparison } from "./path.ts";
+import { normalizeProjectPathForComparison } from "./path.ts";
 
 const parser = unified().use(remarkParse);
 
 function imageEmbed(path: string): string {
-  // Forward slashes read the same in every client parser; UNC paths also need file: to
-  // distinguish them from protocol-relative web URLs.
-  const destination = isWindowsDrivePath(path)
-    ? path.replaceAll("\\", "/")
-    : isUncPath(path)
-      ? `file:${path.replaceAll("\\", "/")}`
-      : path;
-  // Clients split `?`/`#`, decode `%` and `&` entities, and read POSIX backslashes as escapes;
+  // Clients split `?`/`#`, decode `%` and `&` entities, and read backslashes as escapes;
   // line breaks end an angle destination.
-  const escaped = destination.replace(/[%?#&\\\r\n]/g, encodeURIComponent).replace(/[<>]/g, "\\$&");
+  const escaped = path.replace(/[%?#&\\\r\n]/g, encodeURIComponent).replace(/[<>]/g, "\\$&");
   return `![](<${escaped}>)`;
 }
 

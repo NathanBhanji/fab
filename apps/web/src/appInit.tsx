@@ -172,7 +172,7 @@ export function startAppServices(): AppRouter {
   const router = getRouter(isElectron ? createHashHistory() : createBrowserHistory());
 
   if (isElectron) {
-    syncDocumentElectronPlatformClasses(navigator.platform);
+    syncDocumentElectronPlatformClasses();
     syncDocumentWindowControlsOverlayClass();
   }
 

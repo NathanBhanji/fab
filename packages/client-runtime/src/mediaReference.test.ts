@@ -6,8 +6,6 @@ describe("mediaFileReference", () => {
   it.each([
     ["/work/project/./media/../clip.mp4", "/work/project/", "clip.mp4"],
     ["/work/project-other/clip.mp4", "/work/project", undefined],
-    ["C:\\WORK\\project\\media\\..\\Clip.mp4", "c:/work/project/", "Clip.mp4"],
-    ["\\\\Server\\Share\\Project\\Clip.mp4", "//server/share/project", "Clip.mp4"],
   ])("preserves %s and only labels paths inside %s as relative", (path, root, relativePath) => {
     expect(mediaFileReference(path, root)).toEqual({
       kind: "file",

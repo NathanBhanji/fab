@@ -634,18 +634,18 @@ describe("terminalLinkAtPositionWithRange", () => {
     }
   });
 
-  it("activates a wrapped quoted Windows path from its spaces and position suffix", () => {
+  it("activates a wrapped quoted path from its spaces and position suffix", () => {
     const row = (text: string, isWrapContinuation: boolean): GhosttyRow => ({
       cells: Array.from(text, (character) => cell(character)),
       text,
       isWrapContinuation,
       wrapsToNext: false,
     });
-    const first = String.raw`"C:\Users\Jane `;
-    const second = String.raw`Doe\index.ts":12:7`;
+    const first = `"/home/Jane `;
+    const second = `Doe/index.ts":12:7`;
     const rows = [row(first, false), row(second, true)];
     const expected = {
-      text: String.raw`C:\Users\Jane Doe\index.ts:12:7`,
+      text: "/home/Jane Doe/index.ts:12:7",
       range: { start: { x: 1, y: 0 }, end: { x: second.length - 1, y: 1 } },
     };
     expect(terminalLinkAtPositionWithRange(rows, 0, first.length - 1)).toEqual(expected);
@@ -691,20 +691,20 @@ describe("terminalLinkAtPositionWithRange", () => {
       row("https://example.", false),
       row("com/reference", true),
       row("~/project/file", false),
-      row("C:\\repo\\file.ts", false),
-      row("PS C:\\repo\\dir 1", false, true),
-      row("\\test> ", true),
+      row("/repo/file.ts", false),
+      row("PS /repo/a/dir 1", false, true),
+      row("/test> ", true),
     ];
 
     expect(terminalLinkAtPositionWithRange(rows, 0, 8)?.text).toBe("https://example.com/reference");
     expect(terminalLinkAtPositionWithRange(rows, 1, 4)?.text).toBe("https://example.com/reference");
     expect(terminalLinkAtPositionWithRange(rows, 2, 2)?.text).toBe("~/project/file");
-    expect(terminalLinkAtPositionWithRange(rows, 3, 4)?.text).toBe("C:\\repo\\file.ts");
+    expect(terminalLinkAtPositionWithRange(rows, 3, 4)?.text).toBe("/repo/file.ts");
     expect(terminalLinkAtPositionWithRange(rows, 4, 13)).toEqual({
-      text: "C:\\repo\\dir 1\\test",
+      text: "/repo/a/dir 1/test",
       range: { start: { x: 3, y: 4 }, end: { x: 4, y: 5 } },
     });
-    expect(terminalLinkAtPositionWithRange(rows, 5, 2)?.text).toBe("C:\\repo\\dir 1\\test");
+    expect(terminalLinkAtPositionWithRange(rows, 5, 2)?.text).toBe("/repo/a/dir 1/test");
     expect(terminalLinkAtPositionWithRange(rows, 5, 5)).toBeNull();
     expect(terminalLinkAtPositionWithRange(rows, 1, 4)).toEqual({
       text: "https://example.com/reference",

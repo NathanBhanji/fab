@@ -1,28 +1,21 @@
-import {
-  fileBasename,
-  isAbsolutePath,
-  isWindowsAbsolutePath,
-  stripSlashPrefixedWindowsDrive,
-} from "./path.ts";
+import { fileBasename, isAbsolutePath } from "./path.ts";
 
 const POSITION_SUFFIX_CAPTURE_PATTERN = /:(\d+)(?::(\d+))?$/;
 
 const POSITION_HASH_PATTERN = /^#L(\d+)(?:C(\d+))?$/i;
 
-/** Keeps paths percent-encoded to avoid double decoding; non-localhost authorities become UNC shares. */
+/** Keeps paths percent-encoded to avoid double decoding; a remote host names no local file. */
 export function parseFileUrlHref(
   href: string,
 ): { readonly path: string; readonly hash: string } | null {
   try {
     const parsed = new URL(href);
     if (parsed.protocol.toLowerCase() !== "file:") return null;
+    if (parsed.hostname !== "" && parsed.hostname.toLowerCase() !== "localhost") return null;
 
-    const uncHostname = parsed.hostname.toLowerCase() === "localhost" ? "" : parsed.hostname;
-    const path = uncHostname
-      ? `\\\\${uncHostname}${parsed.pathname.replaceAll("/", "\\")}`
-      : parsed.pathname;
+    const path = parsed.pathname;
     if (path.length === 0) return null;
-    return { path: stripSlashPrefixedWindowsDrive(path), hash: parsed.hash };
+    return { path, hash: parsed.hash };
   } catch {
     return null;
   }
@@ -53,15 +46,8 @@ export function formatFilePathPosition(position: FilePathPosition): string {
   return `${position.path}:${position.line}${position.column ? `:${position.column}` : ""}`;
 }
 
-function isWindowsPathStyle(value: string): boolean {
-  return isWindowsAbsolutePath(value) || /[A-Za-z]:\\/.test(value);
-}
-
-export function joinPath(base: string, next: string, separator: "/" | "\\"): string {
+export function joinPath(base: string, next: string): string {
   const cleanBase = base.replace(/[\\/]+$/, "");
-  if (separator === "\\") {
-    return `${cleanBase}\\${next.replaceAll("/", "\\")}`;
-  }
   return `${cleanBase}/${next.replace(/^\/+/, "")}`;
 }
 
@@ -76,11 +62,6 @@ function inferHomeFromCwd(cwd: string): string | undefined {
     return `/home/${posixHome[1]}`;
   }
 
-  const windowsUser = cwd.match(/^([A-Za-z]:[\\/]Users[\\/][^\\/]+)/i);
-  if (windowsUser?.[1]) {
-    return windowsUser[1];
-  }
-
   return undefined;
 }
 
@@ -89,15 +70,13 @@ export function resolvePathLinkTarget(rawPath: string, cwd: string): string {
   const { path } = position;
 
   let resolvedPath = path;
-  if (path.startsWith("~/") || (isWindowsPathStyle(cwd) && path.startsWith("~\\"))) {
+  if (path.startsWith("~/")) {
     const home = inferHomeFromCwd(cwd);
     if (home) {
-      const separator: "/" | "\\" = isWindowsPathStyle(home) ? "\\" : "/";
-      resolvedPath = joinPath(home, path.slice(2), separator);
+      resolvedPath = joinPath(home, path.slice(2));
     }
   } else if (!isAbsolutePath(path)) {
-    const separator: "/" | "\\" = isWindowsPathStyle(cwd) ? "\\" : "/";
-    resolvedPath = joinPath(cwd, path, separator);
+    resolvedPath = joinPath(cwd, path);
   }
 
   return formatFilePathPosition({ ...position, path: resolvedPath });
