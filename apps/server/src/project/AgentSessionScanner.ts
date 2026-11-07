@@ -641,19 +641,14 @@ function shouldRetainDecodedRecord(
   );
 }
 
-function normalizeForWorktreeMatch(value: string, caseFold: boolean): string {
-  const normalized = `${value.replaceAll("\\", "/")}/`;
-  return caseFold ? normalized.toLowerCase() : normalized;
+function normalizeForWorktreeMatch(value: string): string {
+  return `${value}/`;
 }
 
-function isFabManagedWorktree(
-  candidatePath: string,
-  worktreesDir: string,
-  caseFold: boolean,
-): boolean {
-  const normalized = normalizeForWorktreeMatch(candidatePath, caseFold);
+function isFabManagedWorktree(candidatePath: string, worktreesDir: string): boolean {
+  const normalized = normalizeForWorktreeMatch(candidatePath);
   return (
-    normalized.startsWith(normalizeForWorktreeMatch(worktreesDir, caseFold)) ||
+    normalized.startsWith(normalizeForWorktreeMatch(worktreesDir)) ||
     normalized.includes("/.fab/worktrees/")
   );
 }
@@ -744,8 +739,6 @@ export const make = Effect.gen(function* () {
   const projectStore = yield* ProjectStore.ProjectStoreV2;
   const baseDir = path.resolve(serverConfig.baseDir);
   const worktreesDir = path.resolve(serverConfig.worktreesDir);
-  const isWindows = (yield* HostProcess.Platform) === "win32";
-  const foldWorktreeCase = isWindows;
   const hostEnvironment = yield* HostProcess.Environment;
   const homeDir = yield* HostProcess.HomeDirectory;
   // `/private/tmp` is what macOS reports for sessions started in `/tmp`.
@@ -762,14 +755,10 @@ export const make = Effect.gen(function* () {
   const isExcludedProjectPath = (candidatePath: string) =>
     excludedProjectRoots.has(normalizeProjectPathForComparison(candidatePath)) ||
     excludedProjectAncestors.some((ancestor) =>
-      normalizeForWorktreeMatch(candidatePath, foldWorktreeCase).startsWith(
-        normalizeForWorktreeMatch(ancestor, foldWorktreeCase),
-      ),
+      normalizeForWorktreeMatch(candidatePath).startsWith(normalizeForWorktreeMatch(ancestor)),
     ) ||
-    normalizeForWorktreeMatch(candidatePath, foldWorktreeCase).startsWith(
-      normalizeForWorktreeMatch(baseDir, foldWorktreeCase),
-    ) ||
-    isFabManagedWorktree(candidatePath, worktreesDir, foldWorktreeCase);
+    normalizeForWorktreeMatch(candidatePath).startsWith(normalizeForWorktreeMatch(baseDir)) ||
+    isFabManagedWorktree(candidatePath, worktreesDir);
 
   const listDirectory = (directory: string) =>
     fileSystem.readDirectory(directory).pipe(Effect.orElseSucceed((): ReadonlyArray<string> => []));
@@ -806,10 +795,6 @@ export const make = Effect.gen(function* () {
     const contents = yield* Effect.forEach(
       unique,
       (filePath) => {
-        // No privacy prompts or FIFOs to block open() here.
-        if (isWindows) {
-          return fileSystem.readFileString(filePath).pipe(Effect.orElseSucceed(() => ""));
-        }
         if ((blockedGitFilePaths.get(filePath) ?? 0) > now) return Effect.succeed("");
         blockedGitFilePaths.delete(filePath);
         return processRunner
@@ -834,7 +819,7 @@ export const make = Effect.gen(function* () {
             Effect.orElseSucceed(() => ""),
           );
       },
-      { concurrency: isWindows ? 1 : GIT_FILE_READ_CONCURRENCY },
+      { concurrency: GIT_FILE_READ_CONCURRENCY },
     );
     return new Map(unique.map((filePath, index) => [filePath, contents[index]!]));
   });

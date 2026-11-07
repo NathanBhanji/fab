@@ -32,7 +32,6 @@ interface Options {
 const UA_PLATFORMS: Partial<Record<NodeJS.Platform, string>> = {
   darwin: "macOS",
   linux: "Linux",
-  win32: "Windows",
 };
 
 /** Change user agent and Sec-CH-UA together; sites block mismatches. */

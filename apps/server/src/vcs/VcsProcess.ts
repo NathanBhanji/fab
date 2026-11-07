@@ -96,21 +96,14 @@ const gitMetricOperations = new Set([
 
 /**
  * Append after inherited entries without changing argv or the user's config.
- * Windows env keys ignore case: read the last spelling of the count so command overrides win,
- * then update every spelling because Node may keep any one.
  * Leave invalid counts untouched so Git reports them.
  */
 export const gitConfigEnv = (
   env: NodeJS.ProcessEnv,
   key: string,
   value: string,
-  platform: NodeJS.Platform,
 ): NodeJS.ProcessEnv => {
-  const countKeys = Object.keys(env).filter((name) =>
-    platform === "win32" ? name.toUpperCase() === "GIT_CONFIG_COUNT" : name === "GIT_CONFIG_COUNT",
-  );
-  const countKey = countKeys.at(-1) ?? "GIT_CONFIG_COUNT";
-  const inherited = env[countKey];
+  const inherited = env.GIT_CONFIG_COUNT;
   if (
     inherited !== undefined &&
     inherited !== "" &&
@@ -121,7 +114,7 @@ export const gitConfigEnv = (
   }
   const count = inherited === undefined || inherited === "" ? 0 : Number.parseInt(inherited, 10);
   return {
-    ...Object.fromEntries([...countKeys, countKey].map((name) => [name, String(count + 1)])),
+    GIT_CONFIG_COUNT: String(count + 1),
     [`GIT_CONFIG_KEY_${count}`]: key,
     [`GIT_CONFIG_VALUE_${count}`]: value,
   };
@@ -131,8 +124,8 @@ export const gitConfigEnv = (
  * A project can contain a fake bare repository whose config runs commands such as `core.fsmonitor`.
  * Require `--git-dir` or `GIT_DIR` to open bare repositories; Git before 2.38 ignores this setting.
  */
-export const explicitBareRepositoryEnv = (env: NodeJS.ProcessEnv, platform: NodeJS.Platform) =>
-  gitConfigEnv(env, "safe.bareRepository", "explicit", platform);
+export const explicitBareRepositoryEnv = (env: NodeJS.ProcessEnv) =>
+  gitConfigEnv(env, "safe.bareRepository", "explicit");
 
 const classifyNonZeroExit = (
   stderr: string,
@@ -211,7 +204,7 @@ export const make = Effect.gen(function* () {
         ...(input.onStdoutChunk !== undefined ? { onStdoutChunk: input.onStdoutChunk } : {}),
         env: {
           ...input.env,
-          ...explicitBareRepositoryEnv({ ...process.env, ...input.env }, hostPlatform),
+          ...explicitBareRepositoryEnv({ ...process.env, ...input.env }),
         },
         timeout: input.timeoutMs ?? DEFAULT_TIMEOUT_MS,
         maxOutputBytes: input.maxOutputBytes ?? DEFAULT_MAX_OUTPUT_BYTES,

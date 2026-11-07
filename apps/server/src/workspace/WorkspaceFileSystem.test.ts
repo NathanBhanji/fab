@@ -1,8 +1,7 @@
-// @effect-diagnostics nodeBuiltinImport:off - FileSystem cannot create a FIFO, and reads spy on native realpath.
+// @effect-diagnostics nodeBuiltinImport:off - FileSystem cannot create a FIFO, and reads spy on native open.
 import * as NodeChildProcess from "node:child_process";
 import * as NodeFSP from "node:fs/promises";
 
-import * as NodePath from "@effect/platform-node/NodePath";
 import * as NodeCrypto from "@effect/platform-node/NodeCrypto";
 import * as NodeServices from "@effect/platform-node/NodeServices";
 import { it, describe, expect } from "@effect/vitest";
@@ -24,7 +23,7 @@ import { vi } from "vite-plus/test";
 
 vi.mock("node:fs/promises", async (importOriginal) => {
   const actual = await importOriginal<typeof NodeFSP>();
-  return { ...actual, realpath: vi.fn(actual.realpath), open: vi.fn(actual.open) };
+  return { ...actual, open: vi.fn(actual.open) };
 });
 
 const injectShortReads = Effect.fn("injectShortReads")(function* (target: string) {
@@ -293,33 +292,31 @@ it.layer(layerTest, { excludeTestServices: true })("WorkspaceFileSystemLive", (i
       }),
     );
 
-    it.effect.skipIf(HostProcess.Platform.defaultValue() === "win32")(
-      "rejects a FIFO without blocking on open",
-      () =>
-        Effect.gen(function* () {
-          const workspaceFileSystem = yield* WorkspaceFileSystem.WorkspaceFileSystem;
-          const path = yield* Path.Path;
-          const cwd = yield* makeTempDir;
-          const outsideDir = yield* makeTempDir;
-          const fifoPath = path.join(outsideDir, "pipe");
-          yield* Effect.promise(
-            () =>
-              new Promise<void>((resolve, reject) =>
-                NodeChildProcess.execFile("mkfifo", [fifoPath], (error) =>
-                  error ? reject(error) : resolve(),
-                ),
+    it.effect("rejects a FIFO without blocking on open", () =>
+      Effect.gen(function* () {
+        const workspaceFileSystem = yield* WorkspaceFileSystem.WorkspaceFileSystem;
+        const path = yield* Path.Path;
+        const cwd = yield* makeTempDir;
+        const outsideDir = yield* makeTempDir;
+        const fifoPath = path.join(outsideDir, "pipe");
+        yield* Effect.promise(
+          () =>
+            new Promise<void>((resolve, reject) =>
+              NodeChildProcess.execFile("mkfifo", [fifoPath], (error) =>
+                error ? reject(error) : resolve(),
               ),
-          );
+            ),
+        );
 
-          const error = yield* workspaceFileSystem
-            .readFile({ cwd, relativePath: fifoPath })
-            .pipe(Effect.flip);
+        const error = yield* workspaceFileSystem
+          .readFile({ cwd, relativePath: fifoPath })
+          .pipe(Effect.flip);
 
-          expect(error).toBeInstanceOf(WorkspaceFileSystem.WorkspacePathNotFileError);
-          expect((yield* workspaceFileSystem.getMetadata({ paths: [fifoPath] })).entries).toEqual([
-            { kind: "other" },
-          ]);
-        }),
+        expect(error).toBeInstanceOf(WorkspaceFileSystem.WorkspacePathNotFileError);
+        expect((yield* workspaceFileSystem.getMetadata({ paths: [fifoPath] })).entries).toEqual([
+          { kind: "other" },
+        ]);
+      }),
     );
 
     it.effect("refuses a network path outside the workspace", () =>
@@ -334,54 +331,25 @@ it.layer(layerTest, { excludeTestServices: true })("WorkspaceFileSystemLive", (i
       }),
     );
 
-    // This resolves inside the project, but Windows reads `\\?\` paths as
-    // written, so realpath on the raw string signed in to attacker.test.
-    it.effect("reads the network path it checked", () =>
-      Effect.gen(function* () {
-        const workspaceFileSystem = yield* WorkspaceFileSystem.make.pipe(
-          Effect.provide(Layer.merge(layerKnownWorkspacesTest, NodePath.layerWin32)),
-        );
-        // Rejects without touching the filesystem, so a Windows runner never looks the share up.
-        const realpath = vi
-          .mocked(NodeFSP.realpath)
-          .mockClear()
-          .mockRejectedValueOnce(Object.assign(new Error("ENOENT"), { code: "ENOENT" }));
-
-        yield* workspaceFileSystem
-          .readFile({
-            cwd: "\\\\?\\UNC\\nas.test\\share\\project",
-            relativePath: "\\\\?\\UNC\\attacker.test\\s\\..\\..\\nas.test\\share\\project\\a.md",
-          })
-          .pipe(Effect.exit);
-
-        expect(realpath.mock.calls.map(([target]) => target)).toEqual([
-          "\\\\?\\UNC\\nas.test\\share\\project\\a.md",
-        ]);
-      }),
-    );
-
     // Resolving `..` before realpath would read beside the link instead of its target.
-    // Windows collapses `..` before the filesystem sees a path, so it has no such reads.
-    it.effect.skipIf(!symlinksSupported || HostProcess.Platform.defaultValue() === "win32")(
-      "reads `..` after a link from the link's target",
-      () =>
-        Effect.gen(function* () {
-          const workspaceFileSystem = yield* WorkspaceFileSystem.WorkspaceFileSystem;
-          const fs = yield* FileSystem.FileSystem;
-          const path = yield* Path.Path;
-          const root = yield* makeTempDir;
-          yield* writeTextFile(root, "target/parent.md", "beside the target\n");
-          yield* writeTextFile(root, "parent.md", "beside the link\n");
-          yield* fs.makeDirectory(path.join(root, "target", "child"));
-          yield* fs.symlink(path.join(root, "target", "child"), path.join(root, "link"));
+    it.effect.skipIf(!symlinksSupported)("reads `..` after a link from the link's target", () =>
+      Effect.gen(function* () {
+        const workspaceFileSystem = yield* WorkspaceFileSystem.WorkspaceFileSystem;
+        const fs = yield* FileSystem.FileSystem;
+        const path = yield* Path.Path;
+        const root = yield* makeTempDir;
+        yield* writeTextFile(root, "target/parent.md", "beside the target\n");
+        yield* writeTextFile(root, "parent.md", "beside the link\n");
+        yield* fs.makeDirectory(path.join(root, "target", "child"));
+        yield* fs.symlink(path.join(root, "target", "child"), path.join(root, "link"));
 
-          const result = yield* workspaceFileSystem.readFile({
-            cwd: root,
-            relativePath: `${root}/link/../parent.md`,
-          });
+        const result = yield* workspaceFileSystem.readFile({
+          cwd: root,
+          relativePath: `${root}/link/../parent.md`,
+        });
 
-          expect(result.contents).toBe("beside the target\n");
-        }),
+        expect(result.contents).toBe("beside the target\n");
+      }),
     );
 
     it.effect.skipIf(!symlinksSupported)(
@@ -687,23 +655,20 @@ it.layer(layerTest, { excludeTestServices: true })("WorkspaceFileSystemLive", (i
         }),
     );
 
-    // On Windows `\` is a separator, so the name cannot exist there.
-    it.effect.skipIf(HostProcess.Platform.defaultValue() === "win32")(
-      "keeps a backslash in a file name as part of the name",
-      () =>
-        Effect.gen(function* () {
-          const workspaceFileSystem = yield* WorkspaceFileSystem.WorkspaceFileSystem;
-          const fileSystem = yield* FileSystem.FileSystem;
-          const cwd = yield* makeTempDir;
-          yield* writeTextFile(cwd, "a\\b.md", "old\n");
+    it.effect("keeps a backslash in a file name as part of the name", () =>
+      Effect.gen(function* () {
+        const workspaceFileSystem = yield* WorkspaceFileSystem.WorkspaceFileSystem;
+        const fileSystem = yield* FileSystem.FileSystem;
+        const cwd = yield* makeTempDir;
+        yield* writeTextFile(cwd, "a\\b.md", "old\n");
 
-          yield* workspaceFileSystem.writeFile({ cwd, relativePath: "a\\b.md", contents: "new\n" });
+        yield* workspaceFileSystem.writeFile({ cwd, relativePath: "a\\b.md", contents: "new\n" });
 
-          expect(
-            (yield* workspaceFileSystem.readFile({ cwd, relativePath: "a\\b.md" })).contents,
-          ).toBe("new\n");
-          expect(yield* fileSystem.readDirectory(cwd)).toEqual(["a\\b.md"]);
-        }),
+        expect(
+          (yield* workspaceFileSystem.readFile({ cwd, relativePath: "a\\b.md" })).contents,
+        ).toBe("new\n");
+        expect(yield* fileSystem.readDirectory(cwd)).toEqual(["a\\b.md"]);
+      }),
     );
 
     it.effect("refuses writes into git's own folders", () =>

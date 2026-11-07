@@ -1048,43 +1048,41 @@ it.effect("checkpoint capture outside a repository fails with the common dir loo
   }).pipe(Effect.scoped, Effect.provide(layerGitContract)),
 );
 
-it.effect.skipIf(HostProcess.Platform.defaultValue() === "win32")(
-  "checkpoint capture handles a repository path containing a newline",
-  () =>
-    Effect.gen(function* () {
-      const fileSystem = yield* FileSystem.FileSystem;
-      const path = yield* Path.Path;
-      const driver = yield* GitVcsDriver.makeVcsDriverShape();
-      const cwd = yield* fileSystem.makeTempDirectoryScoped({
-        prefix: "fab-checkpoint-new\nline-",
-      });
-      const { git, checkpointRef } = yield* makeCheckpointFixture(driver, cwd);
-      const originalIndex = yield* fileSystem.readFile(path.join(cwd, ".git", "index"));
+it.effect("checkpoint capture handles a repository path containing a newline", () =>
+  Effect.gen(function* () {
+    const fileSystem = yield* FileSystem.FileSystem;
+    const path = yield* Path.Path;
+    const driver = yield* GitVcsDriver.makeVcsDriverShape();
+    const cwd = yield* fileSystem.makeTempDirectoryScoped({
+      prefix: "fab-checkpoint-new\nline-",
+    });
+    const { git, checkpointRef } = yield* makeCheckpointFixture(driver, cwd);
+    const originalIndex = yield* fileSystem.readFile(path.join(cwd, ".git", "index"));
 
-      const commands = yield* captureRecordingGitCommands(cwd, checkpointRef);
+    const commands = yield* captureRecordingGitCommands(cwd, checkpointRef);
 
-      assert.deepStrictEqual(commands, [
-        "rev-parse",
-        "rev-parse",
-        "config",
-        "rev-parse",
-        "read-tree",
-        "ls-files",
-        "check-ignore",
-        "add",
-        "write-tree",
-        "commit-tree",
-        "update-ref",
-      ]);
-      assert.strictEqual((yield* git(["show", `${checkpointRef}:file.txt`])).stdout, "unstaged\n");
-      assert.deepEqual(yield* fileSystem.readFile(path.join(cwd, ".git", "index")), originalIndex);
-      assert.deepStrictEqual(
-        (yield* fileSystem.readDirectory(path.join(cwd, ".git"))).filter((name) =>
-          name.startsWith("fab-checkpoint-index-"),
-        ),
-        [],
-      );
-    }).pipe(Effect.scoped, Effect.provide(layerGitContract)),
+    assert.deepStrictEqual(commands, [
+      "rev-parse",
+      "rev-parse",
+      "config",
+      "rev-parse",
+      "read-tree",
+      "ls-files",
+      "check-ignore",
+      "add",
+      "write-tree",
+      "commit-tree",
+      "update-ref",
+    ]);
+    assert.strictEqual((yield* git(["show", `${checkpointRef}:file.txt`])).stdout, "unstaged\n");
+    assert.deepEqual(yield* fileSystem.readFile(path.join(cwd, ".git", "index")), originalIndex);
+    assert.deepStrictEqual(
+      (yield* fileSystem.readDirectory(path.join(cwd, ".git"))).filter((name) =>
+        name.startsWith("fab-checkpoint-index-"),
+      ),
+      [],
+    );
+  }).pipe(Effect.scoped, Effect.provide(layerGitContract)),
 );
 
 it.effect("restores empty checkpoints without changing paths outside the workspace", () =>
@@ -1219,40 +1217,36 @@ it.effect("GitVcsDriver treats a missing git executable as outside any repositor
   }).pipe(Effect.scoped, Effect.provide(Layer.mergeAll(NodeServices.layer, NodeCrypto.layer))),
 );
 
-it.effect.skipIf(HostProcess.Platform.defaultValue() === "win32")(
-  "GitVcsDriver detects a repository whose path contains a newline",
-  () =>
-    Effect.gen(function* () {
-      const fileSystem = yield* FileSystem.FileSystem;
-      const path = yield* Path.Path;
-      const parent = yield* fileSystem.makeTempDirectoryScoped({ prefix: "fab-newline-repo-" });
-      const cwd = path.join(parent, "multi\nline");
-      yield* fileSystem.makeDirectory(cwd);
-      yield* runGit(cwd, ["init"]);
-      const driver = yield* GitVcsDriver.makeVcsDriverShape();
+it.effect("GitVcsDriver detects a repository whose path contains a newline", () =>
+  Effect.gen(function* () {
+    const fileSystem = yield* FileSystem.FileSystem;
+    const path = yield* Path.Path;
+    const parent = yield* fileSystem.makeTempDirectoryScoped({ prefix: "fab-newline-repo-" });
+    const cwd = path.join(parent, "multi\nline");
+    yield* fileSystem.makeDirectory(cwd);
+    yield* runGit(cwd, ["init"]);
+    const driver = yield* GitVcsDriver.makeVcsDriverShape();
 
-      const repository = yield* driver.detectRepository(cwd);
-      assert.strictEqual(repository?.rootPath, yield* fileSystem.realPath(cwd));
-      assert.strictEqual(repository?.metadataPath, ".git");
-    }).pipe(Effect.scoped, Effect.provide(layerGitContract)),
+    const repository = yield* driver.detectRepository(cwd);
+    assert.strictEqual(repository?.rootPath, yield* fileSystem.realPath(cwd));
+    assert.strictEqual(repository?.metadataPath, ".git");
+  }).pipe(Effect.scoped, Effect.provide(layerGitContract)),
 );
 
-it.effect.skipIf(HostProcess.Platform.defaultValue() === "win32")(
-  "GitVcsDriver still fails detection when git exists but cannot be spawned",
-  () =>
-    Effect.gen(function* () {
-      const fileSystem = yield* FileSystem.FileSystem;
-      // A file without the execute bit fails to spawn with a permission error.
-      const notExecutable = yield* fileSystem.makeTempFileScoped({ prefix: "fab-git-" });
-      const driver = yield* GitVcsDriver.makeVcsDriverShape().pipe(
-        Effect.provide(vcsProcessSpawning(notExecutable)),
-      );
+it.effect("GitVcsDriver still fails detection when git exists but cannot be spawned", () =>
+  Effect.gen(function* () {
+    const fileSystem = yield* FileSystem.FileSystem;
+    // A file without the execute bit fails to spawn with a permission error.
+    const notExecutable = yield* fileSystem.makeTempFileScoped({ prefix: "fab-git-" });
+    const driver = yield* GitVcsDriver.makeVcsDriverShape().pipe(
+      Effect.provide(vcsProcessSpawning(notExecutable)),
+    );
 
-      const error = yield* driver.isInsideWorkTree(process.cwd()).pipe(Effect.flip);
-      assert.strictEqual(error._tag, "VcsProcessSpawnError");
-      const detectionError = yield* driver.detectRepository(process.cwd()).pipe(Effect.flip);
-      assert.strictEqual(detectionError._tag, "VcsProcessSpawnError");
-    }).pipe(Effect.scoped, Effect.provide(Layer.mergeAll(NodeServices.layer, NodeCrypto.layer))),
+    const error = yield* driver.isInsideWorkTree(process.cwd()).pipe(Effect.flip);
+    assert.strictEqual(error._tag, "VcsProcessSpawnError");
+    const detectionError = yield* driver.detectRepository(process.cwd()).pipe(Effect.flip);
+    assert.strictEqual(detectionError._tag, "VcsProcessSpawnError");
+  }).pipe(Effect.scoped, Effect.provide(Layer.mergeAll(NodeServices.layer, NodeCrypto.layer))),
 );
 
 const gitCommandCount = (operation: string, outcome: string) =>

@@ -90,5 +90,3 @@ export const Addresses = Context.Reference<Effect.Effect<ReadonlySet<string>>>(
 export const UserId = Context.Reference<number | undefined>("@fab/shared/HostProcess/UserId", {
   defaultValue: () => process.getuid?.(),
 });
-
-export const isWindows = Effect.map(Platform, (platform) => platform === "win32");

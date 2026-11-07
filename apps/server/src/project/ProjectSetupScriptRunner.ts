@@ -106,19 +106,9 @@ export class ProjectSetupScriptProjectNotFoundError extends Schema.TaggedError<P
   }
 }
 
-export class ProjectSetupScriptUnsupportedShellError extends Schema.TaggedError<ProjectSetupScriptUnsupportedShellError>()(
-  "ProjectSetupScriptUnsupportedShellError",
-  { shell: Schema.String },
-) {
-  override get message(): string {
-    return "Project script completion is not supported in cmd.exe. Install PowerShell and retry.";
-  }
-}
-
 export const ProjectSetupScriptRunnerError = Schema.Union([
   ProjectSetupScriptOperationError,
   ProjectSetupScriptProjectNotFoundError,
-  ProjectSetupScriptUnsupportedShellError,
 ]);
 export type ProjectSetupScriptRunnerError = typeof ProjectSetupScriptRunnerError.Type;
 
@@ -168,9 +158,8 @@ function lineEditorReading(text: string, previous: boolean): boolean {
 
 type CompletionShell = "posix" | "fish" | "powershell";
 
-function resolveCompletionShell(shell: string): CompletionShell | null {
-  const name = (shell.split(/[/\\]/).at(-1) ?? shell).toLowerCase().replace(/\.exe$/, "");
-  if (name === "cmd") return null;
+function resolveCompletionShell(shell: string): CompletionShell {
+  const name = (shell.split("/").at(-1) ?? shell).toLowerCase();
   if (name === "fish") return "fish";
   if (name === "pwsh" || name === "powershell") return "powershell";
   return "posix";
@@ -492,10 +481,6 @@ export const make = Effect.gen(function* () {
       const completionShell = resolveCompletionShell(shell);
       let commandLine = script.command;
       if (observe && completionToken) {
-        if (completionShell === null) {
-          yield* terminalManager.closeIdle({ threadId: input.threadId, terminalId });
-          return yield* new ProjectSetupScriptUnsupportedShellError({ shell });
-        }
         commandLine = wrapCommandForCompletion(
           script.command,
           completionShell,
@@ -514,7 +499,7 @@ export const make = Effect.gen(function* () {
     );
 
     // Return once the terminal exists so callers can show it while a startup prompt waits.
-    // PowerShell and cmd have no line-editor signal.
+    // PowerShell has no line-editor signal.
     yield* (
       completionShell === "posix" || completionShell === "fish"
         ? readiness.wait

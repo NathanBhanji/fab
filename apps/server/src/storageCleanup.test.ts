@@ -357,12 +357,8 @@ const cleanupFixture = (
         ...git,
         execute: (input) =>
           Effect.gen(function* () {
-            // Before Git's own clean check: inside `git worktree remove`, or on
-            // Windows the same status check the removal makes before deleting.
-            if (
-              editBeforeRemoval &&
-              (input.args.includes("remove") || input.args.includes("--porcelain"))
-            )
+            // Before Git's own clean check inside `git worktree remove`.
+            if (editBeforeRemoval && input.args.includes("remove"))
               yield* fs.writeFileString(`${worktree}/tracked.txt`, "late edit\n");
             return yield* git.execute(input);
           }),
@@ -1579,13 +1575,13 @@ describe("orphan worktree reports", () => {
     ),
   );
 
-  it.live.each(["canonical", "win32", "linux"] as const)(
+  it.live.each(["canonical", "linux"] as const)(
     "skips an ancestor of a referenced thread worktree (%s)",
     (platform) =>
       runCleanupTest(
         Effect.gen(function* () {
           const fixture = yield* cleanupFixture().pipe(
-            Effect.provideService(HostProcess.Platform, platform === "win32" ? "win32" : "linux"),
+            Effect.provideService(HostProcess.Platform, "linux"),
           );
           fixture.setThreads([]);
           const ancestor = `${fixture.config.worktreesDir}/repository/stack`;
@@ -1593,13 +1589,7 @@ describe("orphan worktree reports", () => {
           yield* fixture.command(fixture.repo, ["worktree", "add", "-b", "nested", worktree]);
           const alias = `${fixture.repo}/alias`;
           if (platform === "canonical") yield* fixture.fs.symlink(worktree, alias);
-          fixture.setStoredWorktreePaths([
-            platform === "canonical"
-              ? alias
-              : platform === "win32"
-                ? worktree.toUpperCase()
-                : worktree,
-          ]);
+          fixture.setStoredWorktreePaths([platform === "canonical" ? alias : worktree]);
           yield* fixture.fs.utimes(ancestor, 1, 1);
           expect((yield* fixture.service.runNow).entries).toEqual([]);
           expect(yield* fixture.fs.exists(worktree)).toBe(true);
@@ -1794,8 +1784,7 @@ describe("orphan worktree reports", () => {
   it.live("continues after an inaccessible directory's git probe", (context) =>
     runCleanupTest(
       Effect.gen(function* () {
-        if ((yield* HostProcess.isWindows) || (yield* HostProcess.UserId) === 0)
-          return context.skip();
+        if ((yield* HostProcess.UserId) === 0) return context.skip();
         const fixture = yield* cleanupFixture();
         fixture.setThreads([]);
         const blocked = `${fixture.config.worktreesDir}/a-inaccessible`;
@@ -1820,45 +1809,36 @@ describe("orphan worktree reports", () => {
     ),
   );
 
-  it.live.each(["win32", "linux"] as const)(
-    "compares thread paths with host casing rules and excludes existing projects (%s)",
-    (platform) =>
-      runCleanupTest(
-        Effect.gen(function* () {
-          const fixture = yield* cleanupFixture().pipe(
-            Effect.provideService(HostProcess.Platform, platform),
-          );
-          fixture.setThreads([]);
-          const parent = `${fixture.config.worktreesDir}/repository`;
-          const referenced = `${parent}/Referenced`;
-          const project = `${parent}/Project`;
-          const nested = `${parent}/Nested`;
-          for (const folder of [referenced, project, nested]) {
-            yield* fixture.fs.makeDirectory(`${folder}/child`, { recursive: true });
-            yield* fixture.fs.utimes(folder, 1, 1);
-          }
-          fixture.setStoredWorktreePaths([fixture.worktree, referenced.toUpperCase()]);
-          fixture.setProjectRoots([fixture.repo, project, `${nested}/child`]);
-          const report = yield* fixture.service.runNow;
-          expect(report.entries.map((entry) => entry.path).sort()).toEqual(
-            platform === "win32" ? [] : [referenced],
-          );
-        }),
-      ),
+  it.live("compares thread paths case-sensitively and excludes existing projects", () =>
+    runCleanupTest(
+      Effect.gen(function* () {
+        const fixture = yield* cleanupFixture().pipe(
+          Effect.provideService(HostProcess.Platform, "linux"),
+        );
+        fixture.setThreads([]);
+        const parent = `${fixture.config.worktreesDir}/repository`;
+        const referenced = `${parent}/Referenced`;
+        const project = `${parent}/Project`;
+        const nested = `${parent}/Nested`;
+        for (const folder of [referenced, project, nested]) {
+          yield* fixture.fs.makeDirectory(`${folder}/child`, { recursive: true });
+          yield* fixture.fs.utimes(folder, 1, 1);
+        }
+        fixture.setStoredWorktreePaths([fixture.worktree, referenced.toUpperCase()]);
+        fixture.setProjectRoots([fixture.repo, project, `${nested}/child`]);
+        const report = yield* fixture.service.runNow;
+        expect(report.entries.map((entry) => entry.path).sort()).toEqual([referenced]);
+      }),
+    ),
   );
 
-  it.live.each([
-    ["win32", "cwd"],
-    ["win32", "worktreePath"],
-    ["linux", "cwd"],
-    ["linux", "worktreePath"],
-  ] as const)(
-    "matches a terminal at the worktree root with host casing rules (%s, %s)",
-    ([platform, field]) =>
+  it.live.each(["cwd", "worktreePath"] as const)(
+    "matches a terminal at the worktree root case-sensitively (%s)",
+    (field) =>
       runCleanupTest(
         Effect.gen(function* () {
           const fixture = yield* cleanupFixture().pipe(
-            Effect.provideService(HostProcess.Platform, platform),
+            Effect.provideService(HostProcess.Platform, "linux"),
           );
           const upper = fixture.worktree.toUpperCase();
           yield* fixture.openTerminal(
@@ -1867,32 +1847,22 @@ describe("orphan worktree reports", () => {
               : { cwd: fixture.repo, worktreePath: upper },
           );
           const report = yield* fixture.service.runNow;
-          expect(report.entries[0]).toMatchObject(
-            platform === "win32"
-              ? { outcome: "kept", reason: "Open terminal" }
-              : { outcome: "removed" },
-          );
+          expect(report.entries[0]).toMatchObject({ outcome: "removed" });
         }),
       ),
   );
 
-  it.live.each(["win32", "linux"] as const)(
-    "matches a provider session at the worktree root with host casing rules (%s)",
-    (platform) =>
-      runCleanupTest(
-        Effect.gen(function* () {
-          const fixture = yield* cleanupFixture().pipe(
-            Effect.provideService(HostProcess.Platform, platform),
-          );
-          fixture.setOpenSessionCwd(fixture.worktree.toUpperCase());
-          const report = yield* fixture.service.runNow;
-          expect(report.entries[0]).toMatchObject(
-            platform === "win32"
-              ? { outcome: "kept", reason: "Provider session is still open" }
-              : { outcome: "removed" },
-          );
-        }),
-      ),
+  it.live("matches a provider session at the worktree root case-sensitively", () =>
+    runCleanupTest(
+      Effect.gen(function* () {
+        const fixture = yield* cleanupFixture().pipe(
+          Effect.provideService(HostProcess.Platform, "linux"),
+        );
+        fixture.setOpenSessionCwd(fixture.worktree.toUpperCase());
+        const report = yield* fixture.service.runNow;
+        expect(report.entries[0]).toMatchObject({ outcome: "removed" });
+      }),
+    ),
   );
 });
 

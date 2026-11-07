@@ -47,7 +47,6 @@ import * as Settings from "./serverSettings.ts";
 import * as TerminalManager from "./terminal/Manager.ts";
 import { isFilesystemRoot, managedWorktreesDirectories } from "./worktreesDirectory.ts";
 import * as GitVcsDriver from "./vcs/GitVcsDriver.ts";
-import { removeLinkedWorktree } from "./vcs/worktreeRemoval.ts";
 import { withWorkspaceLease } from "./workspace/workspaceLease.ts";
 import * as HostProcess from "@fab/shared/HostProcess";
 import * as NodeSqliteClient from "@fab/shared/nodeSqliteClient";
@@ -305,11 +304,7 @@ const make = Effect.gen(function* () {
     liveTerminals.set(terminal.threadId, threadTerminals);
   };
 
-  const isWindows = yield* HostProcess.isWindows;
-  const pathKey = (target: string) => {
-    const resolved = path.resolve(target);
-    return isWindows ? resolved.toLowerCase() : resolved;
-  };
+  const pathKey = (target: string) => path.resolve(target);
   const inside = (root: string, target: string) => {
     const relative = path.relative(pathKey(root), pathKey(target));
     return (
@@ -1168,15 +1163,22 @@ const make = Effect.gen(function* () {
           const changes = yield* localChangesReason(worktreePath, settings);
           if (changes !== null) return keep(changes);
         }
-        yield* removeLinkedWorktree({
-          operation: "StorageCleanup.cleanupGit",
-          cwd: project.workspaceRoot,
-          worktreePath,
-          // Git requires force for submodules; recursive checks above cannot make removal atomic.
-          force: submodules.force,
-          execute: git.execute,
-          run: (args) => cleanupGit(project.workspaceRoot, [...args], "git worktree remove"),
-        });
+        yield* cleanupGit(
+          project.workspaceRoot,
+          [
+            // Git refuses to remove a worktree with untracked files unless forced, but
+            // its check honors `status.showUntrackedFiles=no` and would delete them.
+            "-c",
+            "status.showUntrackedFiles=normal",
+            "worktree",
+            "remove",
+            // Git requires force for submodules; recursive checks above cannot make removal atomic.
+            ...(submodules.force ? ["--force"] : []),
+            "--",
+            worktreePath,
+          ],
+          "git worktree remove",
+        );
         entries.push({ ...entry, outcome: "removed", reason: sentence(removalReason), bytes });
         yield* gitManager.invalidateStatus(project.workspaceRoot);
         // Preserve branch/path so ProviderTurnStartService can recreate the checkout on resume.

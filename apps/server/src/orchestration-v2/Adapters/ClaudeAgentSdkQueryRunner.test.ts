@@ -21,7 +21,6 @@ import * as Stream from "effect/Stream";
 import * as TestClock from "effect/testing/TestClock";
 import { vi } from "vite-plus/test";
 
-import * as HostProcess from "@fab/shared/HostProcess";
 import { AgentScope } from "@fab/shared/AgentScope";
 import { ProviderEventLoggers } from "@fab/provider-core/server/ProviderEventLoggers";
 import { makeProviderFailure } from "@fab/provider-core/server/failure";
@@ -498,7 +497,7 @@ const openFakeCli = (cli: string) =>
     });
   });
 
-describe.skipIf(HostProcess.Platform.defaultValue() === "win32")("Claude CLI process", () => {
+describe("Claude CLI process", () => {
   // The leftover child holds a FIFO open; its death produces EOF without polling.
   it.effect("stops what the CLI left running when the session closes", () =>
     Effect.gen(function* () {

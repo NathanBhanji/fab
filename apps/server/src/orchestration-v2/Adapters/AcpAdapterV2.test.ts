@@ -420,11 +420,9 @@ function makeMockRuntime(input: {
   readonly cancelBehavior?: AcpSessionRuntime.AcpSessionRuntimeOptions["cancelBehavior"];
   readonly ownDescendantProcessGroups?: boolean;
   readonly ownDetachedProcessGroup?: boolean;
-  readonly processGroupPlatform?: NodeJS.Platform;
   readonly processGroupTerminationGrace?: Duration.Input;
   readonly linuxCgroupController?: AcpSessionRuntime.AcpSessionRuntimeOptions["linuxCgroupController"];
   readonly posixProcessTreeController?: AcpSessionRuntime.AcpSessionRuntimeOptions["posixProcessTreeController"];
-  readonly windowsProcessTreeTerminator?: AcpSessionRuntime.AcpSessionRuntimeOptions["windowsProcessTreeTerminator"];
   readonly wrapCancel?: (
     cancel: AcpSessionRuntime.AcpSessionRuntime["Service"]["cancel"],
   ) => AcpSessionRuntime.AcpSessionRuntime["Service"]["cancel"];
@@ -464,9 +462,7 @@ function makeMockRuntime(input: {
           ...(input.ownDescendantProcessGroups === undefined
             ? {}
             : { ownDescendantProcessGroups: input.ownDescendantProcessGroups }),
-          ...(input.ownDetachedProcessGroup === true
-            ? { processGroupPlatform: input.processGroupPlatform ?? "linux" }
-            : {}),
+          ...(input.ownDetachedProcessGroup === true ? { processGroupPlatform: "linux" } : {}),
           ...(input.processGroupTerminationGrace === undefined
             ? {}
             : { processGroupTerminationGrace: input.processGroupTerminationGrace }),
@@ -476,9 +472,6 @@ function makeMockRuntime(input: {
           ...(input.posixProcessTreeController === undefined
             ? {}
             : { posixProcessTreeController: input.posixProcessTreeController }),
-          ...(input.windowsProcessTreeTerminator === undefined
-            ? {}
-            : { windowsProcessTreeTerminator: input.windowsProcessTreeTerminator }),
           protocolLogging,
           spawn: {
             command: process.execPath,
@@ -8893,11 +8886,14 @@ describe("AcpAdapterV2", () => {
             childProcessSpawner,
             mockAgentPath,
             ownDetachedProcessGroup: true,
-            processGroupPlatform: "win32",
-            windowsProcessTreeTerminator: () =>
-              Deferred.succeed(teardownStarted, undefined).pipe(
+            processGroupTerminationGrace: 0,
+            wrapRuntime: (runtime) => ({
+              ...runtime,
+              terminateProcessGroup: Deferred.succeed(teardownStarted, undefined).pipe(
                 Effect.andThen(Deferred.await(releaseTeardown)),
+                Effect.andThen(runtime.terminateProcessGroup ?? Effect.void),
               ),
+            }),
             environment: (runtimeOrdinal) => {
               runtimeOrdinalSeen = runtimeOrdinal;
               return runtimeOrdinal === 1 ? { FAB_ACP_HANG_PROMPT_FOREVER: "1" } : {};
@@ -9000,11 +8996,14 @@ describe("AcpAdapterV2", () => {
             childProcessSpawner,
             mockAgentPath,
             ownDetachedProcessGroup: true,
-            processGroupPlatform: "win32",
-            windowsProcessTreeTerminator: () =>
-              Deferred.succeed(teardownStarted, undefined).pipe(
+            processGroupTerminationGrace: 0,
+            wrapRuntime: (runtime) => ({
+              ...runtime,
+              terminateProcessGroup: Deferred.succeed(teardownStarted, undefined).pipe(
                 Effect.andThen(Deferred.await(releaseTeardown)),
+                Effect.andThen(runtime.terminateProcessGroup ?? Effect.void),
               ),
+            }),
             environment: (runtimeOrdinal) => {
               runtimeOrdinalSeen = runtimeOrdinal;
               return runtimeOrdinal === 1 ? { FAB_ACP_HANG_PROMPT_FOREVER: "1" } : {};

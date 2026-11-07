@@ -1,5 +1,4 @@
 import * as Cache from "effect/Cache";
-import * as Cause from "effect/Cause";
 import * as Clock from "effect/Clock";
 import * as Data from "effect/Data";
 import * as Digest from "effect/crypto/Digest";
@@ -42,9 +41,7 @@ import { parseFabProjectFile } from "@fab/shared/fabProjectFile";
 import { resolveProjectFileBackedSetting } from "@fab/shared/projectSettings";
 import { gitCommandDuration, gitCommandsTotal, withMetrics } from "../observability/Metrics.ts";
 import * as GitVcsDriver from "./GitVcsDriver.ts";
-import { removeEmptyDirectory } from "./removeEmptyDirectory.ts";
-import { explicitBareRepositoryEnv, gitConfigEnv } from "./VcsProcess.ts";
-import { removeLinkedWorktree } from "./worktreeRemoval.ts";
+import { explicitBareRepositoryEnv } from "./VcsProcess.ts";
 import { resolveWorktreesDirectory } from "../worktreesDirectory.ts";
 import {
   parseRemoteNames,
@@ -934,13 +931,6 @@ const collectOutput = Effect.fnUntraced(function* (
   };
 });
 
-/** Windows Git needs core.longpaths beyond MAX_PATH (260); OS LongPathsEnabled alone is insufficient. */
-export const windowsLongPathConfigEnv = (
-  platform: NodeJS.Platform,
-  env: NodeJS.ProcessEnv,
-): NodeJS.ProcessEnv =>
-  platform === "win32" ? gitConfigEnv(env, "core.longpaths", "true", platform) : {};
-
 export const makeGitVcsDriverCore = Effect.fn("makeGitVcsDriverCore")(function* () {
   const fileSystem = yield* FileSystem.FileSystem;
   const path = yield* Path.Path;
@@ -948,7 +938,6 @@ export const makeGitVcsDriverCore = Effect.fn("makeGitVcsDriverCore")(function* 
   const { worktreesDir } = yield* ServerConfig.ServerConfig;
   const isServerInternalPath = yield* makeIsServerInternalPath;
   const digest = yield* Digest.Digest;
-  const hostPlatform = yield* HostProcess.Platform;
   const serviceScope = yield* Effect.scope;
   const statusFetches = new Map<string, Fiber.Fiber<void, GitCommandError>>();
   const statusFetchProcesses = yield* Semaphore.make(4);
@@ -983,14 +972,11 @@ export const makeGitVcsDriverCore = Effect.fn("makeGitVcsDriverCore")(function* 
           ...input.env,
           ...trace2Monitor.env,
         };
-        const env = { ...baseEnv, ...explicitBareRepositoryEnv(baseEnv, hostPlatform) };
-        const spawnEnv = { ...env, ...windowsLongPathConfigEnv(hostPlatform, env) };
+        const spawnEnv = { ...baseEnv, ...explicitBareRepositoryEnv(baseEnv) };
         const resolved = yield* resolveSpawnCommand("git", [], { env: spawnEnv });
-        // cmd wrappers truncate multiline commits; leave git.cmd handling to Node lookup.
-        const executable = resolved.shell ? "git" : resolved.command;
         const child = yield* commandSpawner
           .spawn(
-            ChildProcess.make(executable, commandInput.args, {
+            ChildProcess.make(resolved.command, commandInput.args, {
               cwd: commandInput.cwd,
               env: spawnEnv,
               forceKillAfter: input.forceKillAfterMs,
@@ -1447,8 +1433,7 @@ export const makeGitVcsDriverCore = Effect.fn("makeGitVcsDriverCore")(function* 
         allowNonZeroExit: true,
       },
     );
-    // Git terminates --show-toplevel with exactly one "\n" on every platform (stdout is
-    // binary mode on Windows). Whitespace before it belongs to the path and must survive,
+    // Git terminates --show-toplevel with exactly one "\n". Whitespace before it belongs to the path and must survive,
     // because this root becomes the editor target for every repository-relative status path.
     const output = result.stdout.endsWith("\n") ? result.stdout.slice(0, -1) : result.stdout;
     return result.exitCode === 0 && output.length > 0
@@ -3107,7 +3092,7 @@ export const makeGitVcsDriverCore = Effect.fn("makeGitVcsDriverCore")(function* 
       "hash-object",
       "-t",
       "tree",
-      (yield* HostProcess.Platform) === "win32" ? "NUL" : "/dev/null",
+      "/dev/null",
     ]);
     return stdout.trim();
   });
@@ -3215,7 +3200,7 @@ export const makeGitVcsDriverCore = Effect.fn("makeGitVcsDriverCore")(function* 
         ? resolved
         : { baseRef: null, mergeBase: "HEAD" };
     const roots = options?.untrackedRoots ?? [];
-    // Bound pathspec matching work and stay below Windows' command-line limit.
+    // Bound pathspec matching work and command-line length.
     const pathspecs =
       roots.length <= 128 && roots.reduce((length, root) => length + root.length + 16, 0) < 8_000
         ? roots.map((root) => `:(top,literal)${root}`)
@@ -4212,7 +4197,7 @@ export const makeGitVcsDriverCore = Effect.fn("makeGitVcsDriverCore")(function* 
         });
       }
       let directoryName = targetBranch.replace(/\//g, "-");
-      // Leave room for files beneath the worktree on Windows, regardless of branch length.
+      // Keep worktree paths short, regardless of branch length.
       if (directoryName.length > 40) {
         const hash = yield* digest.digest(Digest.sha256, new TextEncoder().encode(targetBranch));
         // Avoid splitting a surrogate pair, which Git would list back as a different path.
@@ -4708,70 +4693,30 @@ export const makeGitVcsDriverCore = Effect.fn("makeGitVcsDriverCore")(function* 
       { writesSharedConfig: true },
     ).pipe(retryWhileConfigLocked, Effect.asVoid);
 
-  /**
-   * Unlinks links under `target` without following them and removes the
-   * directories that leaves empty. Returns false when anything else remains.
-   */
-  // Recursive filesystem traversal can visit many entries; removeWorktree owns the operation span.
-  const removeLeftoverLinks = Effect.fnUntraced(function* (
-    target: string,
-  ): Effect.fn.Return<boolean, PlatformError.PlatformError | Cause.UnknownError> {
-    if (Option.isSome(yield* fileSystem.readLink(target).pipe(Effect.option))) {
-      yield* fileSystem.remove(target);
-      return true;
-    }
-    if ((yield* fileSystem.stat(target)).type !== "Directory") return false;
-    let empty = true;
-    for (const name of yield* fileSystem.readDirectory(target)) {
-      if (!(yield* removeLeftoverLinks(path.join(target, name)))) empty = false;
-    }
-    // Only an empty directory goes, so files written since the listing stay.
-    return empty && (yield* removeEmptyDirectory(target));
-  });
-
   const removeWorktree: GitVcsDriver.GitVcsDriver["Service"]["removeWorktree"] = Effect.fn(
     "removeWorktree",
   )(function* (input) {
     // Git also matches a worktree by its short name, which can name a different
-    // folder than this path. Resolving it once keeps Git, the Windows deletion
-    // in removeLinkedWorktree, and the leftover cleanup below on one directory.
+    // folder than this path. Resolving it once keeps Git and the checks below on one directory.
     const target = path.resolve(input.cwd, input.path);
-    const result = yield* removeLinkedWorktree({
-      operation: "GitVcsDriver.removeWorktree",
-      cwd: input.cwd,
-      worktreePath: target,
-      force: input.force === true,
-      execute,
-      run: (args) =>
-        executeGitWithStableDiagnostics("GitVcsDriver.removeWorktree", input.cwd, args, {
-          timeoutMs: WORKTREE_REMOVE_TIMEOUT_MS,
-          allowNonZeroExit: true,
-        }).pipe(Effect.map((result) => ({ ...result, args }))),
-    }).pipe(
-      Effect.provideService(FileSystem.FileSystem, fileSystem),
-      Effect.provideService(Path.Path, path),
+    const args = [
+      // Git refuses to remove a worktree with untracked files unless forced, but
+      // its check honors `status.showUntrackedFiles=no` and would delete them.
+      "-c",
+      "status.showUntrackedFiles=normal",
+      "worktree",
+      "remove",
+      ...(input.force === true ? ["--force"] : []),
+      "--",
+      target,
+    ];
+    const result = yield* executeGitWithStableDiagnostics(
+      "GitVcsDriver.removeWorktree",
+      input.cwd,
+      args,
+      { timeoutMs: WORKTREE_REMOVE_TIMEOUT_MS, allowNonZeroExit: true },
     );
-    if (result.exitCode === 0) {
-      // Git for Windows reports success without removing NTFS junctions or their parent directories.
-      // Log leftover cleanup failures: Git already unregistered the worktree, so removal cannot be retried.
-      if (yield* fileSystem.exists(target).pipe(Effect.orElseSucceed(() => false))) {
-        const removed = yield* removeLeftoverLinks(target).pipe(
-          Effect.catch((error) =>
-            Effect.logWarning("GitVcsDriver.removeWorktree: failed to delete leftover links", {
-              path: target,
-              error,
-            }).pipe(Effect.as(true)),
-          ),
-        );
-        if (!removed) {
-          yield* Effect.logWarning(
-            "GitVcsDriver.removeWorktree: kept files written after git removed the worktree",
-            { path: target },
-          );
-        }
-      }
-      return;
-    }
+    if (result.exitCode === 0) return;
     // Threads share paths and outside Git can remove worktrees; already-gone removals are no-ops.
     const alreadyGone =
       isMissingWorktreeStderr(result.stderr) &&
@@ -4787,7 +4732,7 @@ export const makeGitVcsDriverCore = Effect.fn("makeGitVcsDriverCore")(function* 
       ...gitCommandContext({
         operation: "GitVcsDriver.removeWorktree",
         cwd: input.cwd,
-        args: result.args,
+        args,
       }),
       detail: "git worktree remove failed",
       ...(result.exitCode === null ? {} : { exitCode: result.exitCode }),

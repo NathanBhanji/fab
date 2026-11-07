@@ -56,7 +56,7 @@ export interface EventLoopReadings {
   readonly heapUsedBytes: number;
   /** Wall time the readings cover. */
   readonly elapsedMs: number;
-  /** One-minute load average, undefined on Windows. */
+  /** One-minute load average, undefined when the host reports none. */
   readonly loadAverage: number | undefined;
   readonly cpuCount: number;
 }
@@ -96,7 +96,6 @@ const makeNodeSampler = Effect.gen(function* () {
       rssBytes: memory.rss,
       heapUsedBytes: memory.heapUsed,
       elapsedMs: nextSampledAt - sampledAt,
-      // Windows has no load average and reports 0, which a running process never sees elsewhere.
       loadAverage: NodeOS.loadavg()[0] || undefined,
       cpuCount: NodeOS.availableParallelism(),
     };
@@ -110,7 +109,7 @@ const makeNodeSampler = Effect.gen(function* () {
 
 export const stallMs = ({ delayMaxNs, activeMs }: EventLoopReadings) => {
   const delayMs = Math.round(delayMaxNs / 1e6) - RESOLUTION_MS;
-  // libuv clocks run during macOS/Windows sleep; idle poll time distinguishes it from stalls.
+  // libuv clocks run during macOS sleep; idle poll time distinguishes it from stalls.
   if (delayMs <= STALL_THRESHOLD_MS || activeMs < delayMs) return undefined;
   return delayMs;
 };

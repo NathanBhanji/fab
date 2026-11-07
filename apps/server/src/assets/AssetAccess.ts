@@ -357,9 +357,7 @@ const finalizeAbsoluteMediaFileAsset = Effect.fn("AssetAccess.finalizeAbsoluteMe
     readonly expiresAt: number;
   }) {
     const path = yield* Path.Path;
-    // Resolving a network path makes Windows sign in to its host with the
-    // user's NTLM credentials, so only the thread's own project may be on a share.
-    // Windows reads a `\\?\` path as written, `..` included, so the lookup gets
+    // Only the thread's own project may be on a network share; the lookup gets
     // the resolved path this check approved.
     const requestedPath = path.resolve(input.requestedPath);
     if (

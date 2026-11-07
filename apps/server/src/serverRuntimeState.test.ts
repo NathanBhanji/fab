@@ -193,7 +193,7 @@ describe("server ownership", () => {
     }).pipe(Effect.provide(layerOwnership)),
   );
 
-  describe.skipIf(HostProcess.Platform.defaultValue() === "win32")("lock file checks", () => {
+  describe("lock file checks", () => {
     it.effect.each([
       "unchanged",
       "unlink",

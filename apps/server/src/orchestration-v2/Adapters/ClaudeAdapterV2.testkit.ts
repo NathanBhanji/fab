@@ -30,10 +30,6 @@ import * as Schema from "effect/Schema";
 import * as Stream from "effect/Stream";
 
 import * as ServerConfig from "../../config.ts";
-import {
-  isWindowsClaudeLauncherShimPath,
-  resolveClaudeSdkExecutablePath,
-} from "../../provider/Drivers/ClaudeExecutable.ts";
 import * as ClaudeAdapterV2 from "./ClaudeAdapterV2.ts";
 import { claudeTaskOutputRoot } from "./ClaudeTaskOutputTail.ts";
 import * as IdAllocator from "@fab/provider-core/server/IdAllocator";
@@ -1476,21 +1472,12 @@ async function recordMessagesUntilToolUse(input: {
   }
 }
 
-// The SDK may lack a platform executable. Prefer installed Claude only when directly spawnable,
-// including Windows shims resolved to package entries.
+// The SDK may lack a platform executable, so prefer an installed Claude.
 const resolveClaudeRecordingExecutablePath = Effect.fn("resolveClaudeRecordingExecutablePath")(
   function* (environment: NodeJS.ProcessEnv) {
     const resolveExecutable = yield* SpawnExecutableResolution;
     const platform = yield* HostProcess.Platform;
-    const resolved = resolveExecutable("claude", platform, environment);
-    if (resolved === undefined) {
-      return undefined;
-    }
-    const executablePath = yield* resolveClaudeSdkExecutablePath(resolved, environment);
-    if (platform === "win32" && isWindowsClaudeLauncherShimPath(executablePath)) {
-      return undefined;
-    }
-    return executablePath;
+    return resolveExecutable("claude", platform, environment);
   },
 );
 

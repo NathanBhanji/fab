@@ -566,8 +566,6 @@ describe("AssetAccess", () => {
     }).pipe(Effect.provide(layerTest)),
   );
 
-  // Resolving `file://attacker.test/share/cat.jpg` from an agent's markdown sent the
-  // Windows user's NTLM credentials to attacker.test.
   it.effect("never resolves a network media path outside the thread's project", () =>
     Effect.gen(function* () {
       const fs = yield* FileSystem.FileSystem;

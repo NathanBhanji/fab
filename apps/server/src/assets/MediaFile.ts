@@ -60,12 +60,9 @@ export const openMediaFile = Effect.fn("openMediaFile")(function* (
           return null;
         }
 
-        // Windows lacks these flags; the descriptor/path identity checks still apply.
         const handle = await NodeFSP.open(
           filePath,
-          NodeFS.constants.O_RDONLY |
-            (NodeFS.constants.O_NOFOLLOW ?? 0) |
-            (NodeFS.constants.O_NONBLOCK ?? 0),
+          NodeFS.constants.O_RDONLY | NodeFS.constants.O_NOFOLLOW | NodeFS.constants.O_NONBLOCK,
         );
         let accepted = false;
         try {
@@ -77,7 +74,7 @@ export const openMediaFile = Effect.fn("openMediaFile")(function* (
           ) {
             return null;
           }
-          // Match FileSystem.realPath's JS behavior; native realpath expands Windows 8.3 names too.
+          // Match FileSystem.realPath's JS behavior rather than native realpath.
           if ((await realpathLikeFileSystem(filePath)) !== filePath) return null;
           const after = await NodeFSP.lstat(filePath, { bigint: true });
           if (!after.isFile() || info.dev !== after.dev || info.ino !== after.ino) return null;

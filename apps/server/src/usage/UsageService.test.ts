@@ -202,7 +202,6 @@ const layerService = (input: {
         OPENCODE_DATA_DIR: NodePath.join(input.home, "opencode"),
         ANTIGRAVITY_DATA_DIR: NodePath.join(input.home, "antigravity"),
         XDG_CONFIG_HOME: NodePath.join(input.home, "config"),
-        APPDATA: NodePath.join(input.home, "config"),
         ...input.environment,
       }),
     ),
@@ -2269,7 +2268,7 @@ describe("UsageService", () => {
       }).pipe(Effect.scoped),
   );
 
-  it.live.skipIf(HostProcess.Platform.defaultValue() === "win32" || process.getuid?.() === 0)(
+  it.live.skipIf(process.getuid?.() === 0)(
     "reports unreadable transcripts as partial and recovers once they can be read",
     () =>
       Effect.gen(function* () {
@@ -2989,34 +2988,32 @@ describe("UsageService", () => {
     }).pipe(Effect.scoped),
   );
 
-  it.live.skipIf(HostProcess.Platform.defaultValue() === "win32")(
-    "keeps a newer cached read when a slower scan of another window finishes later",
-    () =>
-      Effect.gen(function* () {
-        const { transcript, settings, home } = yield* setup;
-        const dir = NodePath.dirname(transcript);
-        const probe = NodePath.join(dir, "probe.jsonl");
-        const hold = NodePath.join(dir, "hold.jsonl");
-        yield* Effect.promise(() => NodeFSP.writeFile(transcript, claudeLine(1, 5)));
-        yield* makeGate(probe, BEFORE_NARROW_WINDOW);
-        yield* makeGate(hold, BEFORE_NARROW_WINDOW);
-        yield* Effect.gen(function* () {
-          const service = yield* UsageService.make;
-          const wide = yield* service.readSummary(WINDOW).pipe(Effect.forkChild);
-          yield* openGate(probe);
-          yield* replaceFile(transcript, claudeLine(1, 5) + claudeLine(2, 7));
-          yield* service.readSummary(NARROW_WINDOW);
-          yield* openGate(hold);
-          yield* Fiber.join(wide);
+  it.live("keeps a newer cached read when a slower scan of another window finishes later", () =>
+    Effect.gen(function* () {
+      const { transcript, settings, home } = yield* setup;
+      const dir = NodePath.dirname(transcript);
+      const probe = NodePath.join(dir, "probe.jsonl");
+      const hold = NodePath.join(dir, "hold.jsonl");
+      yield* Effect.promise(() => NodeFSP.writeFile(transcript, claudeLine(1, 5)));
+      yield* makeGate(probe, BEFORE_NARROW_WINDOW);
+      yield* makeGate(hold, BEFORE_NARROW_WINDOW);
+      yield* Effect.gen(function* () {
+        const service = yield* UsageService.make;
+        const wide = yield* service.readSummary(WINDOW).pipe(Effect.forkChild);
+        yield* openGate(probe);
+        yield* replaceFile(transcript, claudeLine(1, 5) + claudeLine(2, 7));
+        yield* service.readSummary(NARROW_WINDOW);
+        yield* openGate(hold);
+        yield* Fiber.join(wide);
 
-          yield* Effect.promise(() =>
-            Promise.all([transcript, probe, hold].map((path) => NodeFSP.rm(path))),
-          );
-          assert.strictEqual(totalOutputTokens(yield* service.readSummary(WINDOW)), 12);
-        }).pipe(
-          Effect.provide(layerService({ prefix: "usage-service-stale-read-test", home, settings })),
+        yield* Effect.promise(() =>
+          Promise.all([transcript, probe, hold].map((path) => NodeFSP.rm(path))),
         );
-      }).pipe(Effect.scoped),
+        assert.strictEqual(totalOutputTokens(yield* service.readSummary(WINDOW)), 12);
+      }).pipe(
+        Effect.provide(layerService({ prefix: "usage-service-stale-read-test", home, settings })),
+      );
+    }).pipe(Effect.scoped),
   );
 
   it.live("keeps an absent directory missing when its cached files only contain diagnostics", () =>

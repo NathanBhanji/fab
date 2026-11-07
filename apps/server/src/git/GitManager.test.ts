@@ -214,7 +214,7 @@ function initRepo(
     yield* runGit(cwd, ["init", "--initial-branch=main"]);
     yield* runGit(cwd, ["config", "user.email", "test@example.com"]);
     yield* runGit(cwd, ["config", "user.name", "Test User"]);
-    // Override global autocrlf on Windows for LF assertions, including linked worktrees.
+    // Override global autocrlf for LF assertions, including linked worktrees.
     yield* runGit(cwd, ["config", "core.autocrlf", "false"]);
     yield* fs.writeFileString(NodePath.join(cwd, "README.md"), "hello\n");
     yield* runGit(cwd, ["add", "README.md"]);
@@ -627,7 +627,7 @@ function makeManager(input?: {
         Effect.gen(function* () {
           const spawner = yield* ChildProcessSpawner.ChildProcessSpawner;
           return ChildProcessSpawner.make((command) => {
-            // On Windows the driver starts git by its full path to git.exe.
+            // The driver can start git by its full path.
             const args =
               command._tag === "StandardCommand" &&
               NodePath.parse(command.command).name.toLowerCase() === "git"
