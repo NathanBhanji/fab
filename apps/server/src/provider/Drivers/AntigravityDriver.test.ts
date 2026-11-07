@@ -33,7 +33,6 @@ import * as ProviderHostLive from "../ProviderHostLive.ts";
 import * as ServerSecretStore from "../../auth/ServerSecretStore.ts";
 
 const hostPlatform = HostProcess.Platform.defaultValue();
-const windowsHost = hostPlatform === "win32";
 const decodeRequest = Schema.decodeEffect(
   Schema.fromJsonString(
     Schema.Struct({
@@ -275,71 +274,69 @@ const layerTest = ProviderHostLive.layer.pipe(
 );
 
 it.layer(layerTest)("AntigravityDriver", (it) => {
-  it.effect.skipIf(windowsHost)(
-    "refreshes through the selected executable and personal Google ACP",
-    () =>
-      Effect.gen(function* () {
-        const h = yield* makeHarness();
-        yield* h.refresh();
-        const snapshot = yield* h.instance.snapshot.getSnapshot;
-        expect(snapshot.status).toBe("ready");
-        expect(snapshot.auth.status).toBe("authenticated");
-        expect(snapshot.models.map((model) => model.slug)).toEqual([
-          "gemini-test-low",
-          "gemini-test-high",
-        ]);
-        expect(snapshot.models[0]?.aliases).toContain(ANTIGRAVITY_DEFAULT_MODEL);
-        expect(snapshot.models.every((model) => model.isLegacy !== true)).toBe(true);
-        expect(snapshot.slashCommands.map((command) => command.name)).toEqual(["plan", "logout"]);
-        expect(snapshot.supportsTextGeneration).toBe(true);
-        h.controls.selected = h.second;
-        yield* h.refresh();
+  it.effect("refreshes through the selected executable and personal Google ACP", () =>
+    Effect.gen(function* () {
+      const h = yield* makeHarness();
+      yield* h.refresh();
+      const snapshot = yield* h.instance.snapshot.getSnapshot;
+      expect(snapshot.status).toBe("ready");
+      expect(snapshot.auth.status).toBe("authenticated");
+      expect(snapshot.models.map((model) => model.slug)).toEqual([
+        "gemini-test-low",
+        "gemini-test-high",
+      ]);
+      expect(snapshot.models[0]?.aliases).toContain(ANTIGRAVITY_DEFAULT_MODEL);
+      expect(snapshot.models.every((model) => model.isLegacy !== true)).toBe(true);
+      expect(snapshot.slashCommands.map((command) => command.name)).toEqual(["plan", "logout"]);
+      expect(snapshot.supportsTextGeneration).toBe(true);
+      h.controls.selected = h.second;
+      yield* h.refresh();
 
-        expect(h.acquisitions).toEqual([
-          { binaryPath: "", path: h.instancePath },
-          { binaryPath: "", path: h.instancePath },
-        ]);
-        const nativeLaunches = h.launches.filter((launch) => launch.harnessPath !== undefined);
-        expect(nativeLaunches.map((launch) => launch.command)).toEqual([
-          h.first.executablePath,
-          h.second.executablePath,
-        ]);
-        expect(nativeLaunches.map((launch) => launch.harnessPath)).toEqual([
-          h.first.harnessPath,
-          h.second.harnessPath,
-        ]);
-        for (const launch of nativeLaunches) {
-          expect(launch.args).toEqual(hostPlatform === "linux" ? ["--uid="] : []);
-          expect(launch.profileDirectory).toBe(h.profileDirectory);
-          expect(launch.forceFileStorage).toBe("1");
-          expect(launch.extendEnv).toBe(false);
-        }
-        for (const launch of h.launches) expect(launch.credentialKeys).toEqual([]);
-        expect(h.releases).toEqual([h.first.version, h.second.version]);
-        const requests = yield* h.readRequests;
-        expect(requests.map((request) => request.method)).toEqual([
-          "initialize",
-          "auth/login",
-          "session/new",
-          "initialize",
-          "auth/login",
-          "session/new",
-        ]);
-        expect(
-          requests
-            .filter((request) => request.method === "auth/login")
-            .map((request) => request.params?.methodId),
-        ).toEqual(["oauth-personal", "oauth-personal"]);
-        expect(
-          requests
-            .filter((request) => request.method === "session/new")
-            .map((request) => request.params?.mcpServers),
-        ).toEqual([[], []]);
-        yield* h.assertClosed;
-      }).pipe(Effect.scoped),
+      expect(h.acquisitions).toEqual([
+        { binaryPath: "", path: h.instancePath },
+        { binaryPath: "", path: h.instancePath },
+      ]);
+      const nativeLaunches = h.launches.filter((launch) => launch.harnessPath !== undefined);
+      expect(nativeLaunches.map((launch) => launch.command)).toEqual([
+        h.first.executablePath,
+        h.second.executablePath,
+      ]);
+      expect(nativeLaunches.map((launch) => launch.harnessPath)).toEqual([
+        h.first.harnessPath,
+        h.second.harnessPath,
+      ]);
+      for (const launch of nativeLaunches) {
+        expect(launch.args).toEqual(hostPlatform === "linux" ? ["--uid="] : []);
+        expect(launch.profileDirectory).toBe(h.profileDirectory);
+        expect(launch.forceFileStorage).toBe("1");
+        expect(launch.extendEnv).toBe(false);
+      }
+      for (const launch of h.launches) expect(launch.credentialKeys).toEqual([]);
+      expect(h.releases).toEqual([h.first.version, h.second.version]);
+      const requests = yield* h.readRequests;
+      expect(requests.map((request) => request.method)).toEqual([
+        "initialize",
+        "auth/login",
+        "session/new",
+        "initialize",
+        "auth/login",
+        "session/new",
+      ]);
+      expect(
+        requests
+          .filter((request) => request.method === "auth/login")
+          .map((request) => request.params?.methodId),
+      ).toEqual(["oauth-personal", "oauth-personal"]);
+      expect(
+        requests
+          .filter((request) => request.method === "session/new")
+          .map((request) => request.params?.mcpServers),
+      ).toEqual([[], []]);
+      yield* h.assertClosed;
+    }).pipe(Effect.scoped),
   );
 
-  it.effect.skipIf(windowsHost)(
+  it.effect(
     "closes refresh processes and clears account metadata when Google sign-in is required",
     () =>
       Effect.gen(function* () {
@@ -359,7 +356,7 @@ it.layer(layerTest)("AntigravityDriver", (it) => {
       }).pipe(Effect.scoped),
   );
 
-  it.effect.skipIf(windowsHost)("keeps the previous catalog when executable resolution fails", () =>
+  it.effect("keeps the previous catalog when executable resolution fails", () =>
     Effect.gen(function* () {
       const h = yield* makeHarness();
       yield* h.refresh();
@@ -376,41 +373,36 @@ it.layer(layerTest)("AntigravityDriver", (it) => {
     }).pipe(Effect.scoped),
   );
 
-  it.effect.skipIf(windowsHost)(
-    "removes runtime temp directories left by a previous server on create",
-    () =>
-      Effect.gen(function* () {
-        const fs = yield* FileSystem.FileSystem;
-        const path = yield* Path.Path;
-        const config = yield* ServerConfig.ServerConfig;
-        const instanceId = ProviderInstanceId.make("antigravity-orphan-sweep");
-        const directories = yield* resolveAntigravityInstanceDirectories(
-          config.stateDir,
-          instanceId,
-        );
-        const legacyRoot = path.join(directories.profile, "antigravity-acp", "tmp");
-        for (const root of [directories.runtimeTemp, legacyRoot]) {
-          const orphan = path.join(root, "run-orphan", "_MEI123", "google3");
-          yield* fs.makeDirectory(orphan, { recursive: true });
-          yield* fs.writeFileString(path.join(orphan, "payload.bin"), "stale");
-        }
-        yield* AntigravityDriver.create({
-          instanceId,
-          displayName: "Sweep",
-          enabled: false,
-          config: AntigravityDriver.defaultConfig(),
-          environment: [],
-        }).pipe(
-          Effect.provide(
-            Layer.mock(AntigravityInstallation.AntigravityInstallation)({
-              managedDirectory: config.stateDir,
-              resolve: () => Effect.die("unused"),
-              acquire: () => Effect.die("unused"),
-            }),
-          ),
-        );
-        expect(yield* fs.exists(directories.runtimeTemp)).toBe(false);
-        expect(yield* fs.exists(legacyRoot)).toBe(false);
-      }).pipe(Effect.scoped),
+  it.effect("removes runtime temp directories left by a previous server on create", () =>
+    Effect.gen(function* () {
+      const fs = yield* FileSystem.FileSystem;
+      const path = yield* Path.Path;
+      const config = yield* ServerConfig.ServerConfig;
+      const instanceId = ProviderInstanceId.make("antigravity-orphan-sweep");
+      const directories = yield* resolveAntigravityInstanceDirectories(config.stateDir, instanceId);
+      const legacyRoot = path.join(directories.profile, "antigravity-acp", "tmp");
+      for (const root of [directories.runtimeTemp, legacyRoot]) {
+        const orphan = path.join(root, "run-orphan", "_MEI123", "google3");
+        yield* fs.makeDirectory(orphan, { recursive: true });
+        yield* fs.writeFileString(path.join(orphan, "payload.bin"), "stale");
+      }
+      yield* AntigravityDriver.create({
+        instanceId,
+        displayName: "Sweep",
+        enabled: false,
+        config: AntigravityDriver.defaultConfig(),
+        environment: [],
+      }).pipe(
+        Effect.provide(
+          Layer.mock(AntigravityInstallation.AntigravityInstallation)({
+            managedDirectory: config.stateDir,
+            resolve: () => Effect.die("unused"),
+            acquire: () => Effect.die("unused"),
+          }),
+        ),
+      );
+      expect(yield* fs.exists(directories.runtimeTemp)).toBe(false);
+      expect(yield* fs.exists(legacyRoot)).toBe(false);
+    }).pipe(Effect.scoped),
   );
 });

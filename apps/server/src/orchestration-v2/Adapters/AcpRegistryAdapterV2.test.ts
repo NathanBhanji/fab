@@ -1105,7 +1105,7 @@ describe("AcpRegistryAdapterV2", () => {
 
       assert.deepEqual(yield* steering({ agentId: "github-copilot-cli" }), copilot);
       assert.deepEqual(
-        yield* steering({ source: "local", commandPath: "C:\\tools\\copilot.cmd" }),
+        yield* steering({ source: "local", commandPath: "/usr/local/bin/copilot" }),
         copilot,
       );
       assert.deepEqual(yield* steering({ agentId: "gemini" }), {

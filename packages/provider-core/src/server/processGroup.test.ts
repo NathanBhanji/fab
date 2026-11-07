@@ -2,7 +2,6 @@
 import * as NodeChildProcess from "node:child_process";
 
 import { describe, expect, it } from "@effect/vitest";
-import * as HostProcess from "@fab/shared/HostProcess";
 
 import { signalProcessGroup } from "./processGroup.ts";
 
@@ -15,7 +14,7 @@ const errorCode = (run: () => void) => {
   }
 };
 
-describe.skipIf(HostProcess.Platform.defaultValue() === "win32")("signalProcessGroup", () => {
+describe("signalProcessGroup", () => {
   // Signal 0 probes without killing.
   it("never reaches this server's group or every process the user owns", () => {
     for (const pid of [1, 0, -1, Number.NaN, 1.5]) {

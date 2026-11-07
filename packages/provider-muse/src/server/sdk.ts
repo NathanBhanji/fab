@@ -10,8 +10,6 @@ import {
   type SpawnedMspConnection,
 } from "@muse-code/sdk";
 import type { RuntimeMode } from "@fab/contracts";
-import * as HostProcess from "@fab/shared/HostProcess";
-import { SpawnExecutableResolution } from "@fab/shared/shell";
 import * as Effect from "effect/Effect";
 
 export interface MuseSdkHost {
@@ -65,11 +63,6 @@ export function makeMuseEnvironment(
   };
 }
 
-export function museVerbatimPath(path: string): string {
-  if (path.startsWith("\\\\?\\")) return path;
-  return path.startsWith("\\\\") ? `\\\\?\\UNC\\${path.slice(2)}` : `\\\\?\\${path}`;
-}
-
 // Native realpath corrects filesystem case as well as resolving symlinks.
 export const museCanonicalPath = Effect.fn("museCanonicalPath")(function* (path: string) {
   return yield* Effect.tryPromise(() => NodeFSP.realpath(path)).pipe(
@@ -77,46 +70,9 @@ export const museCanonicalPath = Effect.fn("museCanonicalPath")(function* (path:
   );
 });
 
-// Windows turn roots need verbatim form; launch cmd.exe with the plain canonical path.
-export const museWorkspaceRoot = Effect.fn("museWorkspaceRoot")(function* (path: string) {
-  if ((yield* HostProcess.Platform) !== "win32") return yield* museCanonicalPath(path);
-  const canonical = yield* Effect.tryPromise(() => NodeFSP.realpath(path)).pipe(
-    // A verbatim path takes `/` literally, so an unresolved root needs Windows separators.
-    Effect.orElseSucceed(() => path.replaceAll("/", "\\")),
-  );
-  return museVerbatimPath(canonical);
-});
-
-function windowsEnvironmentValue(environment: NodeJS.ProcessEnv, name: string) {
-  const key = Object.keys(environment).find(
-    (candidate) => candidate.toUpperCase() === name.toUpperCase(),
-  );
-  return key === undefined ? undefined : environment[key];
-}
-
-/** Resolve Windows launchers with PATHEXT and run .cmd/.bat under cmd.exe; SDK spawn has no shell. */
-export const museLaunch = Effect.fn("museLaunch")(function* (
-  binaryPath: string,
-  environment?: NodeJS.ProcessEnv,
-): Effect.fn.Return<MuseLaunch> {
-  if ((yield* HostProcess.Platform) !== "win32") return { command: binaryPath, args: [] };
-  const env = environment ?? (yield* HostProcess.Environment);
-  const resolveExecutable = yield* SpawnExecutableResolution;
-  const resolved = resolveExecutable(binaryPath, "win32", env) ?? binaryPath;
-  if (!/\.(?:cmd|bat)$/i.test(resolved)) return { command: resolved, args: [] };
-  const systemRoot = windowsEnvironmentValue(env, "SystemRoot");
-  return {
-    command:
-      windowsEnvironmentValue(env, "ComSpec") ??
-      (systemRoot ? `${systemRoot}\\System32\\cmd.exe` : "cmd.exe"),
-    // /d prevents AutoRun stdout; bare @ preserves quoted paths that cmd /c would unquote.
-    args: [
-      "/d",
-      "/c",
-      ...(/\s/.test(resolved) ? ["@", resolved] : [resolved.replace(/[()&<>@^|]/g, "^$&")]),
-    ],
-  };
-});
+/** The SDK spawns without a shell, so the binary runs directly. */
+export const museLaunch = (binaryPath: string): Effect.Effect<MuseLaunch> =>
+  Effect.succeed({ command: binaryPath, args: [] });
 
 export function museApprovalMode(runtimeMode: RuntimeMode) {
   return runtimeMode === "full-access" ? "allowAll" : "promptUnmatched";
@@ -212,7 +168,7 @@ export const createMuseSdkHostEffect = Effect.fn("createMuseSdkHostEffect")(func
   options: Omit<MuseSdkHostOptions, "signal">,
   createHost: typeof createMuseSdkHost = createMuseSdkHost,
 ) {
-  const launch = options.launch ?? (yield* museLaunch(options.binaryPath, options.environment));
+  const launch = options.launch ?? (yield* museLaunch(options.binaryPath));
   let startup: Promise<MuseSdkHost> | undefined;
   return yield* Effect.tryPromise((signal) => {
     startup = createHost({ ...options, launch, signal });

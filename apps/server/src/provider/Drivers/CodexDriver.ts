@@ -63,15 +63,12 @@ const DRIVER_KIND = ProviderDriverKind.make("codex");
 const CODEX_STANDALONE_HOME_PATTERN = /^(.*)\/packages\/standalone\//is;
 
 function codexStandaloneHome(commandPath: string): string | null {
-  // Slash replacement preserves indices; Unicode lowercasing can change the path length.
-  const match = CODEX_STANDALONE_HOME_PATTERN.exec(commandPath.replaceAll("\\", "/"));
-  if (!match) {
+  const home = CODEX_STANDALONE_HOME_PATTERN.exec(commandPath)?.[1];
+  if (home === undefined) {
     return null;
   }
-  const home = match[1]!;
-  // Keep root separators: `C:` is drive-relative, and an empty home is not `/`.
-  const isRoot = home === "" || /^[a-z]:$/i.test(home);
-  return commandPath.slice(0, home.length + (isRoot ? 1 : 0));
+  // An empty home is the root, not "".
+  return home === "" ? "/" : home;
 }
 
 // Standalone updates locate their install through CODEX_HOME. Account and auth-overlay

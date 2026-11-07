@@ -44,14 +44,13 @@ const snapshot: ServerProvider = {
 const fixture = Effect.fn("ClaudeMaintenance.test.fixture")(function* (
   npm = false,
   platform: NodeJS.Platform = "linux",
-  programFiles?: string,
 ) {
   const fs = yield* FileSystem.FileSystem;
   const path = yield* Path.Path;
   const directory = yield* fs.makeTempDirectoryScoped();
   const binaryPath = npm
     ? path.join(directory, "lib/node_modules/@anthropic-ai/claude-code/cli.js")
-    : path.join(directory, ".local/bin", platform === "win32" ? "claude.exe" : "claude");
+    : path.join(directory, ".local/bin/claude");
   yield* fs.makeDirectory(path.dirname(binaryPath), { recursive: true });
   yield* fs.writeFileString(binaryPath, "#!/bin/sh\n");
   yield* fs.chmod(binaryPath, 0o755);
@@ -60,11 +59,7 @@ const fixture = Effect.fn("ClaudeMaintenance.test.fixture")(function* (
   const settingsPath = path.join(configDirectory, "settings.json");
   const managed = new Map<string, string>();
   const managedDirectory =
-    platform === "win32"
-      ? `${programFiles ?? "C:/Program Files"}/ClaudeCode`
-      : platform === "darwin"
-        ? "/Library/Application Support/ClaudeCode"
-        : "/etc/claude-code";
+    platform === "darwin" ? "/Library/Application Support/ClaudeCode" : "/etc/claude-code";
   let installationReads = 0;
   const testFs = FileSystem.makeNoop({
     ...fs,
@@ -104,7 +99,6 @@ const fixture = Effect.fn("ClaudeMaintenance.test.fixture")(function* (
       Effect.provideService(HostProcess.Environment, {
         PATH: "",
         CLAUDE_CONFIG_DIR: configDirectory,
-        ...(programFiles ? { PROGRAMFILES: programFiles } : {}),
       }),
     ),
   };
@@ -231,15 +225,13 @@ it.layer(NodeServices.layer)("ClaudeMaintenance", (it) => {
   );
 
   it.effect.each([
-    { name: "Linux", platform: "linux", programFiles: undefined },
-    { name: "macOS", platform: "darwin", programFiles: undefined },
-    { name: "Windows default path", platform: "win32", programFiles: undefined },
-    { name: "Windows custom path", platform: "win32", programFiles: "D:/Programs" },
+    { name: "Linux", platform: "linux" },
+    { name: "macOS", platform: "darwin" },
   ] as const)(
     "separates channel caches and honors $name managed overrides and feed invalidation",
     (row) =>
       Effect.gen(function* () {
-        const f = yield* fixture(false, row.platform, row.programFiles);
+        const f = yield* fixture(false, row.platform);
         const requests: string[] = [];
         const client = HttpClient.make((request) => {
           requests.push(request.url);

@@ -271,21 +271,18 @@ const make = Effect.gen(function* () {
       awaitRefresh,
     }) {
       const home = yield* HostProcess.HomeDirectory;
-      const userHome =
-        (platform === "win32" ? hostEnvironment["USERPROFILE"] : hostEnvironment["HOME"]) || home;
+      const userHome = hostEnvironment["HOME"] || home;
       const configHome = hostEnvironment["XDG_CONFIG_HOME"]?.trim();
       const cursorHome =
         platform === "darwin"
           ? path.join(userHome, "Library", "Application Support")
-          : platform === "win32"
-            ? hostEnvironment["APPDATA"] || path.join(userHome, "AppData", "Roaming")
-            : configHome && path.isAbsolute(configHome)
-              ? configHome
-              : path.join(userHome, ".config");
+          : configHome && path.isAbsolute(configHome)
+            ? configHome
+            : path.join(userHome, ".config");
       const authPath =
         platform === "darwin"
           ? path.join(userHome, ".cursor", "auth.json")
-          : path.join(cursorHome, platform === "win32" ? "Cursor" : "cursor", "auth.json");
+          : path.join(cursorHome, "cursor", "auth.json");
       // Fab's Cursor sign-in and CURSOR_API_KEY name the account the agent uses, so they win.
       const apiKeys = yield* Effect.forEach(instances, ({ instanceId, environment }) =>
         environment.CURSOR_API_KEY?.trim()

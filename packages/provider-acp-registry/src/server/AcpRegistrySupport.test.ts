@@ -4,7 +4,6 @@ import { describe, expect, it } from "@effect/vitest";
 import { DEFAULT_SERVER_SETTINGS, ProviderDriverKind, ProviderInstanceId } from "@fab/contracts";
 import { AcpRegistrySettings } from "../settings.ts";
 import * as HostProcess from "@fab/shared/HostProcess";
-import { SpawnExecutableResolution } from "@fab/shared/shell";
 import * as Deferred from "effect/Deferred";
 import * as Effect from "effect/Effect";
 import * as FileSystem from "effect/FileSystem";
@@ -106,38 +105,6 @@ const makeFakeNpmToolchain = Effect.fn("AcpRegistrySupport.test.makeFakeNpmToolc
   };
 });
 
-const makeFakeUvToolchain = Effect.fn("AcpRegistrySupport.test.makeFakeUvToolchain")(function* (
-  rootDirectory: string,
-) {
-  const fileSystem = yield* FileSystem.FileSystem;
-  const path = yield* Path.Path;
-  const toolchainBin = path.join(rootDirectory, "fake-uv", "bin");
-  const globalBin = path.join(rootDirectory, "tools", "example-agent", "1.2.3", "python", "bin");
-  const executablePath = path.join(globalBin, "fast-agent");
-  const uvPath = path.join(toolchainBin, "uv");
-  const logPath = path.join(rootDirectory, "uv.log");
-  yield* fileSystem.makeDirectory(toolchainBin, { recursive: true });
-  yield* fileSystem.writeFileString(logPath, "");
-  yield* fileSystem.copyFile(
-    yield* path.fromFileUrl(new URL("./testing/AcpRegistrySupport.uv.fixture.sh", import.meta.url)),
-    uvPath,
-  );
-  yield* fileSystem.chmod(uvPath, 0o755);
-  return {
-    environment: {
-      ...process.env,
-      PATH: `${toolchainBin}:${process.env.PATH ?? ""}`,
-      FAKE_UV_LOG: logPath,
-      FAKE_UV_BIN: path.join(rootDirectory, "external-uv-bin"),
-      FAKE_UV_EXECUTABLE: executablePath,
-    } satisfies NodeJS.ProcessEnv,
-    executablePath,
-    globalBin,
-    logPath,
-    uvPath,
-  };
-});
-
 describe("AcpRegistrySupport", () => {
   it("selects the preferred compatible distribution", () => {
     const agent = makeAgent({
@@ -180,47 +147,6 @@ describe("AcpRegistrySupport", () => {
         platformTarget: "darwin-aarch64",
       }),
     ).toBeUndefined();
-    expect(
-      AcpRegistrySupport.resolveAcpRegistryDistribution({
-        agent: makeAgent({
-          binary: {
-            "windows-x86_64": {
-              archive: archiveUrl,
-              cmd: "./bin/example-agent-x64.exe",
-              args: ["acp"],
-            },
-          },
-        }),
-        preference: "auto",
-        platformTarget: "windows-aarch64",
-      }),
-    ).toMatchObject({
-      kind: "binary",
-      binaryTarget: { cmd: "./bin/example-agent-x64.exe" },
-    });
-    expect(
-      AcpRegistrySupport.resolveAcpRegistryDistribution({
-        agent: makeAgent({
-          binary: {
-            "windows-aarch64": {
-              archive: archiveUrl,
-              cmd: "./bin/example-agent-arm64.exe",
-              args: ["acp"],
-            },
-            "windows-x86_64": {
-              archive: archiveUrl,
-              cmd: "./bin/example-agent-x64.exe",
-              args: ["acp"],
-            },
-          },
-        }),
-        preference: "auto",
-        platformTarget: "windows-aarch64",
-      }),
-    ).toMatchObject({
-      kind: "binary",
-      binaryTarget: { cmd: "./bin/example-agent-arm64.exe" },
-    });
   });
 
   it.effect("resolves a local command on the selected environment without the registry", () => {
@@ -301,27 +227,6 @@ describe("AcpRegistrySupport", () => {
         shell: false,
       });
       expect(resolved.agent).toBeUndefined();
-
-      for (const extension of [".cmd", ".BAT"]) {
-        const windowsResolver = yield* AcpRegistrySupport.makeAcpRegistryCatalog({
-          cacheDir,
-          toolsDir: `${cacheDir}/tools`,
-          registryUrl,
-        }).pipe(
-          Effect.provideService(HostProcess.Platform, "win32"),
-          Effect.provideService(SpawnExecutableResolution, () => `C:\\bin\\dsh${extension}`),
-        );
-        const localSettings = decodeAcpRegistrySettings({ source: "local", commandPath: "dsh" });
-        for (const failure of [
-          yield* windowsResolver.inspect(localSettings).pipe(Effect.flip),
-          yield* windowsResolver.resolve(localSettings, "/workspace").pipe(Effect.flip),
-        ]) {
-          expect(failure).toMatchObject({
-            reason: "runner_unavailable",
-            detail: expect.stringContaining("node.exe"),
-          });
-        }
-      }
     }).pipe(
       Effect.scoped,
       Effect.provide(layerResolver(() => Effect.die("unexpected registry request"))),
@@ -493,59 +398,6 @@ describe("AcpRegistrySupport", () => {
       expect(resolved.spawn).toMatchObject({
         command: path.join(userGlobalBin, "example-agent"),
         env: { PATH: expect.stringMatching(new RegExp(`^${userGlobalBin}:`, "u")) },
-      });
-    }).pipe(
-      Effect.scoped,
-      Effect.provide(
-        layerResolver((request) =>
-          Effect.succeed(HttpClientResponse.fromWeb(request, new Response(makeRegistry(agent)))),
-        ),
-      ),
-    );
-  });
-
-  it.effect("honors an exact Windows PATH override when launching a global package", () => {
-    const agent = makeAgent({
-      uvx: { package: "fast-agent-acp==0.10.1", args: ["--acp"] },
-    });
-    return Effect.gen(function* () {
-      const fileSystem = yield* FileSystem.FileSystem;
-      const cacheDir = yield* fileSystem.makeTempDirectoryScoped({
-        prefix: "fab-acp-registry-windows-package-path-",
-      });
-      const toolchain = yield* makeFakeUvToolchain(cacheDir);
-      const linuxResolver = yield* AcpRegistrySupport.makeAcpRegistryCatalog({
-        cacheDir,
-        toolsDir: `${cacheDir}/tools`,
-        registryUrl,
-      });
-      yield* linuxResolver.resolve(settings(), "/workspace", toolchain.environment);
-
-      const windowsEnvironment = {
-        ...toolchain.environment,
-        Path: "C:\\host\\bin",
-        PATH: "C:\\provider\\bin",
-      };
-      const windowsResolver = yield* AcpRegistrySupport.makeAcpRegistryCatalog({
-        cacheDir,
-        toolsDir: `${cacheDir}/tools`,
-        registryUrl,
-      }).pipe(
-        Effect.provideService(HostProcess.Platform, "win32"),
-        Effect.provideService(SpawnExecutableResolution, (command) => {
-          if (command === "uv") return toolchain.uvPath;
-          if (command === "fast-agent") return toolchain.executablePath;
-          return undefined;
-        }),
-      );
-      const resolved = yield* windowsResolver.resolve(
-        settings(),
-        "C:\\workspace",
-        windowsEnvironment,
-      );
-
-      expect(resolved.spawn).toMatchObject({
-        env: { PATH: `${toolchain.globalBin};C:\\provider\\bin` },
       });
     }).pipe(
       Effect.scoped,

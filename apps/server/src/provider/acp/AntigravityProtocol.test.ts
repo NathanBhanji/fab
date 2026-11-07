@@ -512,8 +512,7 @@ describe("Antigravity tool results", () => {
 
   it.each([
     ["/workspace/result.png", "/workspace/result.png"],
-    ["C:\\work\\result.png", "C:\\work\\result.png"],
-    ["file:///C:/work/result.png", "C:/work/result.png"],
+    ["file:///workspace/result.png", "/workspace/result.png"],
     ["https://example.com/result.png", undefined],
     ["file://another-host/result.png", undefined],
     ["data:image/png;base64,AAAA", undefined],

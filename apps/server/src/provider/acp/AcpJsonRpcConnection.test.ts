@@ -8,7 +8,6 @@ import * as NodeCrypto from "@effect/platform-node/NodeCrypto";
 import * as NodeServices from "@effect/platform-node/NodeServices";
 import * as Layer from "effect/Layer";
 import { assert, it } from "@effect/vitest";
-import * as HostProcess from "@fab/shared/HostProcess";
 import * as Deferred from "effect/Deferred";
 import * as Effect from "effect/Effect";
 import * as Exit from "effect/Exit";
@@ -317,16 +316,12 @@ describe("AcpSessionRuntime", () => {
 
   it.effect.each([
     { name: "exit code", terminate: "process.exit(1)", code: 1, signal: undefined },
-    ...(HostProcess.Platform.defaultValue() === "win32"
-      ? []
-      : [
-          {
-            name: "signal",
-            terminate: "process.kill(process.pid, 'SIGTERM')",
-            code: undefined,
-            signal: "SIGTERM",
-          },
-        ]),
+    {
+      name: "signal",
+      terminate: "process.kill(process.pid, 'SIGTERM')",
+      code: undefined,
+      signal: "SIGTERM",
+    },
   ])("retains the $name and sanitized stderr when ACP exits before initialize", (testCase) =>
     Effect.gen(function* () {
       const runtime = yield* AcpSessionRuntime.make({

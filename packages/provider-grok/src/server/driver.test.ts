@@ -2,7 +2,6 @@ import * as NodeCrypto from "@effect/platform-node/NodeCrypto";
 import * as NodeServices from "@effect/platform-node/NodeServices";
 import { expect, it } from "@effect/vitest";
 import { ProviderInstanceId } from "@fab/contracts";
-import * as HostProcess from "@fab/shared/HostProcess";
 import * as Effect from "effect/Effect";
 import * as FileSystem from "effect/FileSystem";
 import * as Layer from "effect/Layer";
@@ -69,9 +68,6 @@ function stdoutSpawner(onSpawn: (command: string, args: ReadonlyArray<string>) =
   });
 }
 
-// The `#!/bin/sh` stub below cannot be resolved as an executable on Windows.
-const windowsHost = HostProcess.Platform.defaultValue() === "win32";
-
 it.layer(layerTest)("GrokDriver", (it) => {
   // Each case puts a stub `brew` at `<prefix>/bin/brew` beside the Grok binary.
   const homebrewCases = [
@@ -124,56 +120,52 @@ it.layer(layerTest)("GrokDriver", (it) => {
     },
   ] as const;
 
-  for (const testCase of homebrewCases) {
-    it.effect.skipIf(windowsHost)(testCase.name, () => {
-      const brewArgs: Array<ReadonlyArray<string>> = [];
-      let prefix = "";
-      return Effect.gen(function* () {
-        const fs = yield* FileSystem.FileSystem;
-        const path = yield* Path.Path;
-        prefix = yield* fs.realPath(
-          yield* fs.makeTempDirectoryScoped({ prefix: "fab-grok-brew-" }),
-        );
-        const brewPath = path.join(prefix, "bin", "brew");
-        const binaryPath = path.join(prefix, ...testCase.binary);
-        for (const executable of [brewPath, binaryPath]) {
-          yield* fs.makeDirectory(path.dirname(executable), { recursive: true });
-          yield* fs.writeFileString(executable, "#!/bin/sh\n");
-          yield* fs.chmod(executable, 0o755);
-        }
+  it.effect.each(homebrewCases)("$name", (testCase) => {
+    const brewArgs: Array<ReadonlyArray<string>> = [];
+    let prefix = "";
+    return Effect.gen(function* () {
+      const fs = yield* FileSystem.FileSystem;
+      const path = yield* Path.Path;
+      prefix = yield* fs.realPath(yield* fs.makeTempDirectoryScoped({ prefix: "fab-grok-brew-" }));
+      const brewPath = path.join(prefix, "bin", "brew");
+      const binaryPath = path.join(prefix, ...testCase.binary);
+      for (const executable of [brewPath, binaryPath]) {
+        yield* fs.makeDirectory(path.dirname(executable), { recursive: true });
+        yield* fs.writeFileString(executable, "#!/bin/sh\n");
+        yield* fs.chmod(executable, 0o755);
+      }
 
-        const instance = yield* GrokDriver.create({
-          instanceId: ProviderInstanceId.make("grok-homebrew"),
-          displayName: "Grok test",
-          enabled: false,
-          environment: [],
-          config: { ...GrokDriver.defaultConfig(), binaryPath },
-        });
-        const capabilities = yield* instance.snapshot.resolveMaintenance();
+      const instance = yield* GrokDriver.create({
+        instanceId: ProviderInstanceId.make("grok-homebrew"),
+        displayName: "Grok test",
+        enabled: false,
+        environment: [],
+        config: { ...GrokDriver.defaultConfig(), binaryPath },
+      });
+      const capabilities = yield* instance.snapshot.resolveMaintenance();
 
-        const update = testCase.update(brewPath, binaryPath);
-        expect(brewArgs).toEqual(testCase.brewArgs);
-        expect(capabilities.update).toEqual(update && expect.objectContaining(update));
-        if (testCase.latestVersion !== undefined) {
-          expect(yield* resolveLatestProviderVersion(capabilities)).toBe(testCase.latestVersion);
-          expect(brewArgs).toEqual([...testCase.brewArgs, ["info", "--json=v2", "grok-build"]]);
-        }
-      }).pipe(
-        Effect.provideService(
-          ChildProcessSpawner.ChildProcessSpawner,
-          stdoutSpawner((command, args) => {
-            expect(command).toBe(`${prefix}/bin/brew`);
-            brewArgs.push(args);
-            if (args[0] === "--prefix") {
-              return `${testCase.reportedPrefix === "own" ? prefix : testCase.reportedPrefix}\n`;
-            }
-            return JSON.stringify({ casks: [{ version: "1.2.4,789" }] });
-          }),
-        ),
-        Effect.scoped,
-      );
-    });
-  }
+      const update = testCase.update(brewPath, binaryPath);
+      expect(brewArgs).toEqual(testCase.brewArgs);
+      expect(capabilities.update).toEqual(update && expect.objectContaining(update));
+      if (testCase.latestVersion !== undefined) {
+        expect(yield* resolveLatestProviderVersion(capabilities)).toBe(testCase.latestVersion);
+        expect(brewArgs).toEqual([...testCase.brewArgs, ["info", "--json=v2", "grok-build"]]);
+      }
+    }).pipe(
+      Effect.provideService(
+        ChildProcessSpawner.ChildProcessSpawner,
+        stdoutSpawner((command, args) => {
+          expect(command).toBe(`${prefix}/bin/brew`);
+          brewArgs.push(args);
+          if (args[0] === "--prefix") {
+            return `${testCase.reportedPrefix === "own" ? prefix : testCase.reportedPrefix}\n`;
+          }
+          return JSON.stringify({ casks: [{ version: "1.2.4,789" }] });
+        }),
+      ),
+      Effect.scoped,
+    );
+  });
 
   it.effect("stays manual-only when the configured executable does not exist", () =>
     Effect.gen(function* () {

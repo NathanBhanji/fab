@@ -15,7 +15,6 @@ import * as Layer from "effect/Layer";
 import * as Option from "effect/Option";
 import * as Path from "effect/Path";
 import * as Schema from "effect/Schema";
-import * as Schedule from "effect/Schedule";
 import * as Scope from "effect/Scope";
 import * as Semaphore from "effect/Semaphore";
 import * as Stream from "effect/Stream";
@@ -134,11 +133,7 @@ const installationError = (operation: string, detail: string, cause?: unknown) =
 const wrapFailure = (operation: string, detail: string) => (cause: unknown) =>
   isInstallationError(cause) ? cause : installationError(operation, detail, cause);
 
-function executableNames(platform: NodeJS.Platform) {
-  return platform === "win32"
-    ? { executable: "agy_acp_server.exe", harness: "localharness_external.exe" }
-    : { executable: "agy_acp_server.par", harness: "localharness_external" };
-}
+const executableNames = { executable: "agy_acp_server.par", harness: "localharness_external" };
 
 function isRunning(state: ProviderInstallState) {
   return (
@@ -162,7 +157,7 @@ export const makeAntigravityInstallation = Effect.fn("AntigravityInstallation.ma
     options.releaseAsset === undefined
       ? resolveAntigravityReleaseAsset(platform, arch)
       : options.releaseAsset;
-  const names = executableNames(platform);
+  const names = executableNames;
   const managedDirectory = path.join(
     options.baseDir,
     "tools",
@@ -210,7 +205,7 @@ export const makeAntigravityInstallation = Effect.fn("AntigravityInstallation.ma
       Option.isSome(info) &&
       info.value.type === "File" &&
       (bytes === undefined || Number(info.value.size) === bytes) &&
-      (platform === "win32" || (info.value.mode & 0o111) !== 0)
+      (info.value.mode & 0o111) !== 0
     );
   });
 
@@ -273,13 +268,9 @@ export const makeAntigravityInstallation = Effect.fn("AntigravityInstallation.ma
   });
 
   const pathCandidates = (binary: string, processEnvironment = environment) => {
-    const pathValue =
-      platform === "win32"
-        ? Object.entries(processEnvironment).findLast(([key]) => key.toUpperCase() === "PATH")?.[1]
-        : processEnvironment.PATH;
-    return (pathValue ?? "")
-      .split(platform === "win32" ? ";" : ":")
-      .map((directory) => directory.trim().replace(/^"|"$/gu, ""))
+    return (processEnvironment.PATH ?? "")
+      .split(":")
+      .map((directory) => directory.trim())
       .filter((directory) => directory.length > 0)
       .map((directory) => path.resolve(directory, binary));
   };
@@ -352,28 +343,14 @@ export const makeAntigravityInstallation = Effect.fn("AntigravityInstallation.ma
     options.validate ??
     Effect.fn("AntigravityInstallation.validate")(
       function* (executable: AntigravityExecutable, expectedVersion: string) {
-        const validationScope = yield* Effect.scope;
         const profileDirectory = yield* Effect.acquireRelease(
           fs.makeTempDirectory({ prefix: "fab-antigravity-validate-" }),
-          (directory) =>
-            fs.remove(directory, { recursive: true, force: true }).pipe(
-              // Windows may retain DLL handles briefly after taskkill returns.
-              Effect.retry({
-                times: platform === "win32" ? 10 : 0,
-                schedule: Schedule.spaced("100 millis"),
-                while: (error) =>
-                  error.reason._tag === "PermissionDenied" ||
-                  error.reason._tag === "Busy" ||
-                  error.reason._tag === "Unknown",
-              }),
-              Effect.orDie,
-            ),
+          (directory) => fs.remove(directory, { recursive: true, force: true }).pipe(Effect.orDie),
         );
         const profile = yield* prepareAntigravityProfile({
           profileDirectory,
           platform,
           baseEnv: environment,
-          // A shallow scoped profile cleans up unpacked files within Windows' path limit.
           tempDirectory: profileDirectory,
         });
         const runtime = yield* makeAntigravityAcpRuntime({
@@ -384,20 +361,7 @@ export const makeAntigravityInstallation = Effect.fn("AntigravityInstallation.ma
             baseEnv: environment,
           }),
           cwd: profileDirectory,
-          childProcessSpawner:
-            platform === "win32"
-              ? ChildProcessSpawner.make(
-                  Effect.fnUntraced(function* (command) {
-                    const child = yield* spawner.spawn(command);
-                    // Stop PyInstaller's tree before ACP closes pipes; after launcher exit, taskkill cannot reach children holding DLLs open.
-                    yield* Scope.addFinalizer(
-                      validationScope,
-                      child.kill({ forceKillAfter: "1 second" }).pipe(Effect.orDie),
-                    );
-                    return child;
-                  }),
-                )
-              : spawner,
+          childProcessSpawner: spawner,
         });
         const initialized = yield* runtime.initialize();
         if (
@@ -425,7 +389,7 @@ export const makeAntigravityInstallation = Effect.fn("AntigravityInstallation.ma
         const detail =
           isAcpProcessExitedError(cause) &&
           /\b(?:AF_INET6|enforce_kernel_ipv6_support)\b/.test(cause.stderr ?? "")
-            ? "Antigravity requires IPv6 socket support. Enable IPv6 in this environment. On WSL, remove ipv6.disable=1 from .wslconfig and run wsl --shutdown."
+            ? "Antigravity requires IPv6 socket support. Enable IPv6 in this environment."
             : "The downloaded Antigravity runtime could not start in this environment.";
         return installationError("verify", detail, cause);
       }),
@@ -641,10 +605,8 @@ export const makeAntigravityInstallation = Effect.fn("AntigravityInstallation.ma
         }
       }).pipe(Effect.scoped);
       yield* fs.remove(archivePath);
-      if (platform !== "win32") {
-        yield* fs.chmod(path.join(pairDirectory, asset.executable.name), 0o755);
-        yield* fs.chmod(path.join(pairDirectory, asset.harness.name), 0o755);
-      }
+      yield* fs.chmod(path.join(pairDirectory, asset.executable.name), 0o755);
+      yield* fs.chmod(path.join(pairDirectory, asset.harness.name), 0o755);
       yield* report("verifying", "Checking the downloaded runtime.");
       yield* validate(
         {

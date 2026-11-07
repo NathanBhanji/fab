@@ -1052,7 +1052,7 @@ export const makePiAdapterV2 = Effect.fn("makePiAdapterV2")(function* (
           status,
           completedAt: completed ? emittedAt : null,
         } as const;
-        if (toolName === "bash" || toolName === "powershell") {
+        if (toolName === "bash") {
           const exitCode =
             recordNumber(recordField(resultRecord, "structuredContent"), "exit_code") ??
             recordNumber(recordField(resultRecord, "details"), "exitCode");

@@ -128,7 +128,6 @@ export const AntigravityDriver: ProviderDriver<
     const authConfigIssue = antigravityAuthConfigIssue(auth);
     const processEnvironment = yield* mergeProviderInstanceEnvironment(environment);
     const userHome = resolveAntigravityUserHome(
-      yield* HostProcess.Platform,
       processEnvironment,
       yield* HostProcess.HomeDirectory,
     );
@@ -222,8 +221,7 @@ export const AntigravityDriver: ProviderDriver<
         ),
       );
       // Use one directory per process; shared cleanup could delete files another session still reads.
-      // Remove after the child dies, best-effort on Windows where handles may outlive the kill;
-      // the next driver start sweeps leftovers.
+      // Remove after the child dies; the next driver start sweeps leftovers.
       const runtimeTempDirectory = yield* Effect.acquireRelease(
         fileSystem.makeTempDirectory({ directory: profile.tempDirectory, prefix: "run-" }).pipe(
           Effect.mapError(

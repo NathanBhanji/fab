@@ -31,14 +31,11 @@ import * as ChildProcess from "effect/process/ChildProcess";
 import * as ChildProcessSpawner from "effect/process/ChildProcessSpawner";
 
 import { signalProcessGroup } from "@fab/provider-core/server/processGroup";
-import { isWindowsCommandNotFound } from "@fab/provider-core/server/snapshotProbe";
 import * as OpenCodeServerLedger from "./OpenCodeServerLedger.ts";
 import { collectStreamAsString } from "@fab/provider-core/server/snapshotProbe";
 import * as NetService from "@fab/shared/Net";
 import { AgentScope } from "@fab/shared/AgentScope";
-import * as HostProcess from "@fab/shared/HostProcess";
 import { compareSemverVersions, parseSemver } from "@fab/shared/semver";
-import { resolveSpawnCommand } from "@fab/shared/shell";
 const encodeUnknownJsonStringExit = Schema.encodeUnknownExit(Schema.fromJsonString(Schema.Unknown));
 const OPENCODE_EMPTY_CONFIG_CONTENT = "{}";
 
@@ -415,50 +412,34 @@ function ensureRuntimeError(
 const makeOpenCodeRuntime = Effect.gen(function* () {
   const spawner = yield* ChildProcessSpawner.ChildProcessSpawner;
   const netService = yield* NetService.NetService;
-  const hostPlatform = yield* HostProcess.Platform;
   const serverLedger = yield* OpenCodeServerLedger.OpenCodeServerLedger;
   const agentScope = yield* AgentScope;
-  // npm's Windows shim lets the child escape libuv kill-on-close; run its executable directly.
-  const resolveCommand = (command: string, args: ReadonlyArray<string>, env?: NodeJS.ProcessEnv) =>
-    resolveSpawnCommand(command, args, { ...(env ? { env } : {}), bypassNpmShim: true });
 
   const runOpenCodeCommand: OpenCodeRuntime["Service"]["runOpenCodeCommand"] = Effect.fn(
     "OpenCodeRuntime.runOpenCodeCommand",
   )(
     function* (input) {
-      const spawnCommand = yield* resolveCommand(input.binaryPath, input.args, input.environment);
       const child = yield* spawner.spawn(
-        ChildProcess.make(spawnCommand.command, spawnCommand.args, {
-          detached: hostPlatform !== "win32",
-          shell: spawnCommand.shell,
+        ChildProcess.make(input.binaryPath, input.args, {
+          detached: true,
           ...(input.cwd ? { cwd: input.cwd } : {}),
           ...(input.environment ? { env: input.environment } : { extendEnv: true }),
         }),
       );
-      const terminateCommandGroup =
-        hostPlatform === "win32"
-          ? child.kill({ killSignal: "SIGKILL" }).pipe(Effect.asVoid)
-          : Effect.sync(() => {
-              try {
-                signalProcessGroup(Number(child.pid), "SIGKILL");
-              } catch {}
-            });
+      const terminateCommandGroup = Effect.sync(() => {
+        try {
+          signalProcessGroup(Number(child.pid), "SIGKILL");
+        } catch {}
+      });
       yield* Effect.addFinalizer(() => terminateCommandGroup.pipe(Effect.ignore));
       const [stdout, stderr, code] = yield* Effect.all(
         [collectStreamAsString(child.stdout), collectStreamAsString(child.stderr), child.exitCode],
         { concurrency: "unbounded" },
       );
-      const exitCode = Number(code);
-      if (yield* isWindowsCommandNotFound(exitCode, stderr)) {
-        return yield* new OpenCodeRuntimeError({
-          operation: "runOpenCodeCommand",
-          detail: `spawn ${input.binaryPath} ENOENT`,
-        });
-      }
       return {
         stdout,
         stderr,
-        code: exitCode,
+        code: Number(code),
       } satisfies OpenCodeCommandResult;
     },
     (effect, input) =>
@@ -515,7 +496,6 @@ const makeOpenCodeRuntime = Effect.gen(function* () {
       env: input.environment,
       shared: true,
     });
-    const spawnCommand = yield* resolveCommand(launch.command, launch.args, input.environment);
     const serverPassword = resolveOpenCodeServerPassword({
       external: false,
       ...(input.serverPassword !== undefined ? { serverPassword: input.serverPassword } : {}),
@@ -527,9 +507,8 @@ const makeOpenCodeRuntime = Effect.gen(function* () {
     const ledgerScope = yield* Scope.fork(runtimeScope);
     const child = yield* spawner
       .spawn(
-        ChildProcess.make(spawnCommand.command, spawnCommand.args, {
-          detached: hostPlatform !== "win32",
-          shell: spawnCommand.shell,
+        ChildProcess.make(launch.command, launch.args, {
+          detached: true,
           env: {
             ...input.environment,
             ...(serverPassword !== undefined ? { OPENCODE_SERVER_PASSWORD: serverPassword } : {}),
@@ -553,13 +532,11 @@ const makeOpenCodeRuntime = Effect.gen(function* () {
       );
 
     const killOpenCodeProcessGroup = (signal: NodeJS.Signals) =>
-      hostPlatform === "win32"
-        ? child.kill({ killSignal: signal, forceKillAfter: "1 second" }).pipe(Effect.asVoid)
-        : Effect.sync(() => {
-            try {
-              signalProcessGroup(Number(child.pid), signal);
-            } catch {}
-          });
+      Effect.sync(() => {
+        try {
+          signalProcessGroup(Number(child.pid), signal);
+        } catch {}
+      });
     const terminateChild = killOpenCodeProcessGroup("SIGTERM").pipe(
       Effect.andThen(Effect.sleep("1 second")),
       Effect.andThen(killOpenCodeProcessGroup("SIGKILL")),

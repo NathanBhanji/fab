@@ -61,9 +61,6 @@ const layerTestHttpClient = Layer.succeed(
   ),
 );
 
-// The mock CLIs from makeTildeProviderFixtures are scripts Windows cannot execute.
-const windowsHost = HostProcess.Platform.defaultValue() === "win32";
-
 const TEST_EPOCH = DateTime.makeUnsafe("1970-01-01T00:00:00.000Z");
 
 const layerBackgroundPolicyAlwaysRun = Layer.mock(BackgroundPolicy.BackgroundPolicy)({
@@ -381,8 +378,6 @@ describe("ProviderInstanceRegistry — multi-instance codex slice", () => {
 
   it.live("runs Codex and Claude readiness probes from configured tilde paths", () =>
     Effect.gen(function* () {
-      if (yield* HostProcess.isWindows) return;
-
       const fixtures = yield* makeTildeProviderFixtures();
 
       const codexId = ProviderInstanceId.make("codex_tilde");
@@ -435,8 +430,6 @@ describe("ProviderInstanceRegistry — multi-instance codex slice", () => {
 
   it.live("runs Claude instance probes in the server state dir, not the server cwd", () =>
     Effect.gen(function* () {
-      if (yield* HostProcess.isWindows) return;
-
       const fixtures = yield* makeTildeProviderFixtures();
       const { stateDir } = yield* ServerConfig.ServerConfig;
       const claudeId = ProviderInstanceId.make("claude_state_dir");
@@ -468,8 +461,6 @@ describe("ProviderInstanceRegistry — multi-instance codex slice", () => {
 
   it.effect("scopes Claude's one-probe fallback to the logged-in organization", () =>
     Effect.gen(function* () {
-      if (yield* HostProcess.isWindows) return;
-
       const fixtures = yield* makeTildeProviderFixtures();
       const fs = yield* FileSystem.FileSystem;
       const path = yield* Path.Path;
@@ -670,7 +661,7 @@ describe("ProviderInstanceRegistry — multi-instance codex slice", () => {
       Effect.provide(layerTest),
     );
 
-  it.live.skipIf(windowsHost)("refreshes Claude usage after redeeming a reset", () =>
+  it.live("refreshes Claude usage after redeeming a reset", () =>
     Effect.gen(function* () {
       const { outcome, after } = yield* redeemClaudeReset({
         result: "reset",
@@ -681,16 +672,14 @@ describe("ProviderInstanceRegistry — multi-instance codex slice", () => {
     }),
   );
 
-  it.live.skipIf(windowsHost)(
-    "reports Claude's answer when a claim changed nothing and the re-probe fails",
-    () =>
-      Effect.gen(function* () {
-        const { outcome } = yield* redeemClaudeReset({
-          result: "already_used",
-          usageFailsAfterClaim: true,
-        });
-        expect(outcome).toMatchObject({ _tag: "Success", success: "alreadyRedeemed" });
-      }),
+  it.live("reports Claude's answer when a claim changed nothing and the re-probe fails", () =>
+    Effect.gen(function* () {
+      const { outcome } = yield* redeemClaudeReset({
+        result: "already_used",
+        usageFailsAfterClaim: true,
+      });
+      expect(outcome).toMatchObject({ _tag: "Success", success: "alreadyRedeemed" });
+    }),
   );
 
   const makeClaudeCacheFixture = Effect.fnUntraced(function* (
@@ -740,31 +729,31 @@ describe("ProviderInstanceRegistry — multi-instance codex slice", () => {
     };
   });
 
-  for (const state of ["signed-out", "usage-failed"] as const) {
-    it.effect.skipIf(windowsHost)(
-      state === "signed-out"
-        ? "shows Claude usage on the first refresh after signing back in"
-        : "retries Claude usage on the first refresh after a failed usage read",
-      () =>
-        Effect.gen(function* () {
-          const fixture = yield* makeClaudeCacheFixture(state);
-          const before = yield* fixture.refresh;
-          if (state === "signed-out") {
-            expect(before.auth.status).toBe("unauthenticated");
-            expect(before.usageLimits).toBeUndefined();
-          } else {
-            expect(before.auth.status).toBe("authenticated");
-            expect(before.usageLimits?.unavailable?.reason).toBe("probeFailed");
-          }
+  it.effect.each([
+    { state: "signed-out", name: "shows Claude usage on the first refresh after signing back in" },
+    {
+      state: "usage-failed",
+      name: "retries Claude usage on the first refresh after a failed usage read",
+    },
+  ] as const)("$name", ({ state }) =>
+    Effect.gen(function* () {
+      const fixture = yield* makeClaudeCacheFixture(state);
+      const before = yield* fixture.refresh;
+      if (state === "signed-out") {
+        expect(before.auth.status).toBe("unauthenticated");
+        expect(before.usageLimits).toBeUndefined();
+      } else {
+        expect(before.auth.status).toBe("authenticated");
+        expect(before.usageLimits?.unavailable?.reason).toBe("probeFailed");
+      }
 
-          yield* fixture.recover;
-          const after = yield* fixture.refresh;
-          expect(after.auth.status).toBe("authenticated");
-          expect(after.usageLimits?.unavailable).toBeUndefined();
-          expect(after.usageLimits?.windows.map((window) => window.id)).toEqual(["five_hour"]);
-        }).pipe(Effect.provide(layerTest)),
-    );
-  }
+      yield* fixture.recover;
+      const after = yield* fixture.refresh;
+      expect(after.auth.status).toBe("authenticated");
+      expect(after.usageLimits?.unavailable).toBeUndefined();
+      expect(after.usageLimits?.windows.map((window) => window.id)).toEqual(["five_hour"]);
+    }).pipe(Effect.provide(layerTest)),
+  );
 
   it.live(
     "shadows instances whose driver is not registered in this build without failing boot",
