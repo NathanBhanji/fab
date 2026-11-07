@@ -157,11 +157,8 @@ async function main() {
   const selected = values("--pose");
   const unknown = selected.filter((id) => !POSES.some((pose) => pose.id === id));
   if (unknown.length) throw new Error(`Unknown pose ${unknown.join(", ")}. Run with --list.`);
-  const platforms = values("--platform");
-  const poses = POSES.filter(
-    (pose) =>
-      (selected.length === 0 ? !pose.pending : selected.includes(pose.id)) &&
-      (platforms.length === 0 || platforms.includes(pose.platform)),
+  const poses = POSES.filter((pose) =>
+    selected.length === 0 ? !pose.pending : selected.includes(pose.id),
   );
   const concurrencyFlag = values("--concurrency")[0];
   const concurrency = concurrencyFlag ? Number(concurrencyFlag) : undefined;
@@ -224,8 +221,7 @@ async function main() {
       ],
       {
         cwd: NodePath.join(REPO_ROOT, "apps/mobile"),
-        // Lazily fetched chunks (dynamic import()) sometimes arrive broken on the pool's Android
-        // emulators and throw SyntaxErrors; release builds have no lazy chunks either.
+        // Release builds have no lazily fetched chunks (dynamic import()); match them.
         env: { ...NodeProcess.env, APP_VARIANT: "development", CI: "1", EXPO_NO_METRO_LAZY: "1" },
         // The app's console output arrives through Metro; keep it with the run.
         stdio: [
@@ -273,18 +269,8 @@ async function main() {
       }
       return result;
     };
-    // Each platform has its own workers, so each gets its own limit; one Mac runs every
-    // iOS simulator, and recording several at once on a shared pool times it out.
-    const byPlatform = await Promise.all(
-      (["ios", "android"] as const).map((platform) =>
-        mapConcurrent(
-          poses.filter((pose) => pose.platform === platform),
-          concurrency ?? (platform === "ios" ? 2 : 3),
-          runOne,
-        ),
-      ),
-    );
-    const results = poses.map((pose) => byPlatform.flat().find((result) => result.pose === pose)!);
+    // One Mac runs every iOS simulator, and recording several at once on a shared pool times it out.
+    const results = await mapConcurrent(poses, concurrency ?? 2, runOne);
 
     const reviewed = review
       ? await mapConcurrent(results, 4, async (result) => {

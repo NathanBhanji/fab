@@ -7,11 +7,6 @@
       "modules": [
         "FabHighlightsModule"
       ]
-    },
-    "android": {
-      "modules": [
-        "expo.modules.fabhighlights.FabHighlightsModule"
-      ]
     }
   }
 }

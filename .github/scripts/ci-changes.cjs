@@ -43,7 +43,7 @@ const TEST_ONLY_DEPS = {
 const BUILD_ONLY_DEPS = { fab: ["@fab/web"] };
 
 const MOBILE_NATIVE =
-  /^apps\/mobile\/.*\.(swift|kt|kts)$|^apps\/mobile\/(\.swiftlint\.yml|detekt\.yml|\.editorconfig|Brewfile)$|^scripts\/mobile-native-static-check\.ts$|^package\.json$|^\.github\/workflows\/ci\.yml$|^\.github\/scripts\/ci-changes\.cjs$|^\.github\/actions\/ci-changes\//;
+  /^apps\/mobile\/.*\.swift$|^apps\/mobile\/(\.swiftlint\.yml|Brewfile)$|^scripts\/mobile-native-static-check\.ts$|^package\.json$|^\.github\/workflows\/ci\.yml$|^\.github\/scripts\/ci-changes\.cjs$|^\.github\/actions\/ci-changes\//;
 
 const OWN_TEST_JOB = new Set(["fab", "@fab/web", "@fab/monorepo"]);
 

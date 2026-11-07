@@ -171,7 +171,6 @@ export default defineConfig({
       "**/*.graphql.ts",
       "packages/source-control-github/schema/**",
       "apps/server/schema/**",
-      "apps/mobile/android/**",
       "apps/mobile/ios/**",
       "apps/mobile/uniwind-types.d.ts",
       // Vendored and generated C.
@@ -203,7 +202,6 @@ export default defineConfig({
       "**/*.graphql.ts",
       "packages/source-control-github/schema/**",
       "apps/server/schema/**",
-      "apps/mobile/android/**",
       "apps/mobile/ios/**",
       "apps/mobile/uniwind-types.d.ts",
     ],

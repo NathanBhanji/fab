@@ -83,7 +83,7 @@ describe("layoutChecks", () => {
     });
   });
 
-  it("flags an error screen and controls under Android system bars", () => {
+  it("flags an error screen and controls under system bars", () => {
     const snapshot: Snapshot = {
       appBundleId: APP,
       viewport: { width: 1080, height: 2400 },
@@ -96,7 +96,7 @@ describe("layoutChecks", () => {
         node(1, {
           kind: "text",
           systemBar: "status",
-          bundleId: "com.android.systemui",
+          bundleId: "com.apple.springboard",
           rect: { x: 0, y: 0, width: 1080, height: 60 },
         }),
         node(2, {

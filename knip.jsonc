@@ -22,7 +22,7 @@
       // electron-builder loads the macOS signer and the Linux afterPack hook by path, and mobile-e2e.ts runs
       // agent-device's CLI by path, and mobile-behavior.ts spawns its runner by path.
       // release-desktop.yml runs the desktop launch check through xvfb-run, which knip
-      // does not trace.
+      // does not trace. The mobile icon sync scripts load sharp from here with createRequire.
       "entry": [
         // These fixture scripts are injected into a browser page by path.
         "fixtures/*/*.js",
@@ -35,7 +35,7 @@
         "prepare-server-compile-cache.cjs",
         "smoke-desktop-app.ts",
       ],
-      "ignoreDependencies": ["agent-device", "esbuild"],
+      "ignoreDependencies": ["agent-device", "esbuild", "sharp"],
       // The `fab` npm package's files: copied into the package, never imported.
       // knip-schemas.test.ts writes a throwaway project to .knip-test-*, which a
       // knip run beside it in check:changed must not report.

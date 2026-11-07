@@ -7,11 +7,6 @@
       "modules": [
         "FabReviewDiffModule"
       ]
-    },
-    "android": {
-      "modules": [
-        "expo.modules.fabreviewdiff.FabReviewDiffModule"
-      ]
     }
   }
 }

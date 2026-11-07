@@ -1,10 +1,7 @@
 {
-  "platforms": ["apple", "android"],
+  "platforms": ["apple"],
   "apple": {
     "modules": ["FabReviewDiffModule"],
     "podspecPath": "FabReviewDiffNative.podspec"
-  },
-  "android": {
-    "modules": ["expo.modules.fabreviewdiff.FabReviewDiffModule"]
   }
 }

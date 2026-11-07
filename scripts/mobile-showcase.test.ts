@@ -4,7 +4,6 @@ import { PNG } from "pngjs";
 
 import type { ShowcaseStoreAssetSpec } from "./mobile-showcase.config.ts";
 import {
-  encodeAndroidPairingUrls,
   normalizeStorePng,
   parsePairingCredentialOutput,
   readPngMetadata,
@@ -82,12 +81,4 @@ it("reads multiline JSON from the pairing CLI", () => {
     parsePairingCredentialOutput('server log\n{\n  "credential": "PAIR-ME"\n}\n'),
     "PAIR-ME",
   );
-});
-
-it("encodes Android pairing URLs without shell-sensitive JSON quotes", () => {
-  const urls = ["http://10.0.2.2:65164/#token=ONE", "http://10.0.2.2:65198/#token=TWO"];
-  const encoded = encodeAndroidPairingUrls(urls);
-  assert.equal(encoded.startsWith("json-uri:"), true);
-  assert.deepStrictEqual(JSON.parse(decodeURIComponent(encoded.slice("json-uri:".length))), urls);
-  assert.equal(encoded.includes('"'), false);
 });

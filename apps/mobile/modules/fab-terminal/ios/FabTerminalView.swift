@@ -220,12 +220,10 @@ public final class FabTerminalView: ExpoView, UITextFieldDelegate {
       guard ghostty_surface_read_text(surface, selection, &captured) else { onCapture(["text": ""]); return }
       defer { ghostty_surface_free_text(surface, &captured) }
       let text = captured.text.flatMap { String(bytes: UnsafeBufferPointer(start: UnsafeRawPointer($0).assumingMemoryBound(to: UInt8.self), count: Int(captured.text_len)), encoding: .utf8) } ?? ""
-      // Android joins snapshot rows with "\n" and trims each row's trailing whitespace, so do
-      // the same here: identical terminal content must capture identically on both platforms.
+      // Trim each row's trailing whitespace so captured text does not carry the grid's padding.
       let normalized = text.split(separator: "\n", omittingEmptySubsequences: false)
         .map { row -> String in
           var line = String(row)
-          // Kotlin's trimEnd only strips ASCII whitespace; match it exactly.
           while let last = line.last, last.isASCII && last.isWhitespace { line.removeLast() }
           return line
         }
