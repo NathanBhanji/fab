@@ -16,21 +16,17 @@ function createBufferLine(text: string, isWrapped = false): TerminalBufferLineLi
 }
 
 describe("extractTerminalLinks", () => {
-  it.each([
-    String.raw`C:\dev\ai-test\dir 1`,
-    String.raw`C:\dev\ai-test\dir 1\test`,
-    "C:\\",
-    String.raw`\\server\my share\dir 1`,
-    "/home/Jane Doe/project",
-    String.raw`C:\dev\folder (draft)\name!`,
-  ])("keeps the full PowerShell prompt path %s in one link", (path) => {
-    expect(extractTerminalLinks(`PS ${path}> `)).toEqual([
-      { kind: "path", text: path, start: 3, end: 3 + path.length },
-    ]);
-  });
+  it.each(["/home/Jane Doe/project", "/home/dev/folder (draft)/name!"])(
+    "keeps the full PowerShell prompt path %s in one link",
+    (path) => {
+      expect(extractTerminalLinks(`PS ${path}> `)).toEqual([
+        { kind: "path", text: path, start: 3, end: 3 + path.length },
+      ]);
+    },
+  );
 
   it("keeps links in a command separate from the PowerShell prompt path", () => {
-    const path = String.raw`C:\dev\dir 1\test`;
+    const path = "/home/dev/dir 1/test";
     const prompt = `PS ${path}> `;
     const url = "https://example.com";
     expect(extractTerminalLinks(`${prompt}echo ${url}`)).toEqual([
@@ -40,27 +36,14 @@ describe("extractTerminalLinks", () => {
   });
 
   it("does not extend ordinary output paths through trailing prose", () => {
-    const path = String.raw`C:\dev\project`;
+    const path = "/home/dev/project";
     expect(extractTerminalLinks(`see ${path} for details`)).toEqual([
       { kind: "path", text: path, start: 4, end: 4 + path.length },
     ]);
   });
 
-  it.each([
-    String.raw`src\index.ts:12`,
-    String.raw`.\src\index.ts:12:7`,
-    String.raw`..\src\index.ts:12`,
-    String.raw`C:\Users\Jane\project\index.ts:12`,
-    String.raw`\\server\share\index.ts:12`,
-  ])("finds Windows path %s", (text) => {
-    const line = `error at ${text}: failed`;
-    expect(extractTerminalLinks(line)).toEqual([
-      { kind: "path", text, start: 9, end: 9 + text.length },
-    ]);
-  });
-
   it.each(['"', "'", "`"])("finds paths containing spaces enclosed in %s", (quote) => {
-    const text = String.raw`C:\Users\Jane Doe\project\index.ts:12:7`;
+    const text = "/Users/Jane Doe/project/index.ts:12:7";
     expect(extractTerminalLinks(`see ${quote}${text}${quote}.`)).toEqual([
       { kind: "path", text, start: 5, end: 5 + text.length },
     ]);
@@ -71,7 +54,6 @@ describe("extractTerminalLinks", () => {
     "./my folder/index.ts",
     "/home/Jane Doe/index.ts",
     "/home/Jane Doe/file)",
-    String.raw`\\server\my share\index.ts`,
   ])("keeps positions outside quotes on %s", (path) => {
     expect(extractTerminalLinks(`"${path}":12:7: error`)).toEqual([
       { kind: "path", text: `${path}:12:7`, start: 1, end: path.length + 7 },
@@ -84,7 +66,7 @@ describe("extractTerminalLinks", () => {
   });
 
   it("keeps quoted paths and URLs separate without duplicate partial paths", () => {
-    const path = String.raw`C:\Jane Doe\index.ts:12`;
+    const path = "/home/Jane Doe/index.ts:12";
     const url = "https://example.com/docs";
     const line = `"${path}" ${url} src/index.ts`;
     expect(extractTerminalLinks(line)).toEqual([
@@ -131,20 +113,6 @@ describe("extractTerminalLinks", () => {
     ]);
   });
 
-  it("finds Windows absolute paths with forward slashes", () => {
-    const line = "see C:/Users/someone/project/src/file.ts:42 for details";
-    const path = "C:/Users/someone/project/src/file.ts:42";
-    const start = line.indexOf(path);
-    expect(extractTerminalLinks(line)).toEqual([
-      {
-        kind: "path",
-        text: path,
-        start,
-        end: start + path.length,
-      },
-    ]);
-  });
-
   it("keeps a trailing colon on URLs", () => {
     expect(extractTerminalLinks("GET https://example.test/items/foo:")).toEqual([
       { kind: "url", text: "https://example.test/items/foo:", start: 4, end: 35 },
@@ -154,7 +122,6 @@ describe("extractTerminalLinks", () => {
   it.each([
     ["./main.go:10:5: undefined: x", "./main.go:10:5"],
     ["/home/dev/app/src/main.c:10:5: error: expected ';'", "/home/dev/app/src/main.c:10:5"],
-    ["C:\\dev\\app\\src\\main.c:10:5: error: expected ';'", "C:\\dev\\app\\src\\main.c:10:5"],
     ["wrote ./out/report.txt:", "./out/report.txt"],
   ])("drops the colon that ends a compiler diagnostic location in %s", (line, text) => {
     const start = line.indexOf(text);
@@ -199,10 +166,10 @@ describe("extractTerminalLinks", () => {
   });
 
   it("keeps file links beside a non-web URL", () => {
-    const line = "src/db.ts:4 redis://localhost:6379/0 C:/app/src/db.ts:9";
+    const line = "src/db.ts:4 redis://localhost:6379/0 /app/src/db.ts:9";
     expect(extractTerminalLinks(line)).toEqual([
       { kind: "path", text: "src/db.ts:4", start: 0, end: 11 },
-      { kind: "path", text: "C:/app/src/db.ts:9", start: 37, end: 55 },
+      { kind: "path", text: "/app/src/db.ts:9", start: 37, end: 53 },
     ]);
   });
 
@@ -268,19 +235,6 @@ describe("collectWrappedTerminalLinkLine", () => {
 });
 
 describe("resolvePathLinkTarget", () => {
-  it("resolves a quoted terminal link against a Windows environment", () => {
-    const [link] = extractTerminalLinks(String.raw`error at "src\my folder\index.ts":12:7`);
-    expect(resolvePathLinkTarget(link?.text ?? "", String.raw`C:\Users\Jane Doe\project`)).toBe(
-      String.raw`C:\Users\Jane Doe\project\src\my folder\index.ts:12:7`,
-    );
-  });
-
-  it("keeps Windows absolute paths with forward slashes unchanged", () => {
-    expect(
-      resolvePathLinkTarget("C:/Users/julius/project/src/main.ts:12", "C:\\Users\\julius\\project"),
-    ).toBe("C:/Users/julius/project/src/main.ts:12");
-  });
-
   // regression: #13408 terminal links kept a trailing colon
   it("keeps the line and column of a compiler diagnostic", () => {
     const [link] = extractTerminalLinks("/Users/julius/project/main.c:10:5: error: expected ';'");

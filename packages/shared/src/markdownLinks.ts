@@ -1,10 +1,4 @@
 import {
-  isNetworkPath,
-  isWindowsAbsolutePath,
-  stripSlashPrefixedWindowsDrive,
-  workspaceRelativeFilePath,
-} from "./path.ts";
-import {
   type FilePathPosition,
   formatFilePathPosition,
   parseFileUrlHref,
@@ -175,14 +169,12 @@ export function inlineCodeFilePathCandidate(codeText: string): string | null {
   const trimmed = codeText.trim();
   if (trimmed.length === 0 || INLINE_CODE_DISQUALIFIER_PATTERN.test(trimmed)) return null;
 
-  const candidate = isWindowsAbsolutePath(trimmed) ? trimmed : trimmed.replaceAll("\\", "/");
+  const candidate = trimmed.replaceAll("\\", "/");
   const hasPosition = POSITION_SUFFIX_PATTERN.test(candidate);
   if (!hasPosition && !PATH_SEPARATOR_PATTERN.test(candidate)) return null;
 
   const hasExplicitPathShape =
-    RELATIVE_PATH_PREFIX_PATTERN.test(candidate) ||
-    candidate.startsWith("/") ||
-    isWindowsAbsolutePath(candidate);
+    RELATIVE_PATH_PREFIX_PATTERN.test(candidate) || candidate.startsWith("/");
   if (!hasExplicitPathShape) {
     const withoutPosition = candidate.replace(POSITION_SUFFIX_PATTERN, "");
     // Markdown destinations accept `patches/`. Inline code still needs a
@@ -235,13 +227,9 @@ export function splitMarkdownLinkSearchAndHash(value: string): {
 export function markdownDestinationHostPath(source: string): string | null {
   if (/^file:/i.test(source)) {
     const target = parseFileUrlHref(source);
-    return target === null
-      ? null
-      : stripSlashPrefixedWindowsDrive(safeDecodeURIComponent(target.path));
+    return target === null ? null : safeDecodeURIComponent(target.path);
   }
-  return stripSlashPrefixedWindowsDrive(
-    safeDecodeURIComponent(splitMarkdownLinkSearchAndHash(source).path),
-  );
+  return safeDecodeURIComponent(splitMarkdownLinkSearchAndHash(source).path);
 }
 
 export function isMarkdownFileLinkLabel(label: string, href: string): boolean {
@@ -256,21 +244,14 @@ export function isMarkdownFileLinkLabel(label: string, href: string): boolean {
   ) {
     return false;
   }
-  let labelPath = normalize(labelPosition.path);
-  let destinationPath = normalize(destination.path);
+  const labelPath = normalize(labelPosition.path);
+  const destinationPath = normalize(destination.path);
   if (labelPath.length === 0) return true;
-  if (isWindowsAbsolutePath(destination.path)) {
-    labelPath = labelPath.toLowerCase();
-    destinationPath = destinationPath.toLowerCase();
-  }
   return destinationPath === labelPath || destinationPath.endsWith(`/${labelPath}`);
 }
 
 export function isRelativeFilePath(path: string): boolean {
-  return (
-    RELATIVE_PATH_PREFIX_PATTERN.test(path) ||
-    (!path.startsWith("/") && !isWindowsAbsolutePath(path))
-  );
+  return RELATIVE_PATH_PREFIX_PATTERN.test(path) || !path.startsWith("/");
 }
 
 function looksLikePosixFilesystemPath(path: string): boolean {
@@ -282,14 +263,13 @@ function looksLikePosixFilesystemPath(path: string): boolean {
 }
 
 function looksLikeFilePath(path: string, authoredPath: string): boolean {
-  if (isWindowsAbsolutePath(path) || RELATIVE_PATH_PREFIX_PATTERN.test(path)) return true;
+  if (RELATIVE_PATH_PREFIX_PATTERN.test(path)) return true;
   if (path.startsWith("/")) return looksLikePosixFilesystemPath(authoredPath);
   if (EXTENSIONLESS_FILE_NAMES.has(path)) return true;
   return RELATIVE_FILE_PATH_PATTERN.test(authoredPath) || RELATIVE_FILE_NAME_PATTERN.test(path);
 }
 
 function hasExternalScheme(path: string): boolean {
-  if (isWindowsAbsolutePath(path)) return false;
   const match = path.match(EXTERNAL_SCHEME_PATTERN);
   if (!match) return false;
   const rest = match[2] ?? "";
@@ -306,7 +286,7 @@ export function parseMarkdownFileLink(href: string): FilePathPosition | null {
   const source =
     (normalized.toLowerCase().startsWith("file:") ? parseFileUrlHref(normalized) : null) ??
     splitMarkdownLinkSearchAndHash(normalized);
-  const path = stripSlashPrefixedWindowsDrive(safeDecodeURIComponent(source.path.trim()));
+  const path = safeDecodeURIComponent(source.path.trim());
   const hash = safeDecodeURIComponent(source.hash.trim());
   if (path.length === 0 || hasExternalScheme(path)) return null;
 
@@ -412,17 +392,7 @@ export function resolveMarkdownFileLinkTarget(
   if (!target) return null;
 
   const pathWithPosition = formatFilePathPosition(target);
-  if (!isRelativeFilePath(pathWithPosition)) {
-    // Opening a network path makes Windows sign in to its host with the user's
-    // NTLM credentials, so only the project's own share becomes a file link.
-    return isNetworkPath(target.path) && workspaceRelativeFilePath(target.path, cwd) === null
-      ? null
-      : pathWithPosition;
-  }
+  if (!isRelativeFilePath(pathWithPosition)) return pathWithPosition;
   if (!baseDir) return null;
   return resolvePathLinkTarget(pathWithPosition, baseDir);
-}
-
-export function isWindowsDrivePathHref(href: string): boolean {
-  return /^[A-Za-z]:[\\/]/.test(safeDecodeURIComponent(href));
 }

@@ -6,7 +6,6 @@ describe("commandProgramName", () => {
   it.each([
     ["/bin/bash --rcfile /tmp/config -c 'git status'", "git"],
     ["zsh -lc 'CI=1 env -u DEBUG sudo -u root vp test run'", "vp"],
-    ['"C:\\Program Files\\Git\\bin\\bash.exe" -lc "git status"', "git"],
     // regression: #9371 a multiline script whose later line re-quotes must still label its first program
     ["/bin/zsh -lc 'git status\nsed -n '\"'1,20p' apps/web/src/components/DiffPanel.tsx\"", "git"],
   ])("unwraps shell scripts without executing them: %s", (command, program) => {

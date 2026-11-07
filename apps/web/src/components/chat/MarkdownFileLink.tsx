@@ -1,4 +1,3 @@
-import { formatFilePathForClipboard } from "@fab/client-runtime/media-actions";
 import {
   isAtomCommandInterrupted,
   squashAtomCommandFailure,
@@ -207,7 +206,7 @@ export const MarkdownFileLink = memo(function MarkdownFileLink({
       return;
     }
 
-    const value = resolveValue().then((text) => formatFilePathForClipboard(text, targetPath));
+    const value = resolveValue();
     // Start the write before workspace lookup finishes so Safari retains the user gesture.
     const write =
       typeof navigator.clipboard.write === "function" && typeof ClipboardItem !== "undefined"

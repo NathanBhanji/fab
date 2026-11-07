@@ -1,4 +1,4 @@
-import { isAbsolutePath, isWindowsAbsolutePath } from "@fab/shared/path";
+import { isAbsolutePath } from "@fab/shared/path";
 
 export const WORKSPACE_BASENAME_LOOKUP_LIMIT = 25;
 
@@ -53,12 +53,9 @@ export function stripRepeatedWorkspacePrefix(relativePath: string, cwd: string):
   if (isAbsolutePath(relativePath)) return null;
   const pathSegments = relativePath.split(/[\\/]+/);
   const cwdSegments = cwd.split(/[\\/]+/).filter(Boolean);
-  const fold = isWindowsAbsolutePath(cwd)
-    ? (segment: string | undefined) => segment?.toLowerCase()
-    : (segment: string | undefined) => segment;
   for (let count = Math.min(cwdSegments.length, pathSegments.length - 1); count > 0; count--) {
     const prefix = cwdSegments.slice(-count);
-    if (prefix.every((segment, index) => fold(segment) === fold(pathSegments[index]))) {
+    if (prefix.every((segment, index) => segment === pathSegments[index])) {
       return pathSegments.slice(count).join("/") || null;
     }
   }
@@ -70,11 +67,7 @@ export function pickStrippedWorkspaceMatch(
   cwd: string,
   entries: ReadonlyArray<WorkspaceEntryCandidate>,
 ): string | null {
-  const caseInsensitive = isWindowsAbsolutePath(cwd);
-  const key = (path: string) => {
-    const normalized = path.replaceAll("\\", "/");
-    return caseInsensitive ? normalized.toLowerCase() : normalized;
-  };
+  const key = (path: string) => path.replaceAll("\\", "/");
   const files = entries.filter((entry) => entry.kind === "file");
   return files.find((entry) => key(entry.path) === key(strippedPath))?.path ?? null;
 }

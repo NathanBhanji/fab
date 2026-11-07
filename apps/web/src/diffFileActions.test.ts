@@ -45,29 +45,19 @@ describe("openDiffFilePrimaryAction", () => {
     ).toBe("frontend/Dockerfile");
   });
 
-  it("handles Windows roots and mixed diff separators", () => {
-    expect(
-      resolveDiffPathForWorkspace({
-        filePath: "Frontend/src\\index.ts",
-        workspaceRoot: "C:\\repo\\frontend",
-        repositoryRoot: "C:\\repo",
-      }),
-    ).toBe("src/index.ts");
-  });
-
   // regression: #6174 opening diff files broke for repositories at a filesystem root
-  it.each([
-    { workspaceRoot: "/frontend", repositoryRoot: "/" },
-    { workspaceRoot: "C:\\frontend", repositoryRoot: "C:\\" },
-  ])("handles filesystem roots: $repositoryRoot", ({ workspaceRoot, repositoryRoot }) => {
-    expect(
-      resolveDiffPathForWorkspace({
-        filePath: "frontend/index.ts",
-        workspaceRoot,
-        repositoryRoot,
-      }),
-    ).toBe("index.ts");
-  });
+  it.each([{ workspaceRoot: "/frontend", repositoryRoot: "/" }])(
+    "handles filesystem roots: $repositoryRoot",
+    ({ workspaceRoot, repositoryRoot }) => {
+      expect(
+        resolveDiffPathForWorkspace({
+          filePath: "frontend/index.ts",
+          workspaceRoot,
+          repositoryRoot,
+        }),
+      ).toBe("index.ts");
+    },
+  );
 
   it.each([
     {
@@ -75,7 +65,6 @@ describe("openDiffFilePrimaryAction", () => {
       workspaceRoot: "/repo/frontend",
       expected: "src/index.ts",
     },
-    { filePath: "c:\\Repo\\src\\index.ts", workspaceRoot: "C:\\repo", expected: "src/index.ts" },
   ])(
     "opens absolute diff paths inside the workspace: $filePath",
     ({ filePath, workspaceRoot, expected }) => {

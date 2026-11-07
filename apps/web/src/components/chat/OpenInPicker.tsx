@@ -36,7 +36,6 @@ import {
 import {
   AntigravityIcon,
   CursorIcon,
-  FileExplorerIcon,
   FinderIcon,
   Icon,
   KiroIcon,
@@ -61,7 +60,7 @@ import {
   WebStormIcon,
 } from "../JetBrainsIcons";
 import { announce } from "~/lib/announce";
-import { cn, isMacPlatform, isWindowsPlatform } from "~/lib/utils";
+import { cn, isMacPlatform } from "~/lib/utils";
 import { shellEnvironment } from "~/state/shell";
 import { useAtomCommand } from "~/state/use-atom-command";
 import {
@@ -184,13 +183,9 @@ const resolveOpenInOptions = (platform: string, availableEditors: ReadonlyArray<
       kind: "brand",
     },
     {
-      Icon: isMacPlatform(platform)
-        ? FinderIcon
-        : isWindowsPlatform(platform)
-          ? FileExplorerIcon
-          : FolderClosedIcon,
+      Icon: isMacPlatform(platform) ? FinderIcon : FolderClosedIcon,
       value: "file-manager",
-      kind: isMacPlatform(platform) || isWindowsPlatform(platform) ? "brand" : "generic",
+      kind: isMacPlatform(platform) ? "brand" : "generic",
     },
   ];
   const availableEditorSet = new Set(availableEditors);

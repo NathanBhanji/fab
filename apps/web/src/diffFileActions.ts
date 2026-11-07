@@ -1,7 +1,6 @@
 import type { ScopedThreadRef } from "@fab/contracts";
 import {
   isAbsolutePath,
-  isWindowsAbsolutePath,
   normalizeProjectPathForComparison,
   workspaceRelativeFilePath,
 } from "@fab/shared/path";
@@ -18,9 +17,7 @@ interface OpenDiffFilePrimaryActionInput {
 }
 
 function normalizedRelativePathSegments(filePath: string): ReadonlyArray<string> | null {
-  if (filePath.startsWith("/") || isWindowsAbsolutePath(filePath) || /^[a-zA-Z]:/.test(filePath)) {
-    return null;
-  }
+  if (filePath.startsWith("/")) return null;
 
   const segments = filePath
     .replaceAll("\\", "/")
@@ -40,10 +37,9 @@ function repositoryRelativeWorkspaceSegments(
   const normalizedRepositoryRoot = normalizeProjectPathForComparison(repositoryRoot);
   if (normalizedWorkspaceRoot === normalizedRepositoryRoot) return [];
 
-  const separator = normalizedRepositoryRoot.includes("\\") ? "\\" : "/";
-  const repositoryPrefix = normalizedRepositoryRoot.endsWith(separator)
+  const repositoryPrefix = normalizedRepositoryRoot.endsWith("/")
     ? normalizedRepositoryRoot
-    : `${normalizedRepositoryRoot}${separator}`;
+    : `${normalizedRepositoryRoot}/`;
   if (!normalizedWorkspaceRoot.startsWith(repositoryPrefix)) return null;
 
   return normalizedWorkspaceRoot
@@ -75,14 +71,9 @@ export function resolveDiffPathForWorkspace(input: {
     return fileSegments.join("/");
   }
 
-  const caseInsensitive = input.repositoryRoot
-    ? isWindowsAbsolutePath(input.repositoryRoot)
-    : false;
-  const belongsToWorkspace = workspaceSegments.every((segment, index) => {
-    const candidate = fileSegments[index];
-    if (candidate === undefined) return false;
-    return caseInsensitive ? candidate.toLowerCase() === segment : candidate === segment;
-  });
+  const belongsToWorkspace = workspaceSegments.every(
+    (segment, index) => fileSegments[index] === segment,
+  );
   if (!belongsToWorkspace) return null;
 
   const relativeSegments = fileSegments.slice(workspaceSegments.length);

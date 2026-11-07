@@ -4,7 +4,6 @@ import {
   breadcrumbPathOf,
   fileBreadcrumbChildren,
   fileBreadcrumbs,
-  isListableHostFolder,
   retainedBreadcrumbTrail,
 } from "./filePath";
 
@@ -15,16 +14,6 @@ describe("fileBreadcrumbs", () => {
       { label: "fab-cleanup", path: "/tmp/fab-cleanup", kind: "directory" },
       { label: "report.md", path: "/tmp/fab-cleanup/report.md", kind: "file" },
     ]);
-    expect(fileBreadcrumbs("fab", "C:\\Temp\\report.md")).toEqual([
-      { label: "C:", path: "C:\\", kind: "directory" },
-      { label: "Temp", path: "C:\\Temp", kind: "directory" },
-      { label: "report.md", path: "C:\\Temp\\report.md", kind: "file" },
-    ]);
-    expect(fileBreadcrumbs("fab", "\\\\server\\share\\report.md").map((c) => c.path)).toEqual([
-      "\\\\server",
-      "\\\\server\\share",
-      "\\\\server\\share\\report.md",
-    ]);
   });
 
   it("builds home-relative breadcrumbs with navigable folders", () => {
@@ -33,8 +22,6 @@ describe("fileBreadcrumbs", () => {
       { label: ".claude", path: "~/.claude", kind: "directory" },
       { label: "CLAUDE.md", path: "~/.claude/CLAUDE.md", kind: "file" },
     ]);
-    expect(isListableHostFolder("~/")).toBe(true);
-    expect(isListableHostFolder("~/.claude")).toBe(true);
   });
 
   it("keeps a project folder named ~ inside the project", () => {
@@ -78,14 +65,9 @@ describe("retainedBreadcrumbTrail", () => {
     ["apps/web", "apps/web/src/main.tsx", "apps/web/src/main.tsx"],
     ["apps/web/src", "/tmp/report", "/tmp/report"],
     ["/tmp/report", "", ""],
-    ["C:\\Temp\\a", "", ""],
     ["/Users/me/projects/scope", "/Users/me", "/Users/me/projects/scope"],
     ["/Users/me/projects/scope", "/Users/me/proj", "/Users/me/proj"],
     ["/Volumes/Work/a", "/Volumes/Work/a/", "/Volumes/Work/a"],
-    ["C:\\Users\\me\\scope", "C:\\", "C:\\Users\\me\\scope"],
-    ["C:\\Users\\me\\scope", "C:\\Users", "C:\\Users\\me\\scope"],
-    ["C:\\Users\\me\\scope", "D:\\", "D:\\"],
-    ["\\\\nas\\share\\docs\\notes", "\\\\nas\\share", "\\\\nas\\share\\docs\\notes"],
   ])("from trail %j to %j keeps %j", (trail, path, expected) => {
     expect(retainedBreadcrumbTrail(trail, path)).toBe(expected);
   });

@@ -44,8 +44,8 @@ describe("resolveModifiedTerminalInput", () => {
     },
   );
 
-  it("pastes on ctrl+v for windows, linux, and unknown hosts", () => {
-    for (const hostPlatform of ["windows", "linux", "unknown"] as const) {
+  it("pastes on ctrl+v for linux and unknown hosts", () => {
+    for (const hostPlatform of ["linux", "unknown"] as const) {
       expect(resolveModifiedTerminalInput({ data: "v", modifier: "ctrl", hostPlatform })).toEqual({
         kind: "paste",
       });

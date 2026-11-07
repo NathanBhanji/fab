@@ -4,14 +4,6 @@ type CommandProgramContext = "exec" | "shell";
 const MAX_COMMAND_SEGMENTS = 64;
 
 const SHELL_PROGRAMS = new Set(["sh", "bash", "zsh", "dash", "ash", "ksh", "fish"]);
-const WINDOWS_SHELL_PROGRAMS = new Set([
-  "cmd",
-  "cmd.exe",
-  "powershell",
-  "powershell.exe",
-  "pwsh",
-  "pwsh.exe",
-]);
 const SHELL_OPTIONS_WITH_VALUE = new Set(["-o", "-O", "--rcfile", "--init-file"]);
 const SHELL_COMMAND_WRAPPERS = new Set(["builtin", "command", "exec"]);
 const SHELL_PRECOMMAND_MODIFIERS = new Set(["nocorrect", "noglob", "time"]);
@@ -238,9 +230,8 @@ function tokenizeShellCommand(command: string): string[] | null {
     }
     if (character === "\\" && quote !== "'") {
       const nextCharacter = input[index + 1];
-      const isWindowsPath = quote === null && /^(?:[A-Za-z]:|\.{1,2})(?:\\[^\s]*)?$/u.test(current);
       if (
-        (quote === '"' || isWindowsPath) &&
+        quote === '"' &&
         nextCharacter !== undefined &&
         nextCharacter !== '"' &&
         nextCharacter !== "\\" &&
@@ -811,39 +802,25 @@ function powerShellAssignmentProgramName(
   };
 }
 
-type WindowsShellPayload = {
+type PowerShellPayload = {
   readonly matched: boolean;
   readonly program: string | null;
 };
 
-function windowsShellPayloadProgramName(
-  shell: string,
+function powerShellPayloadProgramName(
   tokens: ReadonlyArray<string>,
   start: number,
   depth: number,
   remainingCommand: string | null,
   separator: string | null,
   segmentsRemaining: number,
-): WindowsShellPayload {
+): PowerShellPayload {
   const parsePayload = (payload: string | undefined): string | null => {
     if (!payload) return null;
     const command =
       remainingCommand && separator ? `${payload} ${separator} ${remainingCommand}` : payload;
     return commandProgramNameInternal(command, depth + 1, "shell", segmentsRemaining);
   };
-
-  if (shell === "cmd" || shell === "cmd.exe") {
-    for (let index = start; index < tokens.length; index += 1) {
-      const option = tokens[index]!.toLowerCase();
-      if (option !== "/c" && option !== "/k") continue;
-      const payload = tokens[index + 1];
-      return {
-        matched: true,
-        program: parsePayload(payload),
-      };
-    }
-    return { matched: false, program: null };
-  }
 
   for (let index = start; index < tokens.length; index += 1) {
     const option = tokens[index]!.toLowerCase();
@@ -1098,10 +1075,6 @@ function parseCommandProgramName(
     segmentsRemaining,
   );
   if (powerShellAssignment.matched) return powerShellAssignment.program;
-  const windowsPath = commandSplit.firstCommand.match(
-    /^\s*((?:\.{1,2}|%[A-Za-z_][A-Za-z0-9_]*%|\$env:[A-Za-z_][A-Za-z0-9_]*)\\\S+)/iu,
-  )?.[1];
-  if (windowsPath) return staticProgramName(windowsPath);
   const tokens = tokenizeShellCommand(withoutShellLineContinuations(commandSplit.firstCommand));
   if (tokens === null) return null;
   const firstCharacter = commandSplit.firstCommand.trimStart()[0];
@@ -1225,7 +1198,7 @@ function parseCommandProgramName(
       }
       return null;
     }
-    if (tokenProgram && SHELL_PROGRAMS.has(tokenProgram.replace(/\.exe$/i, "").toLowerCase())) {
+    if (tokenProgram && SHELL_PROGRAMS.has(tokenProgram.toLowerCase())) {
       const scriptIndex = shellCommandArgumentIndex(tokens, index + 1);
       if (scriptIndex !== null) {
         const script = tokens[scriptIndex];
@@ -1235,9 +1208,8 @@ function parseCommandProgramName(
       }
     }
     const lowerTokenProgram = tokenProgram?.toLowerCase();
-    if (lowerTokenProgram && WINDOWS_SHELL_PROGRAMS.has(lowerTokenProgram)) {
-      const payload = windowsShellPayloadProgramName(
-        lowerTokenProgram,
+    if (lowerTokenProgram === "pwsh") {
+      const payload = powerShellPayloadProgramName(
         tokens,
         index + 1,
         depth,
@@ -1381,18 +1353,13 @@ function withoutShellWrapper(command: string): string {
   const split = splitFirstShellCommand(trimmed);
   if (split.remainingCommand !== null) return trimmed;
   const tokens = tokenizeShellCommand(trimmed);
-  const program = tokens?.[0]
-    ?.split(/[\\/]/u)
-    .at(-1)
-    ?.replace(/\.exe$/iu, "");
+  const program = tokens?.[0]?.split(/[\\/]/u).at(-1);
   if (!tokens || !program || !SHELL_PROGRAMS.has(program)) return trimmed;
   const scriptIndex = shellCommandArgumentIndex(tokens, 1);
   // Positional arguments can affect the script; keep those invocations intact.
   if (scriptIndex === null || scriptIndex !== tokens.length - 1) return trimmed;
   return tokens[scriptIndex]?.trim() || trimmed;
 }
-
-const POWERSHELL_PROGRAMS = new Set(["powershell", "pwsh"]);
 
 const POWERSHELL_VERBS = new Set(
   `Add Approve Assert Backup Block Build Checkpoint Clear Close Compare Complete Compress Confirm Connect Convert ConvertFrom ConvertTo Copy Debug Deny Deploy Disable Disconnect Dismount Edit Enable Enter Exit Expand Export Find ForEach Format Get Grant Group Hide Import Initialize Install Invoke Join Limit Lock Measure Merge Mount Move New Open Optimize Out Ping Pop Protect Publish Push Read Receive Redo Register Remove Rename Repair Request Reset Resize Resolve Restart Restore Resume Revoke Save Search Select Send Set Show Skip Sort Split Start Step Stop Submit Suspend Switch Sync Tee Test Trace Unblock Undo Uninstall Unlock Unprotect Unpublish Unregister Update Use Wait Watch Where Write`.split(
@@ -1410,9 +1377,8 @@ export function commandHighlightLanguage(command: string): "powershell" | "shell
   const name = (program?.[1] ?? program?.[2] ?? program?.[3] ?? "")
     .split(/[\\/]/u)
     .at(-1)
-    ?.toLowerCase()
-    .replace(/\.exe$/u, "");
-  if (name && POWERSHELL_PROGRAMS.has(name)) return "powershell";
+    ?.toLowerCase();
+  if (name === "pwsh") return "powershell";
   return isPowerShellScript(command) ? "powershell" : "shellscript";
 }
 

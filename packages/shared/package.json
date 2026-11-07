@@ -343,10 +343,6 @@
       "types": "./src/HostProcess.ts",
       "import": "./src/HostProcess.ts"
     },
-    "./testing/longTempDir": {
-      "types": "./src/testing/longTempDir.ts",
-      "import": "./src/testing/longTempDir.ts"
-    },
     "./testing/symlinks": {
       "types": "./src/testing/symlinks.ts",
       "import": "./src/testing/symlinks.ts"
@@ -466,10 +462,6 @@
     "./proposedPlanText": {
       "types": "./src/proposedPlanText.ts",
       "import": "./src/proposedPlanText.ts"
-    },
-    "./markdownWindowsPaths": {
-      "types": "./src/markdownWindowsPaths.ts",
-      "import": "./src/markdownWindowsPaths.ts"
     },
     "./generatedImageMarkdown": {
       "types": "./src/generatedImageMarkdown.ts",

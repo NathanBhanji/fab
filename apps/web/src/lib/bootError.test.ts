@@ -31,14 +31,6 @@ describe("resolveTriageCommand", () => {
     await expect(
       resolveTriageCommand(desktopWith(async () => notOnPath("/Users/O'Neil/.fab/bin/fab"))),
     ).resolves.toBe(`'/Users/O'"'"'Neil/.fab/bin/fab' triage`);
-    await expect(
-      resolveTriageCommand(desktopWith(async () => notOnPath("C:\\Users\\Me\\.fab\\bin\\fab.cmd"))),
-    ).resolves.toBe("C:\\Users\\Me\\.fab\\bin\\fab.cmd triage");
-    await expect(
-      resolveTriageCommand(
-        desktopWith(async () => notOnPath("C:\\Users\\Jo O'Neil\\.fab\\bin\\fab.cmd")),
-      ),
-    ).resolves.toBe("& 'C:\\Users\\Jo O''Neil\\.fab\\bin\\fab.cmd' triage");
   });
 
   it("falls back to npx without a usable desktop launcher", async () => {
@@ -48,10 +40,10 @@ describe("resolveTriageCommand", () => {
     await expect(resolveTriageCommand(desktopWith(async () => notOnPath(null)))).resolves.toBe(
       "npx fab triage",
     );
-    const staleWindowsPathEntry = { ...notOnPath(null), supported: true, onPath: true };
-    await expect(
-      resolveTriageCommand(desktopWith(async () => staleWindowsPathEntry)),
-    ).resolves.toBe("npx fab triage");
+    const stalePathEntry = { ...notOnPath(null), supported: true, onPath: true };
+    await expect(resolveTriageCommand(desktopWith(async () => stalePathEntry))).resolves.toBe(
+      "npx fab triage",
+    );
     await expect(
       resolveTriageCommand(desktopWith(() => Promise.reject(new Error("ipc closed")))),
     ).resolves.toBe("npx fab triage");

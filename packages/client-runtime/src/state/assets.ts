@@ -8,7 +8,6 @@ import {
   WS_METHODS,
 } from "@fab/contracts";
 import { mediaMimeTypeFromExtension } from "@fab/shared/mediaPreview";
-import { isWindowsAbsolutePath } from "@fab/shared/path";
 import {
   getProjectFaviconResourceKey,
   isProjectFaviconFallbackUrl,
@@ -275,7 +274,7 @@ export function createAssetEnvironmentAtoms<R, E>(
         error._tag === "AssetWorkspaceContextNotFoundError"
       ) ||
       resource._tag !== "media-file" ||
-      !(resource.path.startsWith("/") || isWindowsAbsolutePath(resource.path)) ||
+      !resource.path.startsWith("/") ||
       mediaMimeTypeFromExtension(resource.path.slice(resource.path.lastIndexOf("."))) === null
     )
       return yield* error;

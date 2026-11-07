@@ -9,7 +9,7 @@ import {
 import { parseKeybindingShortcut } from "@fab/shared/keybindings";
 
 import { formatShortcutKeyLabel, formatShortcutLabel, shortcutConflictKey } from "../keybindings";
-import { isMacPlatform, isWindowsPlatform } from "./utils";
+import { isMacPlatform } from "./utils";
 
 const DESKTOP_KEY_ALIASES: Readonly<Record<string, string>> = {
   return: "enter",
@@ -63,7 +63,7 @@ function modifierKeyLabel(modifier: SnapShotModifier, platform: string): string 
     if (modifier === "control") return "⌃";
     return "⌥";
   }
-  if (modifier === "meta") return isWindowsPlatform(platform) ? "⊞" : "Super";
+  if (modifier === "meta") return "Super";
   return modifier === "control" ? "Ctrl" : "Alt";
 }
 

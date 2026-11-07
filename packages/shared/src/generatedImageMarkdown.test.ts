@@ -11,28 +11,15 @@ it.each([
   },
   {
     name: "skips images the reply already shows",
-    text: String.raw`![A](</tmp/a b.png>) ![B](c:\Users\me\.codex\b.png) ![C][a\*b] ![D][unc]
+    text: String.raw`![A](</tmp/a b.png>) ![B][a\*b] ![C](file:///tmp/c.png)
 
-[a\*b]: c:\Users\me\.codex\c.png
-[unc]: <\\HOST\Share\d.png>
+[a\*b]: /tmp/b.png`,
+    saved: ["/tmp/a b.png", "/tmp/b.png", "/tmp/c.png", "/tmp/D.png"],
+    expected: String.raw`![A](</tmp/a b.png>) ![B][a\*b] ![C](file:///tmp/c.png)
 
-![E](file://host/share/e.png)`,
-    saved: [
-      "/tmp/a b.png",
-      String.raw`C:\Users\Me\.codex\b.png`,
-      String.raw`C:\Users\Me\.codex\c.png`,
-      String.raw`\\host\share\d.png`,
-      String.raw`\\HOST\SHARE\e.png`,
-      "/tmp/C.png",
-    ],
-    expected: String.raw`![A](</tmp/a b.png>) ![B](c:\Users\me\.codex\b.png) ![C][a\*b] ![D][unc]
+[a\*b]: /tmp/b.png
 
-[a\*b]: c:\Users\me\.codex\c.png
-[unc]: <\\HOST\Share\d.png>
-
-![E](file://host/share/e.png)
-
-![](</tmp/C.png>)`,
+![](</tmp/D.png>)`,
   },
   {
     name: "links, code and escaped embeds still need a preview",
@@ -60,15 +47,10 @@ it.each([
     expected: "<pre>\nlog\n</pre>\n\n![](</tmp/a.png>)",
   },
   {
-    name: "Windows, UNC and reserved characters keep their path",
+    name: "reserved characters keep their path",
     text: "",
-    saved: [
-      String.raw`C:\Users\me\a b#1.png`,
-      String.raw`\\host\share\a.png`,
-      "/tmp/a#b?100%25&copy;\\!\n<x>.png",
-    ],
-    expected:
-      "![](<C:/Users/me/a b%231.png>)\n\n![](<file://host/share/a.png>)\n\n![](</tmp/a%23b%3F100%2525%26copy;%5C!%0A\\<x\\>.png>)",
+    saved: ["/tmp/a#b?100%25&copy;\\!\n<x>.png"],
+    expected: "![](</tmp/a%23b%3F100%2525%26copy;%5C!%0A\\<x\\>.png>)",
   },
 ])("generated image embeds: $name", ({ text, saved, expected }) => {
   const result = appendGeneratedImageEmbeds(text, saved);

@@ -20,7 +20,6 @@ import {
   findProjectByPath,
   inferProjectTitleFromPath,
   isExplicitRelativeProjectPath,
-  isUnsupportedWindowsProjectPath,
   resolveProjectPathForDispatch,
 } from "../state/projects.ts";
 import type { EnvironmentProject } from "../state/models.ts";
@@ -262,16 +261,12 @@ export function getCloneDestinationBrowsePath(input: {
   readonly browseDirectoryPath: string;
   readonly selectedDirectoryName: string;
   readonly cloneDirectoryName: string;
-  readonly caseSensitive: boolean;
 }): string {
   const selectedDirectoryPath = appendBrowsePathSegment(
     input.browseDirectoryPath,
     input.selectedDirectoryName,
   );
-  const selectedDirectoryMatches = input.caseSensitive
-    ? input.selectedDirectoryName === input.cloneDirectoryName
-    : input.selectedDirectoryName.toLowerCase() === input.cloneDirectoryName.toLowerCase();
-  return selectedDirectoryMatches
+  return input.selectedDirectoryName === input.cloneDirectoryName
     ? selectedDirectoryPath
     : getCloneDestinationPath(selectedDirectoryPath, input.cloneDirectoryName);
 }
@@ -279,14 +274,10 @@ export function getCloneDestinationBrowsePath(input: {
 export function resolveAddProjectPath(input: {
   readonly rawPath: string;
   readonly currentProjectCwd?: string | null;
-  readonly platform: string;
 }): { readonly ok: true; readonly path: string } | { readonly ok: false; readonly error: string } {
   const rawPath = input.rawPath.trim();
   if (rawPath.length === 0) {
     return { ok: false, error: "Enter a project path." };
-  }
-  if (isUnsupportedWindowsProjectPath(rawPath, input.platform)) {
-    return { ok: false, error: "Windows-style paths are only supported on Windows environments." };
   }
   if (isExplicitRelativeProjectPath(rawPath) && !input.currentProjectCwd) {
     return { ok: false, error: "Relative paths require an active project in this environment." };

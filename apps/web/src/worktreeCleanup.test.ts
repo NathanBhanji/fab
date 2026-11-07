@@ -54,7 +54,6 @@ describe("getOrphanedWorktreePathForThread", () => {
   it.each([
     ["/tmp/repo/worktrees/feature-a", "/tmp/repo/worktrees/feature-a/"],
     ["/tmp/repo/worktrees/feature-a", "/tmp/repo/worktrees/feature-a//"],
-    ["C:\\repo\\worktrees\\feature-a", "c:/repo/worktrees/feature-a/"],
   ])("treats %s and %s as the same worktree", (targetPath, otherPath) => {
     const threads = [
       makeThread({ id: ThreadId.make("thread-1"), worktreePath: targetPath }),

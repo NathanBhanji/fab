@@ -204,33 +204,6 @@ it("builds the tree rehype-raw builds for markdown without HTML", () => {
   }
 });
 
-it("keeps backslashes that CommonMark would read as escapes in prose Windows paths", () => {
-  const processor = unified()
-    .use(remarkParse)
-    .use(CHAT_MARKDOWN_REMARK_PLUGINS)
-    .use(remarkRehype, { allowDangerousHtml: true })
-    .use(CHAT_MARKDOWN_REHYPE_PLUGINS);
-  type Node = { type: string; value?: string; tagName?: string; children?: Node[] };
-  const text = (node: Node): string =>
-    node.type === "text"
-      ? (node.value ?? "")
-      : node.tagName === "code"
-        ? `<code>${(node.children ?? []).map(text).join("")}</code>`
-        : (node.children ?? []).map(text).join("");
-  const render = (markdown: string) => text(processor.runSync(processor.parse(markdown)) as Node);
-
-  expect(
-    render(String.raw`Saved to C:\Users\me\.fab\_build and (C:\.scratch) and C:/work\.config.`),
-  ).toBe(String.raw`Saved to C:\Users\me\.fab\_build and (C:\.scratch) and C:/work\.config.`);
-  expect(render(String.raw`Escaped C:\\Users\\me`)).toBe(String.raw`Escaped C:\\Users\\me`);
-  expect(render(String.raw`See C:\x and \*this\* and Note:\*that\*.`)).toBe(
-    String.raw`See C:\x and *this* and Note:*that*.`,
-  );
-  expect(render(String.raw`${"`"}C:\me\.fab${"`"} and C:\me\.fab`)).toBe(
-    String.raw`<code>C:\me\.fab</code> and C:\me\.fab`,
-  );
-});
-
 it("keeps an image on its own line under a label but leaves inline images inline", () => {
   const processor = unified()
     .use(remarkParse)
@@ -277,16 +250,13 @@ it("moves a <picture>'s color-scheme sources onto its <img>, which the renderer 
         "</picture>",
         "",
         '<picture><source media="(prefers-color-scheme: light)" srcset="javascript:alert(1)"><img src="docs/dark.webp"></picture>',
-        "",
-        String.raw`<picture><source media="(prefers-color-scheme: dark)" srcset="C:\shots\dark.png"><img src="C:\shots\light.png"></picture>`,
       ].join("\n"),
     ),
   ) as Node;
 
-  expect(tags(tree)).toEqual(["picture", "img", "p", "picture", "img", "p", "picture", "img"]);
+  expect(tags(tree)).toEqual(["picture", "img", "p", "picture", "img"]);
   expect(images(tree).map((image) => image.properties)).toEqual([
     { src: "docs/light.webp", alt: "Studio", dataDarkSrc: "docs/dark.webp" },
     { src: "docs/dark.webp" },
-    { dataLocalSrc: String.raw`C:\shots\light.png`, dataDarkSrc: "file:///C:/shots/dark.png" },
   ]);
 });

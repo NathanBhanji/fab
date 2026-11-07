@@ -32,9 +32,6 @@ export function getLocalFileManagerName(platform: string): string {
   if (isMacPlatform(platform)) {
     return "Finder";
   }
-  if (isWindowsPlatform(platform)) {
-    return "File Explorer";
-  }
   return "Files";
 }
 

@@ -45,7 +45,6 @@ import {
 import {
   appendBrowsePathSegment,
   inferProjectTitleFromPath,
-  isWindowsPlatform,
 } from "@fab/client-runtime/state/projects";
 import { resolvePastedPath } from "@fab/shared/path";
 import {
@@ -293,7 +292,6 @@ function ProjectPathInput(props: {
 function useBrowsePathInput(environment: EnvironmentOption | null, pinnedDirectoryName = "") {
   const environmentId = environment?.environmentId ?? null;
   const environmentBaseDirectory = environment?.baseDirectory ?? null;
-  const clonePathCaseSensitive = !isWindowsPlatform(environment?.platform ?? "");
   const seedPath = getCloneDestinationPath(
     getAddProjectInitialQuery(environmentBaseDirectory),
     pinnedDirectoryName,
@@ -343,7 +341,6 @@ function useBrowsePathInput(environment: EnvironmentOption | null, pinnedDirecto
             browseDirectoryPath: input.browseDirectoryPath,
             selectedDirectoryName: input.selectedDirectoryName,
             cloneDirectoryName: pinnedDirectoryName,
-            caseSensitive: clonePathCaseSensitive,
           })
         : getCloneDestinationPath(selectedDirectoryPath, pinnedDirectoryName);
     setNavigatingEnvironmentId(environmentId);
@@ -915,7 +912,7 @@ function FolderBrowser(props: {
   }) => Promise<boolean>;
   readonly pinnedDirectoryName?: string;
 }) {
-  const browsePath = getFilesystemBrowsePath(props.pathInput, props.environment.platform);
+  const browsePath = getFilesystemBrowsePath(props.pathInput);
   const browseInput =
     browsePath.directoryPath.length > 0 ? { partialPath: browsePath.directoryPath } : null;
   const fileAccessSession = useEnvironmentQuery(
@@ -938,9 +935,7 @@ function FolderBrowser(props: {
         }),
   );
   const pinnedDirectoryName = props.pinnedDirectoryName ?? "";
-  const pinnedDirectoryMatches = isWindowsPlatform(props.environment.platform)
-    ? browsePath.filterQuery.toLowerCase() === pinnedDirectoryName.toLowerCase()
-    : browsePath.filterQuery === pinnedDirectoryName;
+  const pinnedDirectoryMatches = browsePath.filterQuery === pinnedDirectoryName;
   const browseFilterQuery = pinnedDirectoryMatches ? "" : browsePath.filterQuery;
   const { visibleEntries: visibleBrowseEntries } = filterFilesystemBrowseEntries(
     browseState.data?.entries ?? [],
@@ -1293,7 +1288,6 @@ export function AddProjectLocalFolderScreen(props: { readonly environmentId?: st
     const resolved = resolveAddProjectPath({
       rawPath: pathInput,
       currentProjectCwd: null,
-      platform: environment.platform,
     });
     if (!resolved.ok) {
       setError(resolved.error);
@@ -1389,7 +1383,6 @@ export function AddProjectDestinationScreen(props: {
     const resolved = resolveAddProjectPath({
       rawPath: pathInput,
       currentProjectCwd: null,
-      platform: environment.platform,
     });
     if (!resolved.ok) {
       setError(resolved.error);

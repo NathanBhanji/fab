@@ -1,7 +1,7 @@
 import type { ExecutionEnvironmentPlatformOs } from "@fab/contracts";
 
 export type PendingModifier = "ctrl" | "meta";
-export type HostPlatform = "mac" | "linux" | "windows" | "unknown";
+export type HostPlatform = "mac" | "linux" | "unknown";
 
 /** Upper bound of `TerminalWriteInput.data`; longer writes are rejected by the server. */
 export const TERMINAL_WRITE_MAX_LENGTH = 65_536;
@@ -34,7 +34,7 @@ function applyCtrlModifier(input: string): string {
   return input;
 }
 
-/** Use the device clipboard for host paste chords; forwarding Ctrl+V to PowerShell pastes the host clipboard. */
+/** Use the device clipboard for host paste chords instead of forwarding them to the host. */
 export function resolveModifiedTerminalInput(input: {
   readonly data: string;
   readonly modifier: PendingModifier;
@@ -83,6 +83,5 @@ export function chunkTerminalWrite(data: string): ReadonlyArray<string> {
 export function hostPlatformFromOs(os: ExecutionEnvironmentPlatformOs | null): HostPlatform | null {
   if (os === "darwin") return "mac";
   if (os === "linux") return "linux";
-  if (os === "windows") return "windows";
   return null;
 }

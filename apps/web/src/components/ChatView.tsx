@@ -2378,8 +2378,6 @@ export default function ChatView(props: ChatViewProps) {
     rightPanelMaximized,
     supportsPullRequests,
     pullRequestsSurfaceAvailable,
-    gitCwd,
-    activeProjectCwd,
     explicitDiffOpenRef,
     onDiffPanelOpen,
     closeRightPanelSurface,

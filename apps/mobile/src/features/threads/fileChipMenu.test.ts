@@ -1,23 +1,7 @@
 import { ThreadId } from "@fab/contracts";
 import { describe, expect, it } from "vite-plus/test";
 
-import {
-  fileChipClipboardPath,
-  fileChipMenu,
-  fileChipShareSource,
-  resolveFileChipTarget,
-} from "./fileChipMenu";
-
-it("copies native paths from a relative file chip in a Windows workspace", () => {
-  const target = resolveFileChipTarget("reports/Device Users.csv", "C:/repo");
-  if (!target) throw new Error("File-chip target unavailable");
-  expect(fileChipClipboardPath(target, "copy-full-path")).toBe(
-    String.raw`C:\repo\reports\Device Users.csv`,
-  );
-  expect(fileChipClipboardPath(target, "copy-relative-path")).toBe(
-    String.raw`reports\Device Users.csv`,
-  );
-});
+import { fileChipMenu, fileChipShareSource, resolveFileChipTarget } from "./fileChipMenu";
 
 describe("resolveFileChipTarget", () => {
   it("resolves a workspace-relative link to both paths", () => {
@@ -34,9 +18,6 @@ describe("resolveFileChipTarget", () => {
     expect(resolveFileChipTarget("~/repo/src/main.ts:12", "/home/maria/repo")).toEqual({
       fullPath: "/home/maria/repo/src/main.ts",
       relativePath: "src/main.ts",
-    });
-    expect(resolveFileChipTarget("~/.agents/AGENTS.md", "C:\\Users\\maria\\repo")).toEqual({
-      fullPath: "C:\\Users\\maria\\.agents\\AGENTS.md",
     });
   });
 

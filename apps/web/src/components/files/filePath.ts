@@ -1,5 +1,5 @@
 import type { ProjectEntry } from "@fab/contracts";
-import { isWindowsAbsolutePath, isHostPath } from "@fab/shared/path";
+import { isHostPath } from "@fab/shared/path";
 
 export interface FileBreadcrumb {
   label: string;
@@ -13,18 +13,16 @@ export interface FileBreadcrumbChild extends ProjectEntry {
 
 export function fileBreadcrumbs(projectName: string, relativePath: string): FileBreadcrumb[] {
   const hostPath = isHostPath(relativePath);
-  const separator = isWindowsAbsolutePath(relativePath) ? "\\" : "/";
-  const parts = relativePath.split(/[\\/]/).filter(Boolean);
-  const root = relativePath.startsWith("\\\\") ? "\\\\" : relativePath.startsWith("/") ? "/" : "";
+  const parts = relativePath.split("/").filter(Boolean);
+  const root = relativePath.startsWith("/") ? "/" : "";
   return [
     ...(hostPath ? [] : [{ label: projectName, path: "", kind: "project" as const }]),
     ...parts.map((part, index) => {
-      const path = root + parts.slice(0, index + 1).join(separator);
+      const path = root + parts.slice(0, index + 1).join("/");
       return {
         label: part,
-        // A bare drive (`C:`) means the drive's current directory; its root is `C:\`.
         // A bare `~` is not a host path; the home folder is `~/`.
-        path: /^[A-Za-z]:$/.test(path) ? `${path}\\` : hostPath && path === "~" ? "~/" : path,
+        path: hostPath && path === "~" ? "~/" : path,
         kind: index === parts.length - 1 ? ("file" as const) : ("directory" as const),
       };
     }),
@@ -34,11 +32,6 @@ export function fileBreadcrumbs(projectName: string, relativePath: string): File
 /** Use the crumb's path spelling so trailing or repeated separators still match. */
 export function breadcrumbPathOf(relativePath: string): string {
   return fileBreadcrumbs("", relativePath).at(-1)?.path ?? relativePath;
-}
-
-/** UNC servers are not listable directories; their shares are. */
-export function isListableHostFolder(path: string): boolean {
-  return isHostPath(path) && !/^\\\\[^\\/]+$/.test(path);
 }
 
 function trailCrumbIndex(trail: string, path: string): number {
@@ -57,9 +50,7 @@ export function trailChildOf(folder: string, trail: string): string | null {
 }
 
 export function joinHostPath(folder: string, relativePath: string): string {
-  const separator = isWindowsAbsolutePath(folder) ? "\\" : "/";
-  const base = folder.endsWith(separator) ? folder : `${folder}${separator}`;
-  return base + relativePath.split("/").join(separator);
+  return folder.endsWith("/") ? `${folder}${relativePath}` : `${folder}/${relativePath}`;
 }
 
 export function fileBreadcrumbChildren(

@@ -28,21 +28,20 @@ export interface WrappedTerminalLinkLine {
 
 const URL_PATTERN = /https?:\/\/[^\s"'`<>]+/giu;
 // The default PowerShell prompt delimits its unquoted path with `PS ` and `>`.
-const POWERSHELL_PROMPT_PATH_PATTERN = /^PS ((?:[A-Za-z]:[\\/]|\\\\|\/)[^>\r\n]*)>/u;
+const POWERSHELL_PROMPT_PATH_PATTERN = /^PS (\/[^>\r\n]*)>/u;
 // Bare paths start only at a segment boundary: hover detection runs this on
 // every frame, so separator-free output must not be rescanned at every suffix.
 const FILE_PATH_PATTERN =
-  /(?:~[\\/]|\.{1,2}[\\/]|\/|[A-Za-z]:[\\/]|\\\\)[^\s"'`<>]+|(?<![\p{L}\p{M}\p{N}._-])[\p{L}\p{M}\p{N}._-]+(?:[\\/][\p{L}\p{M}\p{N}._-]+)+(?::\d+){0,2}/gu;
+  /(?:~\/|\.{1,2}\/|\/)[^\s"'`<>]+|(?<![\p{L}\p{M}\p{N}._-])[\p{L}\p{M}\p{N}._-]+(?:[\\/][\p{L}\p{M}\p{N}._-]+)+(?::\d+){0,2}/gu;
 const QUOTED_FILE_PATH_PATTERN =
-  /(["'`])(?<path>(?:~[\\/]|\.{1,2}[\\/]|\/|[A-Za-z]:[\\/]|\\\\|[\p{L}\p{M}\p{N}._ -]+[\\/])[^\r\n]*?|[\p{L}\p{M}\p{N}._ -]+\.[\p{L}\p{M}\p{N}_-]+(?::\d+){0,2})\1(?<position>(?::\d+){0,2})/gu;
+  /(["'`])(?<path>(?:~\/|\.{1,2}\/|\/|[\p{L}\p{M}\p{N}._ -]+[\\/])[^\r\n]*?|[\p{L}\p{M}\p{N}._ -]+\.[\p{L}\p{M}\p{N}_-]+(?::\d+){0,2})\1(?<position>(?::\d+){0,2})/gu;
 const TRAILING_PUNCTUATION_PATTERN = /[.,;!?]+$/;
 // Paths also drop a trailing colon: compilers end `file:line:col:` with one.
 const TRAILING_PATH_PUNCTUATION_PATTERN = /[.,;:!?]+$/;
 // A question mark is legal in filenames; only exclude query-bearing request targets.
 const REQUEST_ROUTE_PATTERN =
   /(?:^|[\s"'`])(?:GET|HEAD|POST|PUT|PATCH|DELETE|OPTIONS|CONNECT|TRACE|proxying)\s+["'`]?(?:\/|[A-Za-z0-9_-]+\/)[^\s?]*\?\S*/g;
-// The tail of `redis://host/0` or `file:///a.mjs` is not a path. One-letter schemes stay drives,
-// a diff's `+` or `-` may lead, and the lookbehind keeps runs from being rescanned at every suffix.
+// The tail of `redis://host/0` or `file:///a.mjs` is not a path. A diff's `+` or `-` may lead, and the lookbehind keeps runs from being rescanned at every suffix.
 const SCHEME_URL_PATTERN = /(?<![A-Za-z\d+.-])[+-]?[A-Za-z][A-Za-z\d+.-]+:\/\/[^\s"'`<>]+/gu;
 
 function trimClosingDelimiters(value: string, kind: TerminalLinkKind): string {
