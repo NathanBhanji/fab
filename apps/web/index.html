@@ -14,10 +14,10 @@
       (() => {
         const LIGHT_BACKGROUND = "#ffffff";
         const DARK_BACKGROUND = "#000000";
-        const CUSTOM_THEMES_STORAGE_KEY = "t3code:themes:v1";
-        const THEME_FOLLOW_SYSTEM_STORAGE_KEY = "t3code:theme-follow-system";
-        const THEME_APPEARANCE_MODE_STORAGE_KEY = "t3code:theme-appearance-mode";
-        const THEME_HALVES_STORAGE_KEY = "t3code:theme-halves:v1";
+        const CUSTOM_THEMES_STORAGE_KEY = "fab:themes:v1";
+        const THEME_FOLLOW_SYSTEM_STORAGE_KEY = "fab:theme-follow-system";
+        const THEME_APPEARANCE_MODE_STORAGE_KEY = "fab:theme-appearance-mode";
+        const THEME_HALVES_STORAGE_KEY = "fab:theme-halves:v1";
         const SPLASH_COLORS = {
           light: {
             background: "#ffffff",
@@ -138,10 +138,10 @@
           "ember",
           "iris",
           "t3-chat-dark",
-          "t3-grove",
-          "t3-ocean",
-          "t3-ember",
-          "t3-iris",
+          "fab-grove",
+          "fab-ocean",
+          "fab-ember",
+          "fab-iris",
         ];
         const setThemeColor = (color) => {
           for (const meta of document.querySelectorAll('meta[name="theme-color"]')) {
@@ -213,14 +213,14 @@
         };
 
         try {
-          const storedTheme = window.localStorage.getItem("t3code:theme");
+          const storedTheme = window.localStorage.getItem("fab:theme");
           const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
           const LEGACY_THEME_IDS = {
             "t3-chat-dark": "t3-chat",
-            "t3-grove": "grove",
-            "t3-ocean": "ocean",
-            "t3-ember": "ember",
-            "t3-iris": "iris",
+            "fab-grove": "grove",
+            "fab-ocean": "ocean",
+            "fab-ember": "ember",
+            "fab-iris": "iris",
           };
           const isLegacyT3ChatDark = storedTheme === "t3-chat-dark";
           const themeId =
@@ -668,13 +668,13 @@
         white-space: nowrap;
       }
     </style>
-    <title>T3 Code (Beta)</title>
+    <title>Fab (Beta)</title>
   </head>
   <body>
     <div id="root">
       <div id="boot-shell">
-        <div id="boot-shell-card" aria-label="T3 Code splash screen">
-          <img id="boot-shell-logo" src="/apple-touch-icon.png" alt="T3 Code" />
+        <div id="boot-shell-card" aria-label="Fab splash screen">
+          <img id="boot-shell-logo" src="/apple-touch-icon.png" alt="Fab" />
         </div>
       </div>
     </div>

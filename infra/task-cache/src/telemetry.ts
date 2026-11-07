@@ -1,4 +1,4 @@
-/* oxlint-disable t3code/no-global-process-runtime -- This bootstrap runs before dependencies are installed. */
+/* oxlint-disable fab/no-global-process-runtime -- This bootstrap runs before dependencies are installed. */
 // @effect-diagnostics globalDate:off globalFetch:off - bootstrap has no Effect dependencies.
 // @effect-diagnostics nodeBuiltinImport:off - standalone collector installed outside the checkout.
 import * as NodeCrypto from "node:crypto";
@@ -84,15 +84,15 @@ export function observeSummaries(
   home = NodeOS.homedir(),
 ) {
   const cache = env.VITE_CACHE_PATH || NodePath.join(root, "node_modules/.vite/task-cache");
-  const queue = NodePath.join(home, ".cache/t3-task-cache/telemetry");
+  const queue = NodePath.join(home, ".cache/fab-task-cache/telemetry");
   let host =
-    env.T3_TASK_CACHE_HOST ||
+    env.FAB_TASK_CACHE_HOST ||
     (env.GITHUB_ACTIONS === "true"
       ? `${env.RUNNER_ENVIRONMENT || "github"}/${env.RUNNER_OS || NodeOS.platform()}/${env.RUNNER_ARCH || NodeOS.arch()}`
       : NodeOS.hostname());
   try {
     host =
-      env.T3_TASK_CACHE_HOST ||
+      env.FAB_TASK_CACHE_HOST ||
       NodeFS.readFileSync(NodePath.join(home, ".agents/MACHINE"), "utf8").trim() ||
       host;
   } catch {
@@ -160,7 +160,7 @@ export function observeSummaries(
 }
 
 export async function flushTelemetry(home = NodeOS.homedir(), env = process.env) {
-  const queue = NodePath.join(home, ".cache/t3-task-cache/telemetry");
+  const queue = NodePath.join(home, ".cache/fab-task-cache/telemetry");
   const deadline = Date.now() + 15_000;
   const skipped = new Set<string>();
   // A flusher that finds the lock taken exits and leaves its event to the holder. Re-check after
@@ -206,7 +206,7 @@ async function drainTelemetry(
     // Bound disk use while offline. Unsent events retry on the next invocation.
     for (const file of files.slice(0, Math.max(0, files.length - 2000)))
       NodeFS.rmSync(NodePath.join(queue, file), { force: true });
-    const credentialsFile = NodePath.join(home, ".config/t3-task-cache/credentials.json");
+    const credentialsFile = NodePath.join(home, ".config/fab-task-cache/credentials.json");
     const credentials = NodeFS.existsSync(credentialsFile)
       ? JSON.parse(NodeFS.readFileSync(credentialsFile, "utf8"))
       : {};

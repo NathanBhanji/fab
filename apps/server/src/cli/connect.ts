@@ -7,10 +7,10 @@ import {
   formatConnectReachable,
   type RelayClientInstallProgressEvent,
   type RelayClientInstallProgressStage,
-} from "@t3tools/contracts";
-import { RelayOkResponse } from "@t3tools/contracts/relay";
-import * as RelayClient from "@t3tools/shared/relayClient";
-import { withRelayClientTracing } from "@t3tools/shared/relayTracing";
+} from "@fab/contracts";
+import { RelayOkResponse } from "@fab/contracts/relay";
+import * as RelayClient from "@fab/shared/relayClient";
+import { withRelayClientTracing } from "@fab/shared/relayTracing";
 import * as Cause from "effect/Cause";
 import * as Clock from "effect/Clock";
 import * as Config from "effect/Config";
@@ -89,7 +89,7 @@ function formatDeviceAuthorizationPrompt(
 ): string {
   const minutes = Math.max(1, Math.round(Duration.toMinutes(prompt.expiresIn)));
   return [
-    "Sign in to T3 Connect. Open on any device:",
+    "Sign in to Fab Connect. Open on any device:",
     `  ${prompt.verificationUriComplete ?? prompt.verificationUri}`,
     `Code: ${prompt.userCode}`,
     `Waiting for approval. Expires in ${minutes} min. Ctrl+C cancels.`,
@@ -114,7 +114,7 @@ const authorizeCli = Effect.fn("cloud.cli.authorize")(function* (options: {
   const existing = yield* tokens.getExisting.pipe(
     Effect.catchTags({
       CloudCliCredentialRefreshError: () =>
-        Console.log("T3 Connect sign-in expired. Sign in again.").pipe(Effect.as(Option.none())),
+        Console.log("Fab Connect sign-in expired. Sign in again.").pipe(Effect.as(Option.none())),
     }),
   );
   if (Option.isSome(existing)) {
@@ -186,24 +186,24 @@ function formatCloudStatus(status: CloudCliStatus, options?: { readonly json?: b
   }
 
   const provisioned = status.revoked
-    ? "removed from T3 Connect"
+    ? "removed from Fab Connect"
     : status.linked
       ? "provisioned"
       : status.desired && status.authenticated
         ? "pending server startup"
         : "not provisioned";
   const nextStep = !status.authenticated
-    ? "Run `t3 connect link` to authorize and enable T3 Connect."
+    ? "Run `fab connect link` to authorize and enable Fab Connect."
     : status.revoked
-      ? "Run `t3 connect link` to link this environment again."
+      ? "Run `fab connect link` to link this environment again."
       : !status.desired
-        ? "Run `t3 connect link` to enable T3 Connect."
+        ? "Run `fab connect link` to enable Fab Connect."
         : !status.linked
-          ? "Start T3 to provision the environment link and launch its managed tunnel."
+          ? "Start Fab to provision the environment link and launch its managed tunnel."
           : undefined;
 
   return [
-    "T3 Connect",
+    "Fab Connect",
     `  Exposure: ${status.desired ? "enabled" : "disabled"}`,
     `  Authorization: ${status.authenticated ? "stored credential" : "missing"}`,
     `  Environment link: ${provisioned}`,
@@ -215,7 +215,7 @@ function formatCloudStatus(status: CloudCliStatus, options?: { readonly json?: b
       : status.reachability === null
         ? [
             "",
-            "No running server answered, so reachability was not checked. Check the background service with `t3 service status`.",
+            "No running server answered, so reachability was not checked. Check the background service with `fab service status`.",
           ]
         : status.reachability.status === "reachable"
           ? [
@@ -232,7 +232,7 @@ const CLOUD_CLI_LIVE_SERVER_TIMEOUT = Duration.seconds(5);
 const confirmRelayClientInstall = (version: string) =>
   Prompt.run(
     Prompt.Confirm({
-      message: `The T3 relay client is required for T3 Connect. Download and install version ${version}?`,
+      message: `The Fab relay client is required for Fab Connect. Download and install version ${version}?`,
       initial: false,
     }),
   );
@@ -290,7 +290,7 @@ const withCloudCliSessionToken = <A, E, R>(
     environmentAuth.issueSession({
       scopes: [scope],
       subject: "cloud-cli",
-      label: "t3 connect cli",
+      label: "fab connect cli",
     }),
     (issued) => run(issued.token),
     (issued) => environmentAuth.revokeSession(issued.sessionId).pipe(Effect.ignore({ log: true })),
@@ -331,7 +331,7 @@ const CLOUD_CLI_REACHABILITY_TIMEOUT = Duration.seconds(30);
 const CLOUD_CLI_REACHABILITY_WAIT = Duration.seconds(60);
 const CLOUD_CLI_REACHABILITY_RETRY = Duration.seconds(5);
 
-/** Asks the running server to check T3 Connect now. `null` when no server answers. */
+/** Asks the running server to check Fab Connect now. `null` when no server answers. */
 const checkLiveReachability = Effect.fn("cloud.cli.check_live_reachability")(function* () {
   const config = yield* ServerConfig.ServerConfig;
   const runtimeState = yield* readPersistedServerRuntimeState(config.serverRuntimeStatePath);
@@ -362,18 +362,18 @@ function formatAlertBox(text: string): string {
 }
 
 /**
- * Waits for the server that `t3 connect` just started to prove other devices
+ * Waits for the server that `fab connect` just started to prove other devices
  * can reach it, so a broken tunnel fails setup instead of looking green.
  */
 export const waitForReachability = Effect.fn("cloud.cli.wait_for_reachability")(function* () {
-  yield* Console.log("Checking T3 Connect...");
+  yield* Console.log("Checking Fab Connect...");
   const deadline =
     (yield* Clock.currentTimeMillis) + Duration.toMillis(CLOUD_CLI_REACHABILITY_WAIT);
   let last: EnvironmentConnectReachability | null = null;
   while (true) {
     last = (yield* checkLiveReachability()) ?? last;
     if (last?.status === "reachable") {
-      yield* Console.log("✓ T3 Connect is reachable.");
+      yield* Console.log("✓ Fab Connect is reachable.");
       return;
     }
     if ((yield* Clock.currentTimeMillis) >= deadline) break;
@@ -382,7 +382,7 @@ export const waitForReachability = Effect.fn("cloud.cli.wait_for_reachability")(
   yield* Console.error(
     formatAlertBox(
       last === null
-        ? "✕ Could not check T3 Connect\n  The T3 server on this machine did not answer.\n  Fix: run `t3 service status`, then `t3 connect status`."
+        ? "✕ Could not check Fab Connect\n  The Fab server on this machine did not answer.\n  Fix: run `fab service status`, then `fab connect status`."
         : formatReachabilityFailure(last),
     ),
   );
@@ -403,7 +403,7 @@ const logCloudDisconnectFailure = (
   clearAuthorization: boolean,
   cause: Cause.Cause<unknown>,
 ) =>
-  Effect.logWarning("T3 Connect disconnect operation failed.").pipe(
+  Effect.logWarning("Fab Connect disconnect operation failed.").pipe(
     Effect.annotateLogs({
       operation,
       clearAuthorization,
@@ -439,7 +439,7 @@ const unlinkRelayEnvironment = Effect.fn("cloud.cli.unlink_relay_environment")(f
 /**
  * Prints the local disconnect outcome, then whether the relay record was revoked.
  * A missing CLI login or a failed relay DELETE leaves that record registered, so
- * those outcomes warn to deregister it from the T3 Connect account page.
+ * those outcomes warn to deregister it from the Fab Connect account page.
  */
 const reportCloudDisconnectResults = Effect.fn("cloud.cli.report_disconnect_results")(
   function* (input: {
@@ -454,10 +454,10 @@ const reportCloudDisconnectResults = Effect.fn("cloud.cli.report_disconnect_resu
         input.liveResult.cause,
       );
       yield* Console.warn(
-        "T3 Connect is disabled, but the running server could not stop its tunnel.\nRestart that server to stop the connector.",
+        "Fab Connect is disabled, but the running server could not stop its tunnel.\nRestart that server to stop the connector.",
       );
     } else {
-      yield* Console.log("T3 Connect is disabled locally.");
+      yield* Console.log("Fab Connect is disabled locally.");
     }
 
     if (Exit.isFailure(input.relayResult)) {
@@ -469,11 +469,11 @@ const reportCloudDisconnectResults = Effect.fn("cloud.cli.report_disconnect_resu
       yield* Console.warn(
         input.clearAuthorization
           ? "Could not revoke the relay-side environment record before signing out.\nThe stored CLI authorization was still removed locally."
-          : "Could not revoke the relay-side environment record yet.\nRun `t3 connect unlink` again when the relay is reachable, or deregister it from the T3 Connect page of your T3 account.",
+          : "Could not revoke the relay-side environment record yet.\nRun `fab connect unlink` again when the relay is reachable, or deregister it from the Fab Connect page of your Fab account.",
       );
     } else if (input.relayResult.value.status === "not-authenticated") {
       yield* Console.warn(
-        "The relay-side environment record was not revoked.\nDeregister it from the T3 Connect page of your T3 account, or run `t3 connect login` and retry.",
+        "The relay-side environment record was not revoked.\nDeregister it from the Fab Connect page of your Fab account, or run `fab connect login` and retry.",
       );
     } else if (input.relayResult.value.status === "revoked") {
       yield* Console.log("Revoked the relay-side environment record.");
@@ -502,7 +502,7 @@ export const disconnectCloud = Effect.fn("cloud.cli.disconnect")(function* (opti
 
   if (options.clearAuthorization) {
     yield* Console.log(
-      "Signed out of T3 Connect locally.\nThe background service is managed separately with `t3 service`.",
+      "Signed out of Fab Connect locally.\nThe background service is managed separately with `fab service`.",
     );
   }
   return liveResult;
@@ -569,7 +569,7 @@ function formatRelayClientReady(version: string): string {
 const linkEnvironmentForConnect = Effect.fn("cloud.cli.link_environment")(function* (options: {
   readonly headless: boolean;
   readonly publishOnly?: boolean;
-  /** For `t3 up`, where the user already chose T3 Connect: install it quietly, without asking. */
+  /** For `fab up`, where the user already chose Fab Connect: install it quietly, without asking. */
   readonly installRelayClient?: boolean;
 }) {
   const publishOnly = options.publishOnly ?? false;
@@ -581,12 +581,12 @@ const linkEnvironmentForConnect = Effect.fn("cloud.cli.link_environment")(functi
       options.installRelayClient === true
         ? (event) =>
             event.type === "progress" && event.stage === "downloading"
-              ? Console.log("Installing the T3 Connect relay client...")
+              ? Console.log("Installing the Fab Connect relay client...")
               : Effect.void
         : reportRelayClientInstallProgress,
     );
     if (Option.isNone(installed)) {
-      yield* Console.log("T3 Connect setup cancelled. The relay client was not installed.");
+      yield* Console.log("Fab Connect setup cancelled. The relay client was not installed.");
       return null;
     }
     if (options.installRelayClient !== true) {
@@ -597,7 +597,7 @@ const linkEnvironmentForConnect = Effect.fn("cloud.cli.link_environment")(functi
   const identity = yield* authorizeCli(options);
   yield* CliState.setCliDesiredCloudLink(true, publishOnly ? "publish_only" : "managed");
   if (yield* CliState.dropRevokedCloudLink) {
-    yield* Console.log("Replacing the link T3 Connect revoked.");
+    yield* Console.log("Replacing the link Fab Connect revoked.");
   }
   if (publishOnly) {
     const secrets = yield* ServerSecretStore.ServerSecretStore;
@@ -611,13 +611,13 @@ const connectLoginCommand = Command.make("login", {
   ...projectLocationFlags,
   headless: headlessFlag,
 }).pipe(
-  Command.withDescription("Authorize the T3 Connect CLI without enabling remote access."),
+  Command.withDescription("Authorize the Fab Connect CLI without enabling remote access."),
   Command.withHandler((flags) =>
     runCloudCommand(
       flags,
       Effect.gen(function* () {
         yield* requireConnectAllowed;
-        yield* Console.log("T3 Connect\n");
+        yield* Console.log("Fab Connect\n");
         const identity = yield* authorizeCli(flags);
         yield* Console.log(`✓ Signed in${connectedAs(identity)}`);
       }),
@@ -635,19 +635,19 @@ const connectLinkCommand = Command.make("link", {
     Flag.withDefault(false),
   ),
 }).pipe(
-  Command.withDescription("Authorize this environment for T3 Connect on next start."),
+  Command.withDescription("Authorize this environment for Fab Connect on next start."),
   Command.withHandler((flags) =>
     runCloudCommand(
       flags,
       Effect.gen(function* () {
         yield* requireConnectAllowed;
-        yield* Console.log("T3 Connect\n");
+        yield* Console.log("Fab Connect\n");
         const linked = yield* linkEnvironmentForConnect(flags);
         if (linked) {
           const serveCommand = yield* resolveCliCommand("serve");
           yield* Console.log(
             flags.publishOnly
-              ? `✓ Authorized${connectedAs(linked.identity)}\n\nNext\n  Start T3 to publish agent activity (no managed tunnel).`
+              ? `✓ Authorized${connectedAs(linked.identity)}\n\nNext\n  Start Fab to publish agent activity (no managed tunnel).`
               : `✓ Authorized${connectedAs(linked.identity)}\n\nNext\n  Start the server with \`${serveCommand}\` to make this machine reachable.`,
           );
         }
@@ -661,7 +661,7 @@ const connectStatusCommand = Command.make("status", {
   json: jsonFlag,
 }).pipe(
   Command.withDescription(
-    "Show T3 Connect setup and check that other devices can reach this machine.",
+    "Show Fab Connect setup and check that other devices can reach this machine.",
   ),
   Command.withHandler((flags) =>
     runCloudCommand(
@@ -746,7 +746,7 @@ const connectPublishCommand = Command.make("publish", {
           const linkedNow = Option.isSome(yield* secrets.get(CLOUD_LINKED_USER_ID));
           if (!linkedNow && (yield* CliState.readCliDesiredLinkMode) === "publish_only") {
             yield* CliState.setCliDesiredCloudLink(false);
-            yield* Console.log("Cancelled the pending publish-only T3 Connect link.");
+            yield* Console.log("Cancelled the pending publish-only Fab Connect link.");
           }
           yield* Console.log("Publishing agent activity disabled.");
           return;
@@ -760,20 +760,20 @@ const connectPublishCommand = Command.make("publish", {
 
         if (!(yield* tokens.hasCredential)) {
           yield* Console.log(
-            "Run `t3 connect login` first so this environment can be authorized to publish.",
+            "Run `fab connect login` first so this environment can be authorized to publish.",
           );
           return;
         }
         // A desired managed link already covers publishing and must not be downgraded.
         if (yield* CliState.readCliDesiredCloudLink) {
           yield* Console.log(
-            "A T3 Connect link is already pending. Start T3 to finish provisioning it; publishing starts once it links.",
+            "A Fab Connect link is already pending. Start Fab to finish provisioning it; publishing starts once it links.",
           );
           return;
         }
         yield* CliState.setCliDesiredCloudLink(true, "publish_only");
         yield* Console.log(
-          "Restart T3 to finish authorizing this environment to publish (no managed tunnel is created).",
+          "Restart Fab to finish authorizing this environment to publish (no managed tunnel is created).",
         );
       }),
     ),
@@ -783,7 +783,7 @@ const connectPublishCommand = Command.make("publish", {
 const connectUnlinkCommand = Command.make("unlink", {
   ...projectLocationFlags,
 }).pipe(
-  Command.withDescription("Disable T3 Connect while retaining the stored authorization."),
+  Command.withDescription("Disable Fab Connect while retaining the stored authorization."),
   Command.withHandler((flags) =>
     runCloudCommand(flags, disconnectCloud({ clearAuthorization: false })),
   ),
@@ -792,13 +792,13 @@ const connectUnlinkCommand = Command.make("unlink", {
 const connectLogoutCommand = Command.make("logout", {
   ...projectLocationFlags,
 }).pipe(
-  Command.withDescription("Disable T3 Connect and clear the stored CLI authorization."),
+  Command.withDescription("Disable Fab Connect and clear the stored CLI authorization."),
   Command.withHandler((flags) =>
     runCloudCommand(flags, disconnectCloud({ clearAuthorization: true })),
   ),
 );
 
-// `t3 connect` itself is `t3 up --connect`, in up.ts.
+// `fab connect` itself is `fab up --connect`, in up.ts.
 export const connectSubcommands = [
   connectLoginCommand,
   connectLinkCommand,

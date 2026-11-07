@@ -1,5 +1,5 @@
-import { SourceControlProviderKind } from "@t3tools/contracts";
-import { EnvironmentId, ProjectId, type PullRequestDetailView } from "@t3tools/contracts";
+import { SourceControlProviderKind } from "@fab/contracts";
+import { EnvironmentId, ProjectId, type PullRequestDetailView } from "@fab/contracts";
 import { expect, it, vi } from "vite-plus/test";
 import { userEvent } from "vite-plus/test/browser";
 

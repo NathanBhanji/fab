@@ -4,7 +4,7 @@ import { ConnectionTraceId } from "./ConnectionTraceId";
 import {
   type EnvironmentConnectionPhase,
   type EnvironmentConnectionPresentation,
-} from "@t3tools/client-runtime/connection";
+} from "@fab/client-runtime/connection";
 import { SymbolView } from "../../components/ui/AppSymbol";
 import { View } from "react-native";
 
@@ -77,7 +77,7 @@ export function EnvironmentConnectionNotice(props: {
           />
         )}
 
-        <Text className="text-center text-lg font-t3-bold text-foreground">
+        <Text className="text-center text-lg font-fab-bold text-foreground">
           {noticeTitle(props.connection.phase, props.environmentLabel)}
         </Text>
         <Text className="text-center text-sm leading-normal text-foreground-muted">

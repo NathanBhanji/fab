@@ -1,7 +1,7 @@
 import * as NodeServices from "@effect/platform-node/NodeServices";
 import { assert, it } from "@effect/vitest";
-import type { ManagedUpdatesPolicy } from "@t3tools/contracts";
-import * as HostProcess from "@t3tools/shared/HostProcess";
+import type { ManagedUpdatesPolicy } from "@fab/contracts";
+import * as HostProcess from "@fab/shared/HostProcess";
 import * as Duration from "effect/Duration";
 import * as Effect from "effect/Effect";
 import * as Exit from "effect/Exit";
@@ -51,7 +51,7 @@ it.effect("authenticates each release page until the requested channel is found"
     const httpClient = HttpClient.make((request) => {
       const url = new URL(request.url);
       assert.equal(url.origin, "https://api.github.com");
-      assert.equal(url.pathname, "/repos/pingdotgg/t3code/releases");
+      assert.equal(url.pathname, "/repos/nathanbhanji/fab/releases");
       assert.equal(request.headers.accept, "application/vnd.github+json");
       assert.equal(request.headers.authorization, "Bearer gh-token");
       const page = url.searchParams.get("page") ?? "";
@@ -73,7 +73,7 @@ it.effect("reads the newest version from the update feed file a mirror publishes
     const requested: string[] = [];
     const mirror = {
       organization: "Example Corp",
-      feedUrl: "https://updates.example.com/t3code/?token=abc",
+      feedUrl: "https://updates.example.com/fab/?token=abc",
     };
     const resolve = (
       channel: "stable" | "nightly" | "preview",
@@ -104,8 +104,8 @@ it.effect("reads the newest version from the update feed file a mirror publishes
       "1.5.0-nightly.20261101.2",
     );
     assert.deepStrictEqual(requested, [
-      "https://updates.example.com/t3code/latest-mac.yml?token=abc",
-      "https://updates.example.com/t3code/nightly-linux-arm64.yml?token=abc",
+      "https://updates.example.com/fab/latest-mac.yml?token=abc",
+      "https://updates.example.com/fab/nightly-linux-arm64.yml?token=abc",
     ]);
     // A feed for the wrong track is not trusted to mean the requested one.
     assert.include(
@@ -116,7 +116,7 @@ it.effect("reads the newest version from the update feed file a mirror publishes
   }),
 );
 
-it.layer(NodeServices.layer)("t3 update under a managed policy", (it) => {
+it.layer(NodeServices.layer)("fab update under a managed policy", (it) => {
   const runWithPolicy = (
     updates: ManagedUpdatesPolicy,
     input: { readonly channel?: "stable" | "nightly"; readonly requestedVersion?: string } = {},
@@ -150,7 +150,7 @@ it.layer(NodeServices.layer)("t3 update under a managed policy", (it) => {
   it.effect("refuses to update when updates are off", () =>
     Effect.gen(function* () {
       const error = yield* runWithPolicy({ mode: "off" });
-      assert.equal(error.message, "Example Corp manages T3 Code updates.");
+      assert.equal(error.message, "Example Corp manages Fab updates.");
     }),
   );
 
@@ -167,7 +167,7 @@ it.layer(NodeServices.layer)("t3 update under a managed policy", (it) => {
       for (const error of [byChannel, byVersion]) {
         assert.equal(
           error.message,
-          "Example Corp manages T3 Code updates. Only stable releases can be installed.",
+          "Example Corp manages Fab updates. Only stable releases can be installed.",
         );
       }
     }),
@@ -177,7 +177,7 @@ it.layer(NodeServices.layer)("t3 update under a managed policy", (it) => {
     Effect.gen(function* () {
       const requested: string[] = [];
       const error = yield* runWithPolicy(
-        { mode: "auto", feedUrl: "https://updates.example.com/t3code" },
+        { mode: "auto", feedUrl: "https://updates.example.com/fab" },
         { channel: "stable" },
         HttpClient.make((request) => {
           requested.push(new URL(request.url).origin);
@@ -192,15 +192,15 @@ it.layer(NodeServices.layer)("t3 update under a managed policy", (it) => {
   );
 });
 
-it.layer(NodeServices.layer)("t3 update launcher", (it) => {
+it.layer(NodeServices.layer)("fab update launcher", (it) => {
   it.effect("repoints a symlink that lives in a runtime versions tree", () =>
     Effect.gen(function* () {
       const fs = yield* FileSystem.FileSystem;
       const path = yield* Path.Path;
-      const root = yield* fs.makeTempDirectoryScoped({ prefix: "t3-update-" });
-      const oldExe = path.join(root, "runtime/versions/1.0.0/t3");
-      const newExe = path.join(root, "runtime/versions/2.0.0/t3");
-      const launcher = path.join(root, "bin/t3");
+      const root = yield* fs.makeTempDirectoryScoped({ prefix: "fab-update-" });
+      const oldExe = path.join(root, "runtime/versions/1.0.0/fab");
+      const newExe = path.join(root, "runtime/versions/2.0.0/fab");
+      const launcher = path.join(root, "bin/fab");
       for (const file of [oldExe, newExe]) {
         yield* fs.makeDirectory(path.dirname(file), { recursive: true });
         yield* fs.writeFileString(file, "");
@@ -222,37 +222,37 @@ it.layer(NodeServices.layer)("t3 update launcher", (it) => {
   it.effect.each([
     { name: "no launcher records", recorded: undefined },
     { name: "an empty launcher record", recorded: "" },
-    { name: "whole launcher records", recorded: "/opt/t3\n" },
-    { name: "Windows launcher records", recorded: "C:\\t3.cmd\r\n" },
+    { name: "whole launcher records", recorded: "/opt/fab\n" },
+    { name: "Windows launcher records", recorded: "C:\\fab.cmd\r\n" },
     // An interrupted append cut this record short.
     { name: "an unterminated launcher record", recorded: "/opt/t" },
-    // Another process's append is cut short after t3 update reads the records.
-    { name: "a record cut short after the read", recorded: "/opt/t3\n", cut: "/opt/t" },
+    // Another process's append is cut short after fab update reads the records.
+    { name: "a record cut short after the read", recorded: "/opt/fab\n", cut: "/opt/f" },
   ])("keeps the runtime a repointed launcher off PATH points at with $name", ({ recorded, cut }) =>
     Effect.gen(function* () {
       const fs = yield* FileSystem.FileSystem;
       const path = yield* Path.Path;
-      const root = yield* fs.makeTempDirectoryScoped({ prefix: "t3-update-" });
+      const root = yield* fs.makeTempDirectoryScoped({ prefix: "fab-update-" });
       yield* TestClock.setTime(Duration.toMillis(Duration.days(1)));
       for (const version of ["1.0.0", "2.0.0"]) {
         const directory = path.join(root, "runtime/versions", version);
         yield* fs.makeDirectory(directory, { recursive: true });
-        yield* fs.writeFileString(path.join(directory, "t3"), "");
+        yield* fs.writeFileString(path.join(directory, "fab"), "");
         yield* fs.writeFileString(path.join(directory, ".install-complete"), `${version}\n`);
         yield* fs.utimes(path.join(directory, ".install-complete"), 0, 0);
       }
       if (recorded !== undefined) {
         yield* fs.writeFileString(path.join(root, "runtime/launchers"), recorded);
       }
-      // A launcher in the T3 home itself, which neither PATH nor the default bin dir reaches.
-      const launcher = path.join(root, "t3");
-      yield* fs.symlink(path.join(root, "runtime/versions/1.0.0/t3"), launcher);
+      // A launcher in the Fab home itself, which neither PATH nor the default bin dir reaches.
+      const launcher = path.join(root, "fab");
+      yield* fs.symlink(path.join(root, "runtime/versions/1.0.0/fab"), launcher);
 
       const launchersFile = path.join(root, "runtime/launchers");
       yield* repointLauncher({
         launchedAs: launcher,
         baseDir: root,
-        targetEntryPath: path.join(root, "runtime/versions/2.0.0/t3"),
+        targetEntryPath: path.join(root, "runtime/versions/2.0.0/fab"),
       }).pipe(
         Effect.provideService(FileSystem.FileSystem, {
           ...fs,
@@ -268,7 +268,7 @@ it.layer(NodeServices.layer)("t3 update launcher", (it) => {
               ),
         }),
       );
-      // A later server start prunes with no idea how this machine launches t3.
+      // A later server start prunes with no idea how this machine launches fab.
       const removed = yield* prunePinnedRuntimes({ baseDir: root, keep: [] }).pipe(
         Effect.provideService(ProcessRunner.ProcessRunner, unrelatedLsof),
         Effect.provideService(HostProcess.Platform, "darwin"),
@@ -280,7 +280,7 @@ it.layer(NodeServices.layer)("t3 update launcher", (it) => {
       // macOS temp dirs sit behind the /var -> /private/var symlink, so compare canonical paths.
       assert.equal(
         yield* fs.realPath(launcher),
-        yield* fs.realPath(path.join(root, "runtime/versions/2.0.0/t3")),
+        yield* fs.realPath(path.join(root, "runtime/versions/2.0.0/fab")),
       );
     }).pipe(Effect.scoped, Effect.provideService(HostProcess.Platform, "linux")),
   );
@@ -288,10 +288,10 @@ it.layer(NodeServices.layer)("t3 update launcher", (it) => {
   const launcherFixture = Effect.fnUntraced(function* () {
     const fs = yield* FileSystem.FileSystem;
     const path = yield* Path.Path;
-    const root = yield* fs.makeTempDirectoryScoped({ prefix: "t3-update-" });
-    const oldExe = path.join(root, "runtime/versions/1.0.0/t3");
-    const newExe = path.join(root, "runtime/versions/2.0.0/t3");
-    const launcher = path.join(root, "t3");
+    const root = yield* fs.makeTempDirectoryScoped({ prefix: "fab-update-" });
+    const oldExe = path.join(root, "runtime/versions/1.0.0/fab");
+    const newExe = path.join(root, "runtime/versions/2.0.0/fab");
+    const launcher = path.join(root, "fab");
     for (const file of [oldExe, newExe]) {
       yield* fs.makeDirectory(path.dirname(file), { recursive: true });
       yield* fs.writeFileString(file, "");
@@ -335,7 +335,7 @@ it.layer(NodeServices.layer)("t3 update launcher", (it) => {
   );
 
   it.effect.each(["recording", "repointing"] as const)(
-    "never leaves a repointed launcher unrecorded when t3 update dies while %s",
+    "never leaves a repointed launcher unrecorded when fab update dies while %s",
     (step) =>
       Effect.gen(function* () {
         const fs = yield* FileSystem.FileSystem;
@@ -350,11 +350,11 @@ it.layer(NodeServices.layer)("t3 update launcher", (it) => {
             ...fs,
             writeFileString: (path, data, options) =>
               step === "recording" && path === launchersFile
-                ? Effect.die("t3 update was killed")
+                ? Effect.die("fab update was killed")
                 : fs.writeFileString(path, data, options),
             rename: (from, to) =>
               step === "repointing" && to === launcher
-                ? Effect.die("t3 update was killed")
+                ? Effect.die("fab update was killed")
                 : fs.rename(from, to),
           }),
           Effect.exit,
@@ -374,13 +374,13 @@ it.layer(NodeServices.layer)("t3 update launcher", (it) => {
     Effect.gen(function* () {
       const fs = yield* FileSystem.FileSystem;
       const path = yield* Path.Path;
-      const root = yield* fs.makeTempDirectoryScoped({ prefix: "t3-update-" });
-      const newExe = path.join(root, "runtime/versions/2.0.0/t3");
-      const copy = path.join(root, "copy/t3");
-      const foreign = path.join(root, "foreign/t3");
-      const elsewhere = path.join(root, "elsewhere/t3");
-      const otherHome = path.join(root, "other/runtime/versions/1.0.0/t3");
-      const otherLauncher = path.join(root, "other/bin/t3");
+      const root = yield* fs.makeTempDirectoryScoped({ prefix: "fab-update-" });
+      const newExe = path.join(root, "runtime/versions/2.0.0/fab");
+      const copy = path.join(root, "copy/fab");
+      const foreign = path.join(root, "foreign/fab");
+      const elsewhere = path.join(root, "elsewhere/fab");
+      const otherHome = path.join(root, "other/runtime/versions/1.0.0/fab");
+      const otherLauncher = path.join(root, "other/bin/fab");
       for (const file of [newExe, copy, elsewhere, otherHome]) {
         yield* fs.makeDirectory(path.dirname(file), { recursive: true });
         yield* fs.writeFileString(file, "");
@@ -407,25 +407,25 @@ it.layer(NodeServices.layer)("t3 update launcher", (it) => {
     Effect.gen(function* () {
       const fs = yield* FileSystem.FileSystem;
       const path = yield* Path.Path;
-      const root = yield* fs.makeTempDirectoryScoped({ prefix: "t3-update-" });
-      const launcher = path.join(root, "bin/t3");
+      const root = yield* fs.makeTempDirectoryScoped({ prefix: "fab-update-" });
+      const launcher = path.join(root, "bin/fab");
       yield* fs.makeDirectory(path.dirname(launcher), { recursive: true });
       yield* fs.writeFileString(launcher, "");
 
       const bare = yield* resolveLauncherPath.pipe(
-        Effect.provideService(HostProcess.InvokedAs, "t3"),
+        Effect.provideService(HostProcess.InvokedAs, "fab"),
         Effect.provideService(HostProcess.Environment, {
           PATH: `${path.join(root, "missing")}:${path.join(root, "bin")}`,
         }),
         Effect.provideService(HostProcess.WorkingDirectory, root),
       );
       const relative = yield* resolveLauncherPath.pipe(
-        Effect.provideService(HostProcess.InvokedAs, "./bin/t3"),
+        Effect.provideService(HostProcess.InvokedAs, "./bin/fab"),
         Effect.provideService(HostProcess.Environment, { PATH: "" }),
         Effect.provideService(HostProcess.WorkingDirectory, root),
       );
       const absent = yield* resolveLauncherPath.pipe(
-        Effect.provideService(HostProcess.InvokedAs, "t3"),
+        Effect.provideService(HostProcess.InvokedAs, "fab"),
         Effect.provideService(HostProcess.Environment, { PATH: path.join(root, "missing") }),
         Effect.provideService(HostProcess.WorkingDirectory, root),
       );
@@ -455,21 +455,21 @@ const withoutTerminals = Effect.acquireRelease(
     }),
 );
 
-it.layer(NodeServices.layer)("t3 update with a background service", (it) => {
+it.layer(NodeServices.layer)("fab update with a background service", (it) => {
   it.effect("names the version a service with a pending restart still runs", () =>
     Effect.gen(function* () {
       yield* withoutTerminals;
       const fs = yield* FileSystem.FileSystem;
       const path = yield* Path.Path;
-      const baseDir = yield* fs.makeTempDirectoryScoped({ prefix: "t3-update-" });
+      const baseDir = yield* fs.makeTempDirectoryScoped({ prefix: "fab-update-" });
       const version = packageJson.version;
       const runtime = pinnedRuntimePaths(path, baseDir, version, "linux");
       yield* fs.makeDirectory(runtime.versionDir, { recursive: true });
       yield* fs.writeFileString(runtime.entryPath, "");
       yield* fs.writeFileString(runtime.sentinelPath, `${version}\n`);
-      const unitPath = path.join(baseDir, "t3code.service");
+      const unitPath = path.join(baseDir, "fab.service");
       const logPath = path.join(baseDir, "boot-service.log");
-      // An earlier `t3 update` pointed the service at this version without restarting it.
+      // An earlier `fab update` pointed the service at this version without restarting it.
       const service = Layer.mock(BootService.BootService, {
         status: Effect.succeed<BootService.BootServiceStatus>({
           supported: true,
@@ -489,7 +489,7 @@ it.layer(NodeServices.layer)("t3 update with a background service", (it) => {
           input.args?.includes("--version") === true
             ? unrelatedLsof
                 .run(input)
-                .pipe(Effect.map((result) => ({ ...result, stdout: `t3 v${version}\n` })))
+                .pipe(Effect.map((result) => ({ ...result, stdout: `fab v${version}\n` })))
             : unrelatedLsof.run(input),
       });
 
@@ -520,7 +520,7 @@ it.layer(NodeServices.layer)("t3 update with a background service", (it) => {
 
       assert.include(
         output,
-        `Background service still running the version before ${version}. Run \`t3 service restart\` when you are ready to switch it to ${version}.`,
+        `Background service still running the version before ${version}. Run \`fab service restart\` when you are ready to switch it to ${version}.`,
       );
     }).pipe(
       Effect.scoped,

@@ -5,7 +5,7 @@ import {
   ClientSettingsSchema,
   DEFAULT_CLIENT_SETTINGS,
   type ClientSettings,
-} from "@t3tools/contracts";
+} from "@fab/contracts";
 import * as Effect from "effect/Effect";
 import * as FileSystem from "effect/FileSystem";
 import * as Layer from "effect/Layer";
@@ -93,7 +93,7 @@ function layer(baseDir: string) {
       Layer.mergeAll(
         NodeServices.layer,
         NodeCrypto.layer,
-        DesktopConfig.layerTest({ T3CODE_HOME: baseDir }),
+        DesktopConfig.layerTest({ FAB_HOME: baseDir }),
       ),
     ),
   );
@@ -110,7 +110,7 @@ const withClientSettings = <A, E, R>(
   Effect.gen(function* () {
     const fileSystem = yield* FileSystem.FileSystem;
     const baseDir = yield* fileSystem.makeTempDirectoryScoped({
-      prefix: "t3-desktop-client-settings-test-",
+      prefix: "fab-desktop-client-settings-test-",
     });
     return yield* effect.pipe(Effect.provide(layer(baseDir)));
   }).pipe(Effect.provide(Layer.mergeAll(NodeServices.layer, NodeCrypto.layer)), Effect.scoped);
@@ -123,7 +123,7 @@ describe("DesktopClientSettings", () => {
         const fileSystem = yield* FileSystem.FileSystem;
         const settings = yield* DesktopClientSettings.DesktopClientSettings;
         const dotfiles = yield* fileSystem.makeTempDirectoryScoped({
-          prefix: "t3-desktop-client-settings-dotfiles-",
+          prefix: "fab-desktop-client-settings-dotfiles-",
         });
         const linkedSettingsPath = `${dotfiles}/client-settings.json`;
         yield* fileSystem.writeFileString(linkedSettingsPath, "{}\n");

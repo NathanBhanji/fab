@@ -14,8 +14,8 @@ import * as Stream from "effect/Stream";
 import { Command, Flag } from "effect/cli";
 import { ChildProcess, ChildProcessSpawner } from "effect/process";
 
-import * as NetService from "@t3tools/shared/Net";
-import * as HostProcess from "@t3tools/shared/HostProcess";
+import * as NetService from "@fab/shared/Net";
+import * as HostProcess from "@fab/shared/HostProcess";
 import { windowsSystemTar } from "./lib/windows-tar.ts";
 import { FetchHttpClient, HttpClient, HttpClientRequest } from "effect/http";
 
@@ -66,7 +66,7 @@ const smokeCliArchive = Effect.fn("smokeCliArchive")(function* (input: {
   const path = yield* Path.Path;
   const platform = yield* HostProcess.Platform;
   const spawner = yield* ChildProcessSpawner.ChildProcessSpawner;
-  const scratch = yield* fs.makeTempDirectory({ prefix: "t3-cli-smoke-" });
+  const scratch = yield* fs.makeTempDirectory({ prefix: "fab-cli-smoke-" });
   // Windows can briefly retain executable locks; cleanup retries but must not fail a successful smoke check.
   yield* Effect.addFinalizer(() =>
     fs.remove(scratch, { recursive: true }).pipe(
@@ -96,7 +96,7 @@ const smokeCliArchive = Effect.fn("smokeCliArchive")(function* (input: {
     });
   }
   const contentDir = path.join(scratch, root);
-  const executable = path.join(contentDir, platform === "win32" ? "t3.exe" : "t3");
+  const executable = path.join(contentDir, platform === "win32" ? "fab.exe" : "fab");
   const bundledLibatomic = path.join(contentDir, "lib/libatomic.so.1");
   for (const required of [
     executable,
@@ -121,7 +121,7 @@ const smokeCliArchive = Effect.fn("smokeCliArchive")(function* (input: {
       (yield* fs.realPath(loaded)) !== (yield* fs.realPath(bundledLibatomic))
     ) {
       return yield* new CliArchiveSmokeError({
-        step: "checking that t3 loads the bundled libatomic",
+        step: "checking that fab loads the bundled libatomic",
         detail: ldd,
       });
     }
@@ -150,10 +150,10 @@ const smokeCliArchive = Effect.fn("smokeCliArchive")(function* (input: {
           USERPROFILE: home,
           TMPDIR: scratch,
           TEMP: scratch,
-          T3CODE_HOME: home,
+          FAB_HOME: home,
           // The archive has a release channel built in, so its events would
           // look like a real new install.
-          T3CODE_TELEMETRY_ENABLED: "false",
+          FAB_TELEMETRY_ENABLED: "false",
         },
         extendEnv: false,
       },

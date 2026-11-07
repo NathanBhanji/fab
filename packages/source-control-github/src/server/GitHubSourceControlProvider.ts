@@ -1,4 +1,4 @@
-import { settingsSecretLiteral, SourceControlProviderKind } from "@t3tools/contracts";
+import { settingsSecretLiteral, SourceControlProviderKind } from "@fab/contracts";
 import * as Data from "effect/Data";
 import * as DateTime from "effect/DateTime";
 import * as Effect from "effect/Effect";
@@ -20,11 +20,11 @@ import {
   type ChangeRequest,
   type SourceControlProviderDiscoveryItem,
   type SourceControlRepositoryCloneUrls,
-} from "@t3tools/contracts";
-import { normalizeGitRemoteUrl } from "@t3tools/shared/git";
-import * as HostProcess from "@t3tools/shared/HostProcess";
-import { decodeJsonResult } from "@t3tools/shared/schemaJson";
-import { isSshRemoteUrl } from "@t3tools/shared/sourceControl";
+} from "@fab/contracts";
+import { normalizeGitRemoteUrl } from "@fab/shared/git";
+import * as HostProcess from "@fab/shared/HostProcess";
+import { decodeJsonResult } from "@fab/shared/schemaJson";
+import { isSshRemoteUrl } from "@fab/shared/sourceControl";
 
 import { GH_PROCESS_CONCURRENCY } from "./GitHubCredentials.ts";
 import * as GitHubAppSignIn from "./GitHubAppSignIn.ts";
@@ -44,14 +44,14 @@ import {
   resolveGitHubRepository,
   type GitHubRepositoryLocator,
 } from "./gitHubRepositoryResolution.ts";
-import * as SourceControlRateLimit from "@t3tools/source-control-core/server/SourceControlRateLimit";
+import * as SourceControlRateLimit from "@fab/source-control-core/server/SourceControlRateLimit";
 import {
   effectiveGitHubAccount,
   findAuthenticatedGitHubAccount,
   parseGitHubAuthStatus,
   type GitHubAuthStatusAccount,
 } from "./gitHubAuthStatus.ts";
-import * as SourceControlProvider from "@t3tools/source-control-core/server/SourceControlProvider";
+import * as SourceControlProvider from "@fab/source-control-core/server/SourceControlProvider";
 import {
   combinedAuthOutput,
   firstSafeAuthLine,
@@ -60,9 +60,9 @@ import {
   type SourceControlAuthProbeInput,
   type SourceControlCliDiscoverySpec,
   type SourceControlManagedCliDiscoverySpec,
-} from "@t3tools/source-control-core/server/discovery";
-import * as SourceControlHost from "@t3tools/source-control-core/server/SourceControlHost";
-import { readSourceControlHostSettings } from "@t3tools/source-control-core/shared/definition";
+} from "@fab/source-control-core/server/discovery";
+import * as SourceControlHost from "@fab/source-control-core/server/SourceControlHost";
+import { readSourceControlHostSettings } from "@fab/source-control-core/shared/definition";
 
 import * as GitHubClient from "../shared/definition.ts";
 import {
@@ -907,7 +907,7 @@ export const make = Effect.gen(function* () {
         return locator === null || `${locator.owner}/${locator.name}`.toLowerCase() === target;
       },
     ),
-    // `gh pr create` run in the checkout, as an agent in a T3 worktree often does, takes its base
+    // `gh pr create` run in the checkout, as an agent in a Fab worktree often does, takes its base
     // from this key.
     recordBranchBase: Effect.fn("GitHubSourceControlProvider.recordBranchBase")(function ({
       cwd,

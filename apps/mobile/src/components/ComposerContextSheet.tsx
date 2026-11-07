@@ -2,17 +2,17 @@ import { Button } from "./ui/Button";
 import * as Dialog from "./ui/Dialog";
 import { useOpenPullRequest } from "../native/useOpenPullRequest";
 import { SourceFileSurface } from "../features/files/SourceFileSurface";
-import { filePreviewKind } from "@t3tools/shared/filePreview";
+import { filePreviewKind } from "@fab/shared/filePreview";
 import type {
   ComposerContextRecord,
   ElementContextSource,
   EnvironmentId,
   ProjectId,
   ScopedThreadRef,
-} from "@t3tools/contracts";
-import { formatAttachmentSize } from "@t3tools/client-runtime/state/attachments";
-import { sourceControlClients } from "@t3tools/client-runtime/source-control-clients";
-import { videoMimeType } from "@t3tools/shared/video";
+} from "@fab/contracts";
+import { formatAttachmentSize } from "@fab/client-runtime/state/attachments";
+import { sourceControlClients } from "@fab/client-runtime/source-control-clients";
+import { videoMimeType } from "@fab/shared/video";
 import { Platform, Pressable, ScrollView, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { REVIEW_MONO_FONT_FAMILY } from "../features/review/reviewDiffRendering";

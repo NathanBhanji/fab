@@ -72,7 +72,7 @@ jobs:
           sparse-checkout: |
             /*
             !/.repos/
-            !/apps/mobile/modules/t3-terminal/Vendor/**/*.a
+            !/apps/mobile/modules/fab-terminal/Vendor/**/*.a
           sparse-checkout-cone-mode: false
 
       - name: Reject repository-owned PR assets
@@ -86,7 +86,7 @@ jobs:
       - name: Setup Vite+
         uses: ./.github/actions/setup-ci-deps
         with:
-          task-cache-read-token: ${{ secrets.T3_TASK_CACHE_READ_TOKEN }}
+          task-cache-read-token: ${{ secrets.FAB_TASK_CACHE_READ_TOKEN }}
 
       # electron's install.js (run by ensure:electron) reads this cache before it
       # downloads from GitHub. The key changes only with the Electron version.
@@ -97,17 +97,17 @@ jobs:
           key: electron-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('node_modules/.pnpm/electron@*/node_modules/electron/package.json') }}
 
       - name: Ensure Electron runtime is installed
-        run: vp run --filter @t3tools/desktop ensure:electron
+        run: vp run --filter @fab/desktop ensure:electron
 
       # Files/dependencies are repo-wide; export checks cover clean workspaces only.
       - name: Check unused code
         run: vp run knip:check
 
       - name: Check generated GitHub GraphQL operations
-        run: vp run --filter @t3tools/source-control-github generate --check
+        run: vp run --filter @fab/source-control-github generate --check
 
       - name: Check generated Expo GraphQL operations
-        run: vp run --filter t3 generate --check
+        run: vp run --filter fab generate --check
 
       - name: Check
         run: vp check
@@ -128,7 +128,7 @@ jobs:
           sparse-checkout: |
             /*
             !/.repos/
-            !/apps/mobile/modules/t3-terminal/Vendor/**/*.a
+            !/apps/mobile/modules/fab-terminal/Vendor/**/*.a
           sparse-checkout-cone-mode: false
 
       - uses: ./.github/actions/setup-apt-mirrors
@@ -148,7 +148,7 @@ jobs:
       - name: Setup Vite+
         uses: ./.github/actions/setup-ci-deps
         with:
-          task-cache-read-token: ${{ secrets.T3_TASK_CACHE_READ_TOKEN }}
+          task-cache-read-token: ${{ secrets.FAB_TASK_CACHE_READ_TOKEN }}
 
       # electron's install.js (run by ensure:electron) reads this cache before it
       # downloads from GitHub. The key changes only with the Electron version.
@@ -160,7 +160,7 @@ jobs:
 
       - name: Ensure Electron runtime is installed
         id: electron
-        run: vp run --filter @t3tools/desktop ensure:electron
+        run: vp run --filter @fab/desktop ensure:electron
 
       # Runs in the background while the build runs, and reports in the last
       # step: neither result hides the other.
@@ -200,7 +200,7 @@ jobs:
           cat "$RUNNER_TEMP/typecheck.log"
           exit "$(cat "$RUNNER_TEMP/typecheck-status")"
 
-  # Everything except `t3` (apps/server) and the web app, which has its own job
+  # Everything except `fab` (apps/server) and the web app, which has its own job
   # below. `--parallel` drops the package dependency ordering that `vp run`
   # applies by default: these `test` tasks declare no `dependsOn` and resolve
   # workspace deps from source, so ordering only bought us idle runners between
@@ -222,7 +222,7 @@ jobs:
           sparse-checkout: |
             /*
             !/.repos/
-            !/apps/mobile/modules/t3-terminal/Vendor/**/*.a
+            !/apps/mobile/modules/fab-terminal/Vendor/**/*.a
           sparse-checkout-cone-mode: false
 
       - uses: ./.github/actions/setup-apt-mirrors
@@ -241,7 +241,7 @@ jobs:
       - name: Setup Vite+
         uses: ./.github/actions/setup-ci-deps
         with:
-          task-cache-read-token: ${{ secrets.T3_TASK_CACHE_READ_TOKEN }}
+          task-cache-read-token: ${{ secrets.FAB_TASK_CACHE_READ_TOKEN }}
 
       # electron's install.js (run by ensure:electron) reads this cache before it
       # downloads from GitHub. The key changes only with the Electron version.
@@ -252,7 +252,7 @@ jobs:
           key: electron-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('node_modules/.pnpm/electron@*/node_modules/electron/package.json') }}
 
       - name: Ensure Electron runtime is installed
-        run: vp run --filter @t3tools/desktop ensure:electron
+        run: vp run --filter @fab/desktop ensure:electron
 
       - name: Test preview artifact validation
         run: python3 -B .github/scripts/stage-preview-bundle.test.py
@@ -272,7 +272,7 @@ jobs:
         env:
           TEST_PACKAGES: ${{ needs.changes.outputs.test_packages }}
         run: |
-          filters=(--filter '!t3' --filter '!@t3tools/monorepo' --filter '!@t3tools/web')
+          filters=(--filter '!fab' --filter '!@fab/monorepo' --filter '!@fab/web')
           if [[ -n "$TEST_PACKAGES" ]]; then
             filters=()
             for package in $TEST_PACKAGES; do filters+=(--filter "$package"); done
@@ -298,13 +298,13 @@ jobs:
           sparse-checkout: |
             /*
             !/.repos/
-            !/apps/mobile/modules/t3-terminal/Vendor/**/*.a
+            !/apps/mobile/modules/fab-terminal/Vendor/**/*.a
           sparse-checkout-cone-mode: false
 
       - name: Setup Vite+
         uses: ./.github/actions/setup-ci-deps
         with:
-          task-cache-read-token: ${{ secrets.T3_TASK_CACHE_READ_TOKEN }}
+          task-cache-read-token: ${{ secrets.FAB_TASK_CACHE_READ_TOKEN }}
 
       # The browser project runs React tests in headless Chromium. Same cache key as
       # test_server, so both jobs share one downloaded browser.
@@ -332,12 +332,12 @@ jobs:
           fi
 
       - name: Test
-        run: vp run --filter @t3tools/web test
+        run: vp run --filter @fab/web test
 
       # Browser tests run source modules; this boots the production chunk graph.
       - name: Boot the built web client
         run: |
-          vp run --filter @t3tools/web build
+          vp run --filter @fab/web build
           node apps/web/scripts/verify-built-boot.ts
 
   # apps/server sets `fileParallelism: false`, so its test files run strictly
@@ -370,7 +370,7 @@ jobs:
           sparse-checkout: |
             /*
             !/.repos/
-            !/apps/mobile/modules/t3-terminal/Vendor/**/*.a
+            !/apps/mobile/modules/fab-terminal/Vendor/**/*.a
           sparse-checkout-cone-mode: false
 
       - name: Detect affected jobs
@@ -381,11 +381,11 @@ jobs:
         if: steps.changes.outputs.test_server != 'false'
         uses: ./.github/actions/setup-ci-deps
         with:
-          task-cache-read-token: ${{ secrets.T3_TASK_CACHE_READ_TOKEN }}
+          task-cache-read-token: ${{ secrets.FAB_TASK_CACHE_READ_TOKEN }}
 
-      # No Electron setup here: `t3` (apps/server) has no Electron dependency
+      # No Electron setup here: `fab` (apps/server) has no Electron dependency
       # and none of its tests touch the runtime. Only the non-server `test`
-      # job, which covers @t3tools/desktop, needs the download.
+      # job, which covers @fab/desktop, needs the download.
       # Cache the pinned browser and skip apt unless shared libraries are missing.
       - name: Resolve Playwright version
         id: playwright_version
@@ -416,8 +416,8 @@ jobs:
       - name: Test
         if: steps.changes.outputs.test_server != 'false'
         env:
-          T3CODE_TRANSFER_BUDGET_REPORT_PATH: ${{ runner.temp }}/t3code-transfer-budget.md
-          T3CODE_TRANSFER_BUDGET_RESULT_PATH: ${{ runner.temp }}/thread-transfer-result.json
+          FAB_TRANSFER_BUDGET_REPORT_PATH: ${{ runner.temp }}/fab-transfer-budget.md
+          FAB_TRANSFER_BUDGET_RESULT_PATH: ${{ runner.temp }}/thread-transfer-result.json
         run: >-
           vp run test:cached -- --shard ${{ matrix.shard }}/${{ strategy.job-total }}
           --uncached apps/server/integration/transferBudgetV2.integration.test.ts
@@ -448,8 +448,8 @@ jobs:
       - name: Publish transfer budget report
         if: always() && steps.transfer_budget.outputs.present == 'true'
         run: |
-          if test -f "${{ runner.temp }}/t3code-transfer-budget.md"; then
-            tee -a "$GITHUB_STEP_SUMMARY" < "${{ runner.temp }}/t3code-transfer-budget.md"
+          if test -f "${{ runner.temp }}/fab-transfer-budget.md"; then
+            tee -a "$GITHUB_STEP_SUMMARY" < "${{ runner.temp }}/fab-transfer-budget.md"
           else
             echo "Transfer budget report was not produced." >> "$GITHUB_STEP_SUMMARY"
           fi
@@ -478,7 +478,7 @@ jobs:
           sparse-checkout: |
             /*
             !/.repos/
-            !/apps/mobile/modules/t3-terminal/Vendor/**/*.a
+            !/apps/mobile/modules/fab-terminal/Vendor/**/*.a
           sparse-checkout-cone-mode: false
 
       - name: Setup Rust
@@ -520,7 +520,7 @@ jobs:
           cache: true
           run-install: |
             args:
-              - --filter=@t3tools/scripts...
+              - --filter=@fab/scripts...
 
       - name: Install mobile native static analysis tools
         run: brew bundle install --file apps/mobile/Brewfile
@@ -544,13 +544,13 @@ jobs:
           sparse-checkout: |
             /*
             !/.repos/
-            !/apps/mobile/modules/t3-terminal/Vendor/**/*.a
+            !/apps/mobile/modules/fab-terminal/Vendor/**/*.a
           sparse-checkout-cone-mode: false
 
       - name: Setup Vite+
         uses: ./.github/actions/setup-ci-deps
         with:
-          task-cache-read-token: ${{ secrets.T3_TASK_CACHE_READ_TOKEN }}
+          task-cache-read-token: ${{ secrets.FAB_TASK_CACHE_READ_TOKEN }}
 
       - name: Exercise release-only workflow steps
         run: node scripts/release-smoke.ts

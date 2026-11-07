@@ -3,17 +3,17 @@ import type {
   ProjectId,
   ProjectScript,
   EnvironmentId,
-} from "@t3tools/contracts";
-import { AuthSettingsWriteScope, EnvironmentAuthorizationError } from "@t3tools/contracts";
-import type { UnifiedSettings } from "@t3tools/contracts/settings";
+} from "@fab/contracts";
+import { AuthSettingsWriteScope, EnvironmentAuthorizationError } from "@fab/contracts";
+import type { UnifiedSettings } from "@fab/contracts/settings";
 import {
   isAtomCommandInterrupted,
   mapAtomCommandResult,
   squashAtomCommandFailure,
   type AtomCommandResult,
-} from "@t3tools/client-runtime/state/runtime";
-import type { EnvironmentProject } from "@t3tools/client-runtime/state/shell";
-import { resolveProjectScripts } from "@t3tools/shared/projectScripts";
+} from "@fab/client-runtime/state/runtime";
+import type { EnvironmentProject } from "@fab/client-runtime/state/shell";
+import { resolveProjectScripts } from "@fab/shared/projectScripts";
 import * as Cause from "effect/Cause";
 import { AsyncResult } from "effect/reactivity";
 import { useStableCallback } from "../../hooks/useStableCallback";

@@ -1,9 +1,9 @@
 import { useAuth } from "@clerk/react";
 import { Link } from "@tanstack/react-router";
-import { managedCapabilityDenial } from "@t3tools/contracts";
+import { managedCapabilityDenial } from "@fab/contracts";
 
 import { hasCloudPublicConfig } from "~/cloud/publicConfig";
-import { useT3ConnectAuthPrompt } from "../clerk/useT3ConnectAuthPrompt";
+import { useFabConnectAuthPrompt } from "../clerk/useFabConnectAuthPrompt";
 import { Button } from "../ui/button";
 import { Switch } from "../ui/switch";
 import { ScopedSwitch } from "./ScopedSwitch";
@@ -21,7 +21,7 @@ export function LabsSettingsPanel() {
       <SettingsSection id="beta" title="Beta">
         <BoringSidebarRow />
         <BoringSidebarMultilineRow />
-        {/* Clerk is only mounted when this build has T3 Connect. */}
+        {/* Clerk is only mounted when this build has Fab Connect. */}
         {hasCloudPublicConfig() ? <GuestLinksRowWithSignIn /> : <GuestLinksRow />}
         <LinkedEnvironmentsRow />
         <SimlockHostsRow />
@@ -72,16 +72,16 @@ function BoringSidebarMultilineRow() {
   );
 }
 
-/** Signed out of T3 Connect, the row offers to sign in instead of its switch. */
+/** Signed out of Fab Connect, the row offers to sign in instead of its switch. */
 function GuestLinksRowWithSignIn() {
   const { isSignedIn } = useAuth();
-  const { openAuthPrompt } = useT3ConnectAuthPrompt();
+  const { openAuthPrompt } = useFabConnectAuthPrompt();
   // `isSignedIn` is undefined until Clerk loads.
   if (isSignedIn !== false) return <GuestLinksRow />;
   return (
     <SettingsRow
       {...searchableSetting("guest-links")}
-      description="Share a thread with a guest who watches it live in their browser and sends messages you approve. Sign in to T3 Connect to use guest links."
+      description="Share a thread with a guest who watches it live in their browser and sends messages you approve. Sign in to Fab Connect to use guest links."
       control={
         <Button size="sm" variant="outline" onClick={openAuthPrompt}>
           Sign in
@@ -96,7 +96,7 @@ function GuestLinksRow() {
   const updateSettings = useUpdateScopedSettings();
   const scope = useOptionalSettingsScope();
   const primaryPolicy = usePrimaryManagedPolicy();
-  // Guests arrive through T3 Connect, so a policy that turns Connect off turns this off too.
+  // Guests arrive through Fab Connect, so a policy that turns Connect off turns this off too.
   const connectDenial = firstManagedDenial(
     scope
       ? scope.connectedEnvironments.map((environment) => environment.serverConfig?.managedPolicy)
@@ -108,12 +108,12 @@ function GuestLinksRow() {
       serverScoped
       {...searchableSetting("guest-links")}
       settingKeys={["guestSharingEnabled"]}
-      // Turning guest links off still works without T3 Connect.
+      // Turning guest links off still works without Fab Connect.
       managed={settings.guestSharingEnabled ? undefined : connectDenial}
       description={
         <>
           Share a thread with a guest who watches it live in their browser and sends messages you
-          approve. Needs T3 Connect: sign in and link this machine in{" "}
+          approve. Needs Fab Connect: sign in and link this machine in{" "}
           <Link to="/settings/access" className="underline underline-offset-2">
             Sharing & access
           </Link>
@@ -187,7 +187,7 @@ function SimlockHostsRow() {
           <Link to="/settings/devices" className="underline underline-offset-2">
             Devices
           </Link>
-          . An alpha that may change or break. T3 Code never installs Simlock.
+          . An alpha that may change or break. Fab never installs Simlock.
         </>
       }
       control={

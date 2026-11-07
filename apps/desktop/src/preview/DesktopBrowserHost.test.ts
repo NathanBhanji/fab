@@ -1,6 +1,6 @@
 // @effect-diagnostics nodeBuiltinImport:off - Stands in for an Electron debugger.
 import { describe, expect, it, vi } from "@effect/vitest";
-import { DesktopBrowserEvent } from "@t3tools/contracts";
+import { DesktopBrowserEvent } from "@fab/contracts";
 import * as Effect from "effect/Effect";
 import * as Fiber from "effect/Fiber";
 import * as Queue from "effect/Queue";
@@ -27,7 +27,7 @@ const command = (
     encodeJson({
       type: "cdp",
       ...key,
-      message: encodeJson({ id, method, params: { id }, sessionId: "t3-preview-page" }),
+      message: encodeJson({ id, method, params: { id }, sessionId: "fab-preview-page" }),
     }),
   );
 
@@ -92,7 +92,7 @@ const makeDebuggee = (
 };
 
 /** Commands wait behind a focus emulation change; it settles within a macrotask. */
-// oxlint-disable-next-line t3code/no-real-time-wait-in-tests -- a zero-delay macrotask boundary, not a wait for time
+// oxlint-disable-next-line fab/no-real-time-wait-in-tests -- a zero-delay macrotask boundary, not a wait for time
 const settle = Effect.promise(() => new Promise<void>((resolve) => setImmediate(resolve)));
 
 const takeEvents = (host: DesktopBrowserHost.DesktopBrowserHost["Service"], count: number) =>
@@ -157,7 +157,7 @@ describe("DesktopBrowserHost", () => {
           encodeJson({
             type: "cdp",
             ...key,
-            message: encodeJson({ id, method, sessionId: "t3-preview-page" }),
+            message: encodeJson({ id, method, sessionId: "fab-preview-page" }),
           }),
         );
       yield* command(1, "Page.captureScreenshot");
@@ -455,7 +455,7 @@ describe("DesktopBrowserHost", () => {
       yield* turn(true);
       yield* raw({ id: 1, method: "Target.attachToTarget", params: { targetId: "GUEST" } });
       expect(yield* Queue.take(replies)).toBe(1);
-      yield* raw({ id: 2, method: "Runtime.evaluate", sessionId: "t3-preview-page-1" });
+      yield* raw({ id: 2, method: "Runtime.evaluate", sessionId: "fab-preview-page-1" });
       yield* settle;
       yield* turn(false);
       yield* TestClock.adjust("1 minute");
@@ -465,7 +465,7 @@ describe("DesktopBrowserHost", () => {
       yield* turn(true);
       yield* raw({ id: 3, method: "Target.attachToTarget", params: { targetId: "GUEST" } });
       expect(yield* Queue.take(replies)).toBe(3);
-      yield* raw({ id: 4, method: "Page.startScreencast", sessionId: "t3-preview-page-2" });
+      yield* raw({ id: 4, method: "Page.startScreencast", sessionId: "fab-preview-page-2" });
       yield* settle;
       yield* turn(false);
       yield* TestClock.adjust("1 minute");
@@ -485,12 +485,12 @@ describe("DesktopBrowserHost", () => {
 
       yield* raw({ id: 1, method: "Target.attachToTarget", params: { targetId: "GUEST" } });
       expect(yield* Queue.take(replies)).toBe(1);
-      yield* raw({ id: 2, method: "Page.captureScreenshot", sessionId: "t3-preview-page-1" });
+      yield* raw({ id: 2, method: "Page.captureScreenshot", sessionId: "fab-preview-page-1" });
       yield* settle;
       yield* raw({
         id: 3,
         method: "Target.detachFromTarget",
-        params: { sessionId: "t3-preview-page-1" },
+        params: { sessionId: "fab-preview-page-1" },
       });
       expect(yield* Queue.take(replies)).toBe(3);
       expect(painting).toEqual([true, false]);
@@ -529,13 +529,13 @@ describe("DesktopBrowserHost", () => {
       yield* turn(false);
       yield* raw({ id: 2, method: "Target.attachToTarget", params: { targetId: "GUEST" } });
       expect(yield* Queue.take(replies)).toBe(2);
-      yield* raw({ id: 3, method: "Page.captureScreenshot", sessionId: "t3-preview-page-1" });
+      yield* raw({ id: 3, method: "Page.captureScreenshot", sessionId: "fab-preview-page-1" });
       yield* settle;
       expect(painting).toEqual([true, false, true]);
       yield* raw({
         id: 4,
         method: "Target.detachFromTarget",
-        params: { sessionId: "t3-preview-page-1" },
+        params: { sessionId: "fab-preview-page-1" },
       });
       expect(yield* Queue.take(replies)).toBe(4);
       expect(painting).toEqual([true, false, true, false]);
@@ -555,11 +555,11 @@ describe("DesktopBrowserHost", () => {
 
       yield* raw({ id: 1, method: "Target.attachToTarget", params: { targetId: "GUEST" } });
       expect(yield* Queue.take(replies)).toBe(1);
-      yield* raw({ id: 2, method: "Page.captureScreenshot", sessionId: "t3-preview-page-1" });
+      yield* raw({ id: 2, method: "Page.captureScreenshot", sessionId: "fab-preview-page-1" });
       yield* raw({
         id: 3,
         method: "Target.detachFromTarget",
-        params: { sessionId: "t3-preview-page-1" },
+        params: { sessionId: "fab-preview-page-1" },
       });
       expect(yield* Queue.take(replies)).toBe(3);
       debuggee.settleFocus();
@@ -607,7 +607,7 @@ describe("DesktopBrowserHost", () => {
 
       yield* raw({ id: 1, method: "Target.attachToTarget", params: { targetId: "GUEST" } });
       expect(yield* Queue.take(replies)).toBe(1);
-      yield* raw({ id: 2, method: "Page.startScreencast", sessionId: "t3-preview-page-1" });
+      yield* raw({ id: 2, method: "Page.startScreencast", sessionId: "fab-preview-page-1" });
       expect(yield* Queue.take(replies)).toBe(2);
       yield* settle;
       expect(painting).toEqual([true, false]);
@@ -630,14 +630,14 @@ describe("DesktopBrowserHost", () => {
       );
       yield* raw({ id: 1, method: "Target.attachToTarget", params: { targetId: "GUEST" } });
       expect(yield* Queue.take(replies)).toBe(1);
-      yield* raw({ id: 2, method: "Page.startScreencast", sessionId: "t3-preview-page-1" });
-      yield* raw({ id: 3, method: "Input.dispatchMouseEvent", sessionId: "t3-preview-page-1" });
+      yield* raw({ id: 2, method: "Page.startScreencast", sessionId: "fab-preview-page-1" });
+      yield* raw({ id: 3, method: "Input.dispatchMouseEvent", sessionId: "fab-preview-page-1" });
       yield* settle;
       debuggee.release();
       yield* raw({
         id: 4,
         method: "Target.detachFromTarget",
-        params: { sessionId: "t3-preview-page-1" },
+        params: { sessionId: "fab-preview-page-1" },
       });
       yield* settle;
       yield* TestClock.adjust("1 minute");
@@ -681,10 +681,10 @@ describe("DesktopBrowserHost", () => {
       yield* raw({
         id: 2,
         method: "Target.detachFromTarget",
-        params: { sessionId: "t3-preview-page-1" },
+        params: { sessionId: "fab-preview-page-1" },
       });
       expect(yield* Queue.take(replies)).toBe(2);
-      yield* raw({ id: 3, method: "Page.startScreencast", sessionId: "t3-preview-page-1" });
+      yield* raw({ id: 3, method: "Page.startScreencast", sessionId: "fab-preview-page-1" });
       yield* settle;
       debuggee.release();
       yield* settle;
@@ -705,7 +705,7 @@ describe("DesktopBrowserHost", () => {
       // A viewer's own CDP session, closed while its still of a hidden guest is pending.
       yield* raw({ id: 1, method: "Target.attachToTarget", params: { targetId: "GUEST" } });
       expect(yield* Queue.take(replies)).toBe(1);
-      yield* raw({ id: 2, method: "Page.captureScreenshot", sessionId: "t3-preview-page-1" });
+      yield* raw({ id: 2, method: "Page.captureScreenshot", sessionId: "fab-preview-page-1" });
       yield* settle;
       yield* TestClock.adjust("1 minute");
       expect(debuggee.focusEmulation).toEqual([true]);
@@ -713,7 +713,7 @@ describe("DesktopBrowserHost", () => {
       yield* raw({
         id: 3,
         method: "Target.detachFromTarget",
-        params: { sessionId: "t3-preview-page-1" },
+        params: { sessionId: "fab-preview-page-1" },
       });
       yield* TestClock.adjust("1 minute");
       expect(debuggee.focusEmulation).toEqual([true, false]);
@@ -732,11 +732,11 @@ describe("DesktopBrowserHost", () => {
       yield* raw({ id: 1, method: "Target.attachToTarget", params: { targetId: "GUEST" } });
       expect(yield* Queue.take(replies)).toBe(1);
       yield* command(host, 2, "Page.captureScreenshot");
-      yield* raw({ id: 3, method: "Page.captureScreenshot", sessionId: "t3-preview-page-1" });
+      yield* raw({ id: 3, method: "Page.captureScreenshot", sessionId: "fab-preview-page-1" });
       yield* raw({
         id: 4,
         method: "Target.detachFromTarget",
-        params: { sessionId: "t3-preview-page-1" },
+        params: { sessionId: "fab-preview-page-1" },
       });
       yield* settle;
       debuggee.release();
@@ -793,9 +793,9 @@ describe("DesktopBrowserHost", () => {
       yield* raw({ id: 1, method: "Target.attachToTarget", params: { targetId: "GUEST" } });
       yield* raw({ id: 2, method: "Target.attachToTarget", params: { targetId: "GUEST" } });
       expect([yield* Queue.take(replies), yield* Queue.take(replies)]).toEqual([1, 2]);
-      yield* raw({ id: 3, method: "Page.startScreencast", sessionId: "t3-preview-page-1" });
-      yield* raw({ id: 4, method: "Page.startScreencast", sessionId: "t3-preview-page-2" });
-      yield* raw({ id: 5, method: "Page.stopScreencast", sessionId: "t3-preview-page-1" });
+      yield* raw({ id: 3, method: "Page.startScreencast", sessionId: "fab-preview-page-1" });
+      yield* raw({ id: 4, method: "Page.startScreencast", sessionId: "fab-preview-page-2" });
+      yield* raw({ id: 5, method: "Page.stopScreencast", sessionId: "fab-preview-page-1" });
       yield* settle;
       debuggee.release();
       yield* settle;
@@ -805,7 +805,7 @@ describe("DesktopBrowserHost", () => {
       yield* raw({
         id: 6,
         method: "Target.detachFromTarget",
-        params: { sessionId: "t3-preview-page-2" },
+        params: { sessionId: "fab-preview-page-2" },
       });
       yield* TestClock.adjust("1 minute");
       expect(debuggee.focusEmulation).toEqual([true, false]);
@@ -894,9 +894,9 @@ describe("DesktopBrowserHost", () => {
       yield* raw({ id: 1, method: "Target.attachToTarget", params: { targetId: "GUEST" } });
       yield* raw({ id: 2, method: "Target.attachToTarget", params: { targetId: "GUEST" } });
       expect([yield* Queue.take(replies), yield* Queue.take(replies)]).toEqual([1, 2]);
-      yield* raw({ id: 3, method: "Page.startScreencast", sessionId: "t3-preview-page-1" });
-      yield* raw({ id: 4, method: "Page.startScreencast", sessionId: "t3-preview-page-2" });
-      yield* raw({ id: 5, method: "Page.stopScreencast", sessionId: "t3-preview-page-1" });
+      yield* raw({ id: 3, method: "Page.startScreencast", sessionId: "fab-preview-page-1" });
+      yield* raw({ id: 4, method: "Page.startScreencast", sessionId: "fab-preview-page-2" });
+      yield* raw({ id: 5, method: "Page.stopScreencast", sessionId: "fab-preview-page-1" });
       yield* settle;
       debuggee.release();
       yield* settle;
@@ -905,7 +905,7 @@ describe("DesktopBrowserHost", () => {
       yield* raw({
         id: 6,
         method: "Target.detachFromTarget",
-        params: { sessionId: "t3-preview-page-2" },
+        params: { sessionId: "fab-preview-page-2" },
       });
       yield* settle;
       expect(painting).toEqual([true, false]);
@@ -1011,7 +1011,7 @@ describe("DesktopBrowserHost", () => {
             id: 2,
             method: "Target.setAutoAttach",
             params: { autoAttach: true, waitForDebuggerOnStart: true, flatten: true },
-            sessionId: "t3-preview-page",
+            sessionId: "fab-preview-page",
           }),
         }),
       );

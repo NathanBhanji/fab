@@ -6,7 +6,7 @@ import {
   type EnvironmentCloudLinkStateResult,
   type EnvironmentCloudPreferencesRequest,
   type EnvironmentCloudRelayConfigResult,
-} from "@t3tools/contracts";
+} from "@fab/contracts";
 import {
   RelayCloudEnvironmentHealthProofPayload,
   type RelayCloudEnvironmentHealthRequest,
@@ -28,8 +28,8 @@ import {
   RelayManagedEndpointRecoveryResponse,
   type RelayManagedEndpointRuntimeConfig,
   RelayOkResponse,
-} from "@t3tools/contracts/relay";
-import { withRelayClientTracing } from "@t3tools/shared/relayTracing";
+} from "@fab/contracts/relay";
+import { withRelayClientTracing } from "@fab/shared/relayTracing";
 import {
   normalizeRelayIssuer,
   RELAY_HEALTH_REQUEST_TYP,
@@ -40,8 +40,8 @@ import {
   RELAY_MINT_RESPONSE_TYP,
   signRelayJwt,
   verifyRelayJwt,
-} from "@t3tools/shared/relayJwt";
-import { isSecureRelayUrl } from "@t3tools/shared/relayUrl";
+} from "@fab/shared/relayJwt";
+import { isSecureRelayUrl } from "@fab/shared/relayUrl";
 import * as Context from "effect/Context";
 import * as SecureRandom from "effect/crypto/SecureRandom";
 import * as DateTime from "effect/DateTime";
@@ -172,7 +172,7 @@ export class CloudLinkNotLinkedError extends Schema.TaggedError<CloudLinkNotLink
   {},
 ) {
   override get message(): string {
-    return "Link this environment to T3 Connect first.";
+    return "Link this environment to Fab Connect first.";
   }
 }
 
@@ -190,7 +190,7 @@ export class CloudLinkAuthorizationMissingError extends Schema.TaggedError<Cloud
   {},
 ) {
   override get message(): string {
-    return "Run `t3 connect link` to authorize this environment.";
+    return "Run `fab connect link` to authorize this environment.";
   }
 }
 
@@ -239,19 +239,19 @@ export class CloudLinkEndpointUnavailableError extends Schema.TaggedError<CloudL
 
 const INTERNAL_OPERATION_MESSAGES = {
   "relay-url-unconfigured":
-    "T3CODE_RELAY_URL must be configured as a secure absolute HTTPS origin.",
+    "FAB_RELAY_URL must be configured as a secure absolute HTTPS origin.",
   "generate-link-proof": "Could not generate environment link proof.",
   "persist-relay-config": "Could not persist environment relay configuration.",
   "register-endpoint-origin": "Could not register the managed endpoint origin.",
   "resolve-server-origin": "Could not resolve the local server origin.",
-  "persist-desired-link": "Could not persist desired T3 Connect link state.",
+  "persist-desired-link": "Could not persist desired Fab Connect link state.",
   "sign-recovery-proof": "Could not sign the managed tunnel recovery request.",
   "unsupported-recovered-tunnel":
-    "T3 Connect returned an unsupported managed tunnel configuration.",
+    "Fab Connect returned an unsupported managed tunnel configuration.",
   "persist-recovered-tunnel": "Could not persist the recovered managed tunnel configuration.",
   "read-relay-config": "Could not read environment relay configuration.",
   "remove-relay-config": "Could not remove environment relay configuration.",
-  "update-webhook-settings": "Could not update T3 Connect webhook settings.",
+  "update-webhook-settings": "Could not update Fab Connect webhook settings.",
   "read-preferences": "Could not read environment cloud preferences.",
   "persist-preferences": "Could not persist environment cloud preferences.",
   "answer-health": "Could not answer cloud health request.",
@@ -299,7 +299,7 @@ export const shouldRetryCloudLink = (error: unknown): boolean =>
   !(CliTokenManager.isCloudCliCredentialRefreshError(error) && error.requiresLogin);
 
 const rollbackFailed = (cause: unknown) =>
-  Effect.logWarning("Could not roll back a T3 Connect preference", { cause });
+  Effect.logWarning("Could not roll back a Fab Connect preference", { cause });
 
 const requireRelayUrl = relayUrlConfig.pipe(
   Effect.mapError(
@@ -519,7 +519,7 @@ export class CloudLink extends Context.Service<
       | HttpClientError.HttpClientError
     >;
   }
->()("t3/cloud/CloudLink") {}
+>()("fab/cloud/CloudLink") {}
 
 const make = Effect.gen(function* () {
   const secrets = yield* ServerSecretStore.ServerSecretStore;
@@ -604,7 +604,7 @@ const make = Effect.gen(function* () {
     const nowSeconds = Math.floor(now.epochMilliseconds / 1_000);
     const descriptor = yield* environment.getDescriptor;
     const payload = {
-      iss: `t3-env:${descriptor.environmentId}`,
+      iss: `fab-env:${descriptor.environmentId}`,
       aud: normalizeRelayIssuer(request.relayIssuer),
       sub: descriptor.environmentId,
       jti: yield* random.uuidV4(),
@@ -934,7 +934,7 @@ const make = Effect.gen(function* () {
     const now = yield* DateTime.now;
     const issuedAt = Math.floor(now.epochMilliseconds / 1_000);
     const claims = {
-      iss: `t3-env:${input.environmentId}`,
+      iss: `fab-env:${input.environmentId}`,
       aud: normalizeRelayIssuer(
         Option.isSome(configuredIssuer) ? bytesToString(configuredIssuer.value) : input.relayUrl,
       ),
@@ -975,7 +975,7 @@ const make = Effect.gen(function* () {
           return false;
         }
         yield* Effect.logWarning(
-          "T3 Connect no longer accepts this environment's link. Link it again to restore remote access.",
+          "Fab Connect no longer accepts this environment's link. Link it again to restore remote access.",
           { cause },
         );
         yield* secrets.set(CLOUD_LINK_REVOKED, stringToBytes("true"));
@@ -1235,7 +1235,7 @@ const make = Effect.gen(function* () {
     if (Option.isNone(token)) {
       return false;
     }
-    // Use the persisted relay URL; T3CODE_RELAY_URL may have changed since linking.
+    // Use the persisted relay URL; FAB_RELAY_URL may have changed since linking.
     const relayUrl = yield* secrets.get(RELAY_URL_SECRET);
     if (Option.isNone(relayUrl)) {
       return false;
@@ -1458,7 +1458,7 @@ const make = Effect.gen(function* () {
         token: request.proof,
         typ: RELAY_HEALTH_REQUEST_TYP,
         issuer: normalizeRelayIssuer(relayIssuer),
-        audience: `t3-env:${environmentId}`,
+        audience: `fab-env:${environmentId}`,
         nowEpochSeconds: nowSeconds,
       }).pipe(Effect.flatMap(decodeCloudHealthProof), Effect.option);
       if (
@@ -1487,7 +1487,7 @@ const make = Effect.gen(function* () {
       const descriptor = yield* environment.getDescriptor;
       const responseExpiresAt = DateTime.add(now, { minutes: 5 });
       const responsePayload = {
-        iss: `t3-env:${environmentId}`,
+        iss: `fab-env:${environmentId}`,
         aud: normalizeRelayIssuer(relayIssuer),
         sub: environmentId,
         jti: yield* random.uuidV4(),
@@ -1561,7 +1561,7 @@ const make = Effect.gen(function* () {
         token: request.proof,
         typ: RELAY_MINT_REQUEST_TYP,
         issuer: normalizeRelayIssuer(relayIssuer),
-        audience: `t3-env:${environmentId}`,
+        audience: `fab-env:${environmentId}`,
         nowEpochSeconds: nowSeconds,
       }).pipe(Effect.flatMap(decodeCloudMintProof), Effect.option);
       if (
@@ -1592,11 +1592,11 @@ const make = Effect.gen(function* () {
         scopes: AuthStandardClientScopes,
         subject: "cloud-connect",
         ttl: Duration.minutes(2),
-        label: "T3 Connect connect",
+        label: "Fab Connect connect",
         proofKeyThumbprint: proof.clientProofKeyThumbprint,
       });
       const responsePayload = {
-        iss: `t3-env:${environmentId}`,
+        iss: `fab-env:${environmentId}`,
         aud: normalizeRelayIssuer(relayIssuer),
         sub: environmentId,
         jti: yield* random.uuidV4(),
@@ -1631,9 +1631,9 @@ const make = Effect.gen(function* () {
   if (!ManagedLimits.allowsConnect(managedPolicy)) {
     // Reading state and unlinking stay available so clients can show and leave the old link.
     yield* unlink().pipe(
-      Effect.tap(() => Effect.logInfo("T3 Connect is off by managed policy; unlinked.")),
+      Effect.tap(() => Effect.logInfo("Fab Connect is off by managed policy; unlinked.")),
       Effect.catch((cause) =>
-        Effect.logWarning("Failed to unlink T3 Connect turned off by managed policy", { cause }),
+        Effect.logWarning("Failed to unlink Fab Connect turned off by managed policy", { cause }),
       ),
     );
     const refused = Effect.fn("CloudLink.refusedByPolicy")(function* () {

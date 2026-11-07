@@ -6,12 +6,12 @@ import {
   secretRequestFailureMessage,
   secretRequestPrivacyNote,
   type SecretRequestItem,
-} from "@t3tools/client-runtime/secret-request";
+} from "@fab/client-runtime/secret-request";
 import {
   isAtomCommandInterrupted,
   squashAtomCommandFailure,
-} from "@t3tools/client-runtime/state/runtime";
-import type { EnvironmentId, OrchestrationV2ProjectedTurnItem } from "@t3tools/contracts";
+} from "@fab/client-runtime/state/runtime";
+import type { EnvironmentId, OrchestrationV2ProjectedTurnItem } from "@fab/contracts";
 import { CheckIcon, LockIcon, MinusIcon, ShieldCheckIcon } from "lucide-react";
 import { useId, useRef, useState, type FormEvent } from "react";
 

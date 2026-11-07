@@ -64,7 +64,7 @@ const makeGuest = (origin = "https://accounts.example.com") => {
   return { guest: guest as unknown as Electron.WebContents, mainFrame, handlers, state, call };
 };
 
-const bridgeLayer = layerFor({ t3codeWebAuthn: { browserPasskeys: true } });
+const bridgeLayer = layerFor({ fabWebAuthn: { browserPasskeys: true } });
 
 const attestationObject = (authData: ReadonlyArray<number>) => {
   const text = (value: string) => [0x60 + value.length, ...Buffer.from(value)];
@@ -274,8 +274,8 @@ describe("PreviewPasskeys", () => {
       const entitled = yield* PreviewPasskeys.PreviewPasskeys.pipe(
         Effect.provide(
           layerFor({
-            t3codeWebAuthn: {
-              touchIdKeychainAccessGroup: "ABC1234567.com.t3tools.t3code.webauthn",
+            fabWebAuthn: {
+              touchIdKeychainAccessGroup: "ABC1234567.dev.bhanji.fab.webauthn",
               browserPasskeys: false,
             },
           }),
@@ -283,7 +283,7 @@ describe("PreviewPasskeys", () => {
       );
       yield* entitled.configure;
       assert.deepStrictEqual(electron.configureWebAuthn.mock.calls, [
-        [{ touchID: { keychainAccessGroup: "ABC1234567.com.t3tools.t3code.webauthn" } }],
+        [{ touchID: { keychainAccessGroup: "ABC1234567.dev.bhanji.fab.webauthn" } }],
       ]);
       assert.isFalse(entitled.bridgeEnabled);
       const { guest, handlers } = makeGuest();
@@ -293,7 +293,7 @@ describe("PreviewPasskeys", () => {
       const unpackaged = yield* PreviewPasskeys.PreviewPasskeys.pipe(
         Effect.provide(
           layerFor(
-            { t3codeWebAuthn: { touchIdKeychainAccessGroup: "X", browserPasskeys: true } },
+            { fabWebAuthn: { touchIdKeychainAccessGroup: "X", browserPasskeys: true } },
             false,
           ),
         ),

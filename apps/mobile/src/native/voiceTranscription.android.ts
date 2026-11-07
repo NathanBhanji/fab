@@ -4,7 +4,7 @@ import {
   VoiceTranscriptionError,
   throwIfVoiceTranscriptionAborted,
   type VoiceTranscriber,
-} from "@t3tools/client-runtime/voice-input";
+} from "@fab/client-runtime/voice-input";
 
 type PreparedGoogleTranscription = { readonly locale: string; readonly mode: number };
 
@@ -15,7 +15,7 @@ type GoogleTranscriptionModule = {
   cancel(id: number): Promise<void>;
 };
 
-const native = requireOptionalNativeModule<GoogleTranscriptionModule>("T3VoiceTranscription");
+const native = requireOptionalNativeModule<GoogleTranscriptionModule>("FabVoiceTranscription");
 
 const nativeErrorMessages: Readonly<Record<string, string>> = {
   unavailable: "On-device voice transcription is not available for this device language.",

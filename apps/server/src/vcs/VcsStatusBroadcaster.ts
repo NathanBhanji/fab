@@ -20,12 +20,12 @@ import type {
   VcsStatusResult,
   VcsStatusStreamEvent,
   VcsStatusSubscriptionInput,
-} from "@t3tools/contracts";
-import { DEFAULT_AUTOMATIC_GIT_FETCH_INTERVAL } from "@t3tools/contracts";
-import { resolveServerBackgroundActivitySettings } from "@t3tools/shared/backgroundActivitySettings";
-import { mergeGitStatusParts } from "@t3tools/shared/git";
-import * as KeyedLock from "@t3tools/shared/KeyedLock";
-import { resolveProjectSettings } from "@t3tools/shared/projectSettings";
+} from "@fab/contracts";
+import { DEFAULT_AUTOMATIC_GIT_FETCH_INTERVAL } from "@fab/contracts";
+import { resolveServerBackgroundActivitySettings } from "@fab/shared/backgroundActivitySettings";
+import { mergeGitStatusParts } from "@fab/shared/git";
+import * as KeyedLock from "@fab/shared/KeyedLock";
+import { resolveProjectSettings } from "@fab/shared/projectSettings";
 
 import * as BackgroundPolicy from "../background/BackgroundPolicy.ts";
 import * as GitWorkflowService from "../git/GitWorkflowService.ts";
@@ -146,7 +146,7 @@ interface ActiveRemotePoller {
 }
 
 export class VcsAutomaticFetchInterval extends Context.Reference<Effect.Effect<Duration.Duration>>(
-  "t3/vcs/VcsAutomaticFetchInterval",
+  "fab/vcs/VcsAutomaticFetchInterval",
   { defaultValue: () => Effect.succeed(DEFAULT_AUTOMATIC_GIT_FETCH_INTERVAL) },
 ) {}
 
@@ -165,7 +165,7 @@ export const layerAutomaticFetchInterval = Layer.effect(
 
 export class VcsAutoPullPolicy extends Context.Reference<{
   readonly isEnabled: (cwd: string) => Effect.Effect<boolean, never>;
-}>("t3/vcs/VcsAutoPullPolicy", {
+}>("fab/vcs/VcsAutoPullPolicy", {
   defaultValue: () => ({ isEnabled: () => Effect.succeed(false) }),
 }) {}
 
@@ -222,7 +222,7 @@ export class VcsStatusBroadcaster extends Context.Service<
       input: VcsStatusSubscriptionInput,
     ) => Stream.Stream<VcsStatusStreamEvent, GitManagerServiceError>;
   }
->()("t3/vcs/VcsStatusBroadcaster") {}
+>()("fab/vcs/VcsStatusBroadcaster") {}
 
 function fingerprintStatusPart(status: unknown): string {
   return JSON.stringify(status);

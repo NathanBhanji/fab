@@ -5,8 +5,8 @@ import {
   ANTIGRAVITY_DEFAULT_MODEL,
   ProviderInstanceId,
   type AntigravitySettings,
-} from "@t3tools/contracts";
-import * as HostProcess from "@t3tools/shared/HostProcess";
+} from "@fab/contracts";
+import * as HostProcess from "@fab/shared/HostProcess";
 import * as Effect from "effect/Effect";
 import * as FileSystem from "effect/FileSystem";
 import * as Layer from "effect/Layer";
@@ -24,10 +24,10 @@ import {
   ANTIGRAVITY_AUTH_STDOUT_PREFIX,
   resolveAntigravityInstanceDirectories,
 } from "../antigravityAuthSupport.ts";
-import * as ProviderEventLoggers from "@t3tools/provider-core/server/ProviderEventLoggers";
-import * as McpProviderSessions from "@t3tools/provider-core/server/McpProviderSessions";
+import * as ProviderEventLoggers from "@fab/provider-core/server/ProviderEventLoggers";
+import * as McpProviderSessions from "@fab/provider-core/server/McpProviderSessions";
 import * as ModelManifest from "../ModelManifest.ts";
-import * as IdAllocator from "@t3tools/provider-core/server/IdAllocator";
+import * as IdAllocator from "@fab/provider-core/server/IdAllocator";
 import { AntigravityDriver } from "./AntigravityDriver.ts";
 import * as ProviderHostLive from "../ProviderHostLive.ts";
 import * as ServerSecretStore from "../../auth/ServerSecretStore.ts";
@@ -62,7 +62,7 @@ const makeHarness = Effect.fn("makeAntigravityDriverHarness")(function* (
   const spawner = yield* ChildProcessSpawner.ChildProcessSpawner;
   const nodePath = yield* HostProcess.ExecutablePath;
   const baseEnv = yield* HostProcess.Environment;
-  const root = yield* fs.makeTempDirectoryScoped({ prefix: "t3-antigravity-driver-" });
+  const root = yield* fs.makeTempDirectoryScoped({ prefix: "fab-antigravity-driver-" });
   const instanceId = ProviderInstanceId.make(path.basename(root));
   const mockAgentPath = yield* path.fromFileUrl(
     new URL("../../../scripts/acp-mock-agent.ts", import.meta.url),
@@ -192,8 +192,8 @@ const makeHarness = Effect.fn("makeAntigravityDriverHarness")(function* (
     config: { ...AntigravityDriver.defaultConfig(), ...options.config },
     environment: [
       { name: "PATH", value: instancePath },
-      { name: "T3_ACP_ANTIGRAVITY", value: "1" },
-      { name: "T3_ACP_REQUEST_LOG_PATH", value: requestLog },
+      { name: "FAB_ACP_ANTIGRAVITY", value: "1" },
+      { name: "FAB_ACP_REQUEST_LOG_PATH", value: requestLog },
       { name: "GEMINI_API_KEY", value: "must-not-be-used" },
       { name: "google_api_key", value: "must-not-be-used" },
       { name: "GOOGLE_APPLICATION_CREDENTIALS", value: "/must-not-be-used.json" },
@@ -244,7 +244,7 @@ const makeHarness = Effect.fn("makeAntigravityDriverHarness")(function* (
 });
 
 const layerDeps = ServerConfig.layerTest(process.cwd(), {
-  prefix: "t3-antigravity-driver-config-",
+  prefix: "fab-antigravity-driver-config-",
 }).pipe(
   Layer.provideMerge(Layer.mergeAll(NodeServices.layer, NodeCrypto.layer)),
   Layer.provideMerge(

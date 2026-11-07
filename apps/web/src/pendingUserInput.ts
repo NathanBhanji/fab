@@ -1,13 +1,13 @@
-import type { ThreadContextRecord, UserInputQuestion } from "@t3tools/contracts";
-import { replaceComposerContextReferences } from "@t3tools/shared/composerContextReferences";
-import { formatThreadLink } from "@t3tools/shared/threadLinks";
+import type { ThreadContextRecord, UserInputQuestion } from "@fab/contracts";
+import { replaceComposerContextReferences } from "@fab/shared/composerContextReferences";
+import { formatThreadLink } from "@fab/shared/threadLinks";
 import {
   buildPendingUserInputAnswers,
   normalizeSelectedOptionValues,
   resolvePendingUserInputAnswer,
   type PendingUserInputAnswer,
   type PendingUserInputDraftAnswer,
-} from "@t3tools/client-runtime/state/pending-user-input";
+} from "@fab/client-runtime/state/pending-user-input";
 
 import { collectInlineContextIds } from "./lib/composerContextReferences";
 

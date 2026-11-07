@@ -1,5 +1,5 @@
-import type { OlderSettledScope } from "@t3tools/client-runtime/state/threads";
-import { EnvironmentId, ProjectId } from "@t3tools/contracts";
+import type { OlderSettledScope } from "@fab/client-runtime/state/threads";
+import { EnvironmentId, ProjectId } from "@fab/contracts";
 import { describe, expect, it } from "vite-plus/test";
 import { userEvent } from "vite-plus/test/browser";
 

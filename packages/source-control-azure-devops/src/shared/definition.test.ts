@@ -1,9 +1,9 @@
-import { SourceControlProviderKind } from "@t3tools/contracts";
-import type { ChangeRequestProjectIdentity } from "@t3tools/source-control-core/shared/definition";
+import { SourceControlProviderKind } from "@fab/contracts";
+import type { ChangeRequestProjectIdentity } from "@fab/source-control-core/shared/definition";
 import {
   makeSourceControlDefinitionRegistry,
   recognizeRemoteWith,
-} from "@t3tools/source-control-core/shared/definition";
+} from "@fab/source-control-core/shared/definition";
 import { describe, expect, it } from "vite-plus/test";
 
 import { definition } from "./definition.ts";
@@ -12,17 +12,17 @@ const parse = (url: string) => definition.parseChangeRequestUrl(new URL(url));
 
 describe("Azure DevOps change request URLs", () => {
   it("reads both hosted URL forms", () => {
-    expect(parse("https://dev.azure.com/acme/platform/_git/t3code/pullrequest/17")).toEqual({
+    expect(parse("https://dev.azure.com/acme/platform/_git/fab/pullrequest/17")).toEqual({
       host: "dev.azure.com",
-      repository: "acme/platform/_git/t3code",
+      repository: "acme/platform/_git/fab",
       number: 17,
-      repositoryUrl: "https://dev.azure.com/acme/platform/_git/t3code",
+      repositoryUrl: "https://dev.azure.com/acme/platform/_git/fab",
     });
     expect(
-      parse("https://acme.visualstudio.com/platform/_git/t3code/pullrequest/17"),
+      parse("https://acme.visualstudio.com/platform/_git/fab/pullrequest/17"),
     ).toMatchObject({
       host: "acme.visualstudio.com",
-      repository: "platform/_git/t3code",
+      repository: "platform/_git/fab",
       number: 17,
     });
   });
@@ -127,23 +127,23 @@ describe("Azure DevOps repository keys", () => {
 
   it("gives a repository the same key over SSH as over HTTPS", () => {
     for (const remote of [
-      "git@ssh.dev.azure.com:v3/T3Tools/Platform/T3Code",
-      "ssh://git@ssh.dev.azure.com:22/v3/T3Tools/Platform/T3Code",
-      "https://T3Tools@dev.azure.com/T3Tools/Platform/_git/T3Code",
+      "git@ssh.dev.azure.com:v3/Fab/Platform/Fab",
+      "ssh://git@ssh.dev.azure.com:22/v3/Fab/Platform/Fab",
+      "https://Fab@dev.azure.com/Fab/Platform/_git/Fab",
     ]) {
       expect(registry.repositoryKeyFromRemote(remote), remote).toBe(
-        "dev.azure.com/t3tools/platform/_git/t3code",
+        "dev.azure.com/fab/platform/_git/fab",
       );
     }
   });
 
   it("keeps the organization in the host for the legacy visualstudio.com remotes", () => {
     for (const remote of [
-      "T3Tools@vs-ssh.visualstudio.com:v3/T3Tools/Platform/T3Code",
-      "https://T3Tools.visualstudio.com/Platform/_git/T3Code",
+      "Fab@vs-ssh.visualstudio.com:v3/Fab/Platform/Fab",
+      "https://Bhanji.visualstudio.com/Platform/_git/Fab",
     ]) {
       expect(registry.repositoryKeyFromRemote(remote), remote).toBe(
-        "t3tools.visualstudio.com/platform/_git/t3code",
+        "fab.visualstudio.com/platform/_git/fab",
       );
     }
   });

@@ -1,6 +1,6 @@
 import { useAtomValue } from "@effect/atom-react";
-import { sortProjectsByGroupOrder } from "@t3tools/client-runtime/state/project-grouping";
-import type { ScopedProjectRef, SidebarProjectGroupingMode } from "@t3tools/contracts";
+import { sortProjectsByGroupOrder } from "@fab/client-runtime/state/project-grouping";
+import type { ScopedProjectRef, SidebarProjectGroupingMode } from "@fab/contracts";
 import { Atom } from "effect/reactivity";
 import { Platform, ScrollView } from "react-native";
 import type { MenuProps } from "../../components/ui/Menu.types";

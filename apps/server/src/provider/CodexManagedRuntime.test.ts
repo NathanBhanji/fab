@@ -1,13 +1,13 @@
 // @effect-diagnostics nodeBuiltinImport:off - checks the host's default Codex directory without writing to it.
 import * as NodeURL from "node:url";
-import * as HostProcess from "@t3tools/shared/HostProcess";
+import * as HostProcess from "@fab/shared/HostProcess";
 import * as Stream from "effect/Stream";
 import { ChildProcess, ChildProcessSpawner } from "effect/process";
 import * as CodexManagedTokenBroker from "./CodexManagedTokenBroker.ts";
 import * as NodeCrypto from "@effect/platform-node/NodeCrypto";
 import * as NodeServices from "@effect/platform-node/NodeServices";
 import { assert, it } from "@effect/vitest";
-import { CodexSettings, EnvironmentId, ProviderInstanceId } from "@t3tools/contracts";
+import { CodexSettings, EnvironmentId, ProviderInstanceId } from "@fab/contracts";
 import * as Clock from "effect/Clock";
 import * as Effect from "effect/Effect";
 import * as FileSystem from "effect/FileSystem";
@@ -98,10 +98,10 @@ it.live.each(
         const ambient = {
           CODEX_HOME: "/user/.codex",
           ACCESS_TOKEN: "ambient-bearer",
-          T3CODE_HOME: path.join(sharedHome, "wrong-server-home"),
+          FAB_HOME: path.join(sharedHome, "wrong-server-home"),
           OPENAI_API_KEY: "dummy-global-key",
           OPENAI_BASE_URL: "https://user-proxy.test",
-          T3CODE_CODEX_LAUNCH_ARGS: "--config model_provider=global-proxy",
+          FAB_CODEX_LAUNCH_ARGS: "--config model_provider=global-proxy",
           PATH: process.env.PATH,
           SystemRoot: process.env.SystemRoot,
         };
@@ -137,7 +137,7 @@ it.live.each(
           assert.isUndefined(effective.environment.ACCESS_TOKEN);
           assert.isUndefined(effective.environment.OPENAI_API_KEY);
           assert.isUndefined(effective.environment.OPENAI_BASE_URL);
-          assert.isUndefined(effective.environment.T3CODE_CODEX_LAUNCH_ARGS);
+          assert.isUndefined(effective.environment.FAB_CODEX_LAUNCH_ARGS);
           const args = codexAppServerArgs(effective.config.launchArgs);
           assert.include(args, 'model_provider="openai_token_sharing"');
           const provider = args.find((arg) =>
@@ -193,7 +193,7 @@ it.live.each(
             const refused = yield* runHelper;
             assert.equal(refused.code, 1);
             assert.equal(refused.stdout, "");
-            assert.isFalse(yield* fs.exists(ambient.T3CODE_HOME));
+            assert.isFalse(yield* fs.exists(ambient.FAB_HOME));
           }
           assert.include(args, "features.api_key_model_discovery=true");
           assert.include(args, "features.multi_agent=false");
@@ -271,7 +271,7 @@ it.live.each(
       Effect.scoped,
       Effect.provide(
         ServerConfig.layerTest(process.cwd(), {
-          prefix: "t3-managed-runtime-",
+          prefix: "fab-managed-runtime-",
         }).pipe(Layer.provideMerge(Layer.mergeAll(NodeServices.layer, NodeCrypto.layer))),
       ),
     ),

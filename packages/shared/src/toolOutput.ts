@@ -1,7 +1,7 @@
 import {
   isProviderSendTurnSupportedImageMimeType,
   PROVIDER_SEND_TURN_MAX_IMAGE_BYTES,
-} from "@t3tools/contracts";
+} from "@fab/contracts";
 import * as Predicate from "effect/Predicate";
 
 import {
@@ -10,7 +10,7 @@ import {
   type HtmlRenderReference,
 } from "./htmlRender.ts";
 import { MCP_APP_OUTPUT_KEY, readMcpAppReference, type McpAppReference } from "./mcpApp.ts";
-import { resolveT3McpToolId } from "./t3McpToolPresentation.ts";
+import { resolveFabMcpToolId } from "./fabMcpToolPresentation.ts";
 
 const MAX_PARSED_BYTES = 16_384;
 const MAX_METADATA_BYTES = 8_192;
@@ -186,7 +186,7 @@ export function htmlRenderFromToolItem(item: {
   readonly toolName: string | null | undefined;
   readonly output?: unknown;
 }): HtmlRenderReference | undefined {
-  if (resolveT3McpToolId(item.toolName) !== HTML_RENDER_TOOL_NAME) return undefined;
+  if (resolveFabMcpToolId(item.toolName) !== HTML_RENDER_TOOL_NAME) return undefined;
   const output = compactDynamicToolOutput(item.output);
   return output?.isError ? undefined : output?.htmlRender;
 }
@@ -196,7 +196,7 @@ export function previewRecordingIdFromToolItem(item: {
   readonly toolName: string | null | undefined;
   readonly output?: unknown;
 }): string | undefined {
-  if (resolveT3McpToolId(item.toolName) !== "preview_recording_stop") return undefined;
+  if (resolveFabMcpToolId(item.toolName) !== "preview_recording_stop") return undefined;
   const budget: ResultReadBudget = {
     remainingBytes: MAX_PARSED_BYTES,
     remainingNodes: MAX_ENVELOPE_NODES,

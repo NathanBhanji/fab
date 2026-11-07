@@ -1,13 +1,13 @@
 import { RegistryContext } from "@effect/atom-react";
-import { scopeProjectRef } from "@t3tools/client-runtime/environment";
-import { availableScratchWorkspaceRoot } from "@t3tools/client-runtime/operations/projects";
+import { scopeProjectRef } from "@fab/client-runtime/environment";
+import { availableScratchWorkspaceRoot } from "@fab/client-runtime/operations/projects";
 import {
   isAtomCommandInterrupted,
   runAtomCommand,
   squashAtomCommandFailure,
-} from "@t3tools/client-runtime/state/runtime";
-import type { EnvironmentProject } from "@t3tools/client-runtime/state/shell";
-import type { EnvironmentId } from "@t3tools/contracts";
+} from "@fab/client-runtime/state/runtime";
+import type { EnvironmentProject } from "@fab/client-runtime/state/shell";
+import type { EnvironmentId } from "@fab/contracts";
 import type { AtomRegistry } from "effect/reactivity";
 import { useContext } from "react";
 

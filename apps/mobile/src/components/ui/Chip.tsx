@@ -41,7 +41,7 @@ export function Chip(props: {
         className={cn(
           "shrink",
           !small && "max-w-[180px]",
-          !small && "font-t3-medium",
+          !small && "font-fab-medium",
           props.selected ? "text-primary-foreground" : "text-foreground-muted",
         )}
       >

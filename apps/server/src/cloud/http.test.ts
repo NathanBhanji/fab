@@ -7,11 +7,11 @@ import {
   AuthTokenExchangeGrantType,
   EnvironmentHttpApi,
   EnvironmentId,
-} from "@t3tools/contracts";
+} from "@fab/contracts";
 import {
   RelayEnvironmentLinkProofPayload,
   type RelayLinkProofRequest,
-} from "@t3tools/contracts/relay";
+} from "@fab/contracts/relay";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
 import * as Schema from "effect/Schema";
@@ -23,7 +23,7 @@ import * as HttpApi from "effect/http-api/HttpApi";
 import * as HttpApiBuilder from "effect/http-api/HttpApiBuilder";
 import * as NetAddress from "effect/net/NetAddress";
 import { decodeJwt, importSPKI, jwtVerify } from "jose";
-import { RELAY_LINK_PROOF_TYP } from "@t3tools/shared/relayJwt";
+import { RELAY_LINK_PROOF_TYP } from "@fab/shared/relayJwt";
 
 import * as EnvironmentAuth from "../auth/EnvironmentAuth.ts";
 import * as AuthHttp from "../auth/http.ts";
@@ -71,7 +71,7 @@ const layerConfig = Layer.effect(
       desktopBootstrapToken: DESKTOP_BOOTSTRAP_TOKEN,
     };
   }),
-).pipe(Layer.provide(ServerConfig.layerTest(process.cwd(), { prefix: "t3-link-proof-test-" })));
+).pipe(Layer.provide(ServerConfig.layerTest(process.cwd(), { prefix: "fab-link-proof-test-" })));
 
 // Real credential issuance, verification, origin checks and signing; no relay or tunnel is started.
 const layerLinkProofRoutes = HttpApiBuilder.layer(LinkProofTestApi).pipe(
@@ -179,7 +179,7 @@ describe("link proof over a non-loopback desktop transport", () => {
         {
           algorithms: ["EdDSA"],
           typ: RELAY_LINK_PROOF_TYP,
-          issuer: "t3-env:wsl-environment",
+          issuer: "fab-env:wsl-environment",
           audience: proofRequest.relayIssuer,
         },
       );

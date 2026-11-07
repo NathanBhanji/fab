@@ -6,14 +6,14 @@ import {
   type ProviderOptionSelection,
   type ScopedThreadRef,
   type ServerProviderModel,
-} from "@t3tools/contracts";
+} from "@fab/contracts";
 import {
   buildExplicitProviderOptionSelectionsFromDescriptors,
   getProviderOptionCurrentValue,
   getProviderOptionDescriptors,
   isClaudeUltrathinkPrompt,
   normalizeModelSlug,
-} from "@t3tools/shared/model";
+} from "@fab/shared/model";
 
 import type { DraftId } from "../../composerDraftStore";
 import { getProviderModelCapabilities } from "../../providerModels";
@@ -61,7 +61,7 @@ export function getComposerPromptInjectionState(prompt: string): ComposerPromptI
   return isClaudeUltrathinkPrompt(prompt) ? "ultrathink" : "none";
 }
 
-/** Cursor ACP can default Fast to true; T3 requires a user selection. */
+/** Cursor ACP can default Fast to true; Fab requires a user selection. */
 export function withImplicitFastModeDefault(
   caps: ModelCapabilities,
   modelOptions: ReadonlyArray<ProviderOptionSelection> | null | undefined,

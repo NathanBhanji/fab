@@ -10,13 +10,13 @@ import {
   type StaticScreenProps,
 } from "@react-navigation/native";
 import { SymbolView } from "../../components/ui/AppSymbol";
-import { pickableProjectGroups } from "@t3tools/client-runtime/state/project-grouping";
-import { isScratchProject } from "@t3tools/client-runtime/state/projects";
+import { pickableProjectGroups } from "@fab/client-runtime/state/project-grouping";
+import { isScratchProject } from "@fab/client-runtime/state/projects";
 import {
   isAtomCommandInterrupted,
   squashAtomCommandFailure,
-} from "@t3tools/client-runtime/state/runtime";
-import type { EnvironmentProject } from "@t3tools/client-runtime/state/shell";
+} from "@fab/client-runtime/state/runtime";
+import type { EnvironmentProject } from "@fab/client-runtime/state/shell";
 import { useEffect, useRef, useState } from "react";
 import { Platform, Pressable, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -270,7 +270,7 @@ export function NewTaskRouteScreen({ route }: StaticScreenProps<NewTaskRoutePara
     scratchStartInFlightRef.current = false;
   }
 
-  // oxlint-disable-next-line t3code/no-unreasoned-state-sync -- navigates to the incoming share's reserved destination draft once its project loads and the screen is focused
+  // oxlint-disable-next-line fab/no-unreasoned-state-sync -- navigates to the incoming share's reserved destination draft once its project loads and the screen is focused
   useEffect(() => {
     const destination = incomingShare?.destination;
     if (!destination) {
@@ -370,7 +370,7 @@ export function NewTaskRouteScreen({ route }: StaticScreenProps<NewTaskRoutePara
                     />
                   </View>
                   <View className="min-w-0 flex-1">
-                    <Text className="text-base font-t3-bold leading-snug">No project</Text>
+                    <Text className="text-base font-fab-bold leading-snug">No project</Text>
                     <Text className="text-xs leading-snug text-foreground-muted" numberOfLines={1}>
                       Start a task without a project
                     </Text>
@@ -396,7 +396,7 @@ export function NewTaskRouteScreen({ route }: StaticScreenProps<NewTaskRoutePara
               {projectEmptyState.loading ? (
                 <AppActivityIndicator colorClassName="accent-icon-muted" />
               ) : null}
-              <Text className="text-center text-lg font-t3-bold text-foreground">
+              <Text className="text-center text-lg font-fab-bold text-foreground">
                 {projectEmptyState.title}
               </Text>
               <Text className="text-center text-sm leading-normal text-foreground-muted">
@@ -450,7 +450,7 @@ export function NewTaskRouteScreen({ route }: StaticScreenProps<NewTaskRoutePara
             </View>
           ) : visibleScopes.length === 0 ? (
             <View className="items-center gap-2 px-6 py-8">
-              <Text className="text-center text-lg font-t3-bold text-foreground">
+              <Text className="text-center text-lg font-fab-bold text-foreground">
                 No matching projects
               </Text>
               <Text className="text-center text-sm leading-normal text-foreground-muted">
@@ -524,7 +524,7 @@ export function NewTaskRouteScreen({ route }: StaticScreenProps<NewTaskRoutePara
                         />
                       </View>
                       <View className="min-w-0 flex-1">
-                        <Text className={cn("text-base leading-snug", "font-t3-bold")}>
+                        <Text className={cn("text-base leading-snug", "font-fab-bold")}>
                           {scope.title}
                         </Text>
                         <Text

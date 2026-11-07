@@ -1,7 +1,7 @@
 import * as NodeServices from "@effect/platform-node/NodeServices";
 import { expect, it } from "@effect/vitest";
-import * as HostProcess from "@t3tools/shared/HostProcess";
-import * as NetService from "@t3tools/shared/Net";
+import * as HostProcess from "@fab/shared/HostProcess";
+import * as NetService from "@fab/shared/Net";
 import * as ConfigProvider from "effect/ConfigProvider";
 import * as Effect from "effect/Effect";
 import * as FileSystem from "effect/FileSystem";
@@ -20,8 +20,8 @@ const status = {
   supported: true,
   installed: true,
   current: true,
-  unitPath: "/home/me/.config/systemd/user/t3code.service",
-  logPath: "/home/me/.t3/userdata/logs/boot-service.log",
+  unitPath: "/home/me/.config/systemd/user/fab.service",
+  logPath: "/home/me/.fab/userdata/logs/boot-service.log",
 } as const;
 
 const newerServiceStatus = { ...status, current: false, installedVersion: "999.0.0" };
@@ -44,8 +44,8 @@ function makeTestService(
       Effect.sync(() => {
         installOptions.push(options);
         return {
-          program: ["/test/t3/runtime/versions/1.0.0/t3", "__service-launcher"],
-          baseDir: "/test/t3",
+          program: ["/test/fab/runtime/versions/1.0.0/fab", "__service-launcher"],
+          baseDir: "/test/fab",
           unitPath: serviceStatus.unitPath,
           logPath: serviceStatus.logPath,
         };
@@ -64,7 +64,7 @@ it.layer(Layer.mergeAll(NodeServices.layer, NetService.layer))("service commands
     (command) =>
       Effect.gen(function* () {
         const fs = yield* FileSystem.FileSystem;
-        const baseDir = yield* fs.makeTempDirectoryScoped({ prefix: "t3-service-cli-test-" });
+        const baseDir = yield* fs.makeTempDirectoryScoped({ prefix: "fab-service-cli-test-" });
         const { service, installOptions } = makeTestService(newerServiceStatus);
         vi.spyOn(BootService, "layer").mockReturnValue(
           Layer.succeed(BootService.BootService, service),
@@ -90,19 +90,19 @@ it.layer(Layer.mergeAll(NodeServices.layer, NetService.layer))("service commands
   );
 
   it.effect.each([
-    { label: "a new service", installed: false, env: "", expected: "T3CODE_LAN=false\n" },
-    // Services installed before T3CODE_LAN existed keep listening on the local network.
+    { label: "a new service", installed: false, env: "", expected: "FAB_LAN=false\n" },
+    // Services installed before FAB_LAN existed keep listening on the local network.
     { label: "an older service", installed: true, env: "", expected: "" },
     {
       label: "a set host",
       installed: false,
-      env: "T3CODE_HOST=::\n",
-      expected: "T3CODE_HOST=::\n",
+      env: "FAB_HOST=::\n",
+      expected: "FAB_HOST=::\n",
     },
   ])("install keeps $label off the local network only when it is new", (input) =>
     Effect.gen(function* () {
       const fs = yield* FileSystem.FileSystem;
-      const baseDir = yield* fs.makeTempDirectoryScoped({ prefix: "t3-service-cli-test-" });
+      const baseDir = yield* fs.makeTempDirectoryScoped({ prefix: "fab-service-cli-test-" });
       yield* fs.writeFileString(`${baseDir}/service.env`, input.env);
       const { service } = makeTestService({
         ...status,
@@ -130,11 +130,11 @@ it.layer(Layer.mergeAll(NodeServices.layer, NetService.layer))("service commands
     }),
   );
 
-  it.effect("protect refuses root before creating any T3 directories", () =>
+  it.effect("protect refuses root before creating any Fab directories", () =>
     Effect.gen(function* () {
       const fs = yield* FileSystem.FileSystem;
-      const parent = yield* fs.makeTempDirectoryScoped({ prefix: "t3-service-cli-test-" });
-      const baseDir = `${parent}/t3`;
+      const parent = yield* fs.makeTempDirectoryScoped({ prefix: "fab-service-cli-test-" });
+      const baseDir = `${parent}/fab`;
       vi.spyOn(BootService, "layer").mockReturnValue(
         Layer.succeed(BootService.BootService, makeTestService(status).service),
       );
@@ -167,13 +167,13 @@ it.layer(Layer.mergeAll(NodeServices.layer, NetService.layer))("service commands
     (command) =>
       Effect.gen(function* () {
         const fs = yield* FileSystem.FileSystem;
-        const baseDir = yield* fs.makeTempDirectoryScoped({ prefix: "t3-service-cli-test-" });
+        const baseDir = yield* fs.makeTempDirectoryScoped({ prefix: "fab-service-cli-test-" });
         const { service, installOptions } = makeTestService(status);
         vi.spyOn(BootService, "layer").mockReturnValue(
           Layer.succeed(BootService.BootService, service),
         );
         const node = "/home/me/.nvm/versions/node/v26.8.2/bin/node";
-        const script = "/home/me/.nvm/versions/node/v26.8.2/lib/node_modules/t3/dist/bin.mjs";
+        const script = "/home/me/.nvm/versions/node/v26.8.2/lib/node_modules/fab/dist/bin.mjs";
 
         const output = yield* Command.runWith(serviceCommand, { version: packageJson.version })([
           command,
@@ -193,7 +193,7 @@ it.layer(Layer.mergeAll(NodeServices.layer, NetService.layer))("service commands
             ),
           ),
         );
-        expect(output).toContain(`t3@${packageJson.version}`);
+        expect(output).toContain(`fab@${packageJson.version}`);
         expect(output).toContain(script);
         expect(installOptions).toEqual([]);
       }),
@@ -206,10 +206,10 @@ it.layer(Layer.mergeAll(NodeServices.layer, NetService.layer))("service commands
   ])("uninstall removes only $label", (input) =>
     Effect.gen(function* () {
       const fs = yield* FileSystem.FileSystem;
-      const baseDir = yield* fs.makeTempDirectoryScoped({ prefix: "t3-service-cli-test-" });
+      const baseDir = yield* fs.makeTempDirectoryScoped({ prefix: "fab-service-cli-test-" });
       const { service, uninstalls } = makeTestService({
         ...status,
-        installedBaseDir: input.otherHome ? "/home/me/.t3" : baseDir,
+        installedBaseDir: input.otherHome ? "/home/me/.fab" : baseDir,
       });
       vi.spyOn(BootService, "layer").mockReturnValue(
         Layer.succeed(
@@ -239,7 +239,7 @@ it.layer(Layer.mergeAll(NodeServices.layer, NetService.layer))("service commands
         ),
       );
       expect(uninstalls).toEqual(input.removed);
-      expect(output).toContain(input.otherHome ? "another T3 home" : "Removed");
+      expect(output).toContain(input.otherHome ? "another Fab home" : "Removed");
     }),
   );
 });

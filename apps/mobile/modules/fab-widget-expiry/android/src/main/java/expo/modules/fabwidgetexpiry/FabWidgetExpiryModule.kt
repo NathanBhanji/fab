@@ -1,0 +1,14 @@
+package expo.modules.fabwidgetexpiry
+
+import expo.modules.kotlin.modules.Module
+import expo.modules.kotlin.modules.ModuleDefinition
+
+class FabWidgetExpiryModule : Module() {
+  override fun definition() = ModuleDefinition {
+    Name("FabWidgetExpiry")
+    Function("schedule") { name: String, deadlines: List<Double> ->
+      val context = appContext.reactContext ?: return@Function
+      WidgetExpiryReceiver.schedule(context, name, deadlines.map { it.toLong() }.toLongArray())
+    }
+  }
+}

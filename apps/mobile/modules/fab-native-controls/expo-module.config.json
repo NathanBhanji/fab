@@ -1,0 +1,19 @@
+{
+  "platforms": ["apple", "android"],
+  "apple": {
+    "modules": ["FabNativeControlsModule", "FabKeyboardCommandsModule"],
+    "appDelegateSubscribers": [
+      "FabWorkspaceOrientationSubscriber",
+      "FabMenuDismissTouchGateSubscriber",
+      "FabBackgroundGraceSubscriber"
+    ]
+  },
+  "android": {
+    "modules": [
+      "expo.modules.fabnativecontrols.FabNativeControlsModule",
+      "expo.modules.fabnativecontrols.FabWorkspaceNavigationModule",
+      "expo.modules.fabnativecontrols.FabKeyboardCommandsModule",
+      "expo.modules.fabnativecontrols.FabFoldPostureModule"
+    ]
+  }
+}

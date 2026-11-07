@@ -1,5 +1,5 @@
-import { EnvironmentId, ProjectId } from "@t3tools/contracts";
-import { scopeProjectRef } from "@t3tools/client-runtime/environment";
+import { EnvironmentId, ProjectId } from "@fab/contracts";
+import { scopeProjectRef } from "@fab/client-runtime/environment";
 import { describe, expect, it, vi } from "vite-plus/test";
 
 import { act, render } from "../../test/render";

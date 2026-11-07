@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vite-plus/test";
-import { ProviderDriverKind } from "@t3tools/contracts";
+import { ProviderDriverKind } from "@fab/contracts";
 
 vi.mock("react-native", () => ({ Alert: { alert: vi.fn() } }));
 
@@ -94,7 +94,7 @@ describe("mobile slash commands", () => {
     },
   );
 
-  it("still applies the T3 plan command for supported providers", () => {
+  it("still applies the Fab plan command for supported providers", () => {
     const items = buildComposerSlashCommandItems({
       query: "plan",
       atMessageStart: true,
@@ -106,7 +106,7 @@ describe("mobile slash commands", () => {
       },
     });
     const item = items[0];
-    if (!item) throw new Error("Expected the T3 plan command");
+    if (!item) throw new Error("Expected the Fab plan command");
     expect(
       resolveComposerCommandSelection({
         draftMessage: "/plan",

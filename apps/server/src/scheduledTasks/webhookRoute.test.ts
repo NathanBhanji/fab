@@ -12,13 +12,13 @@ import * as HttpRouter from "effect/http/HttpRouter";
 import * as HttpApi from "effect/http-api/HttpApi";
 import * as HttpApiBuilder from "effect/http-api/HttpApiBuilder";
 
-import { RELAY_HOOK_DELIVERY_TYP, signRelayJwt } from "@t3tools/shared/relayJwt";
+import { RELAY_HOOK_DELIVERY_TYP, signRelayJwt } from "@fab/shared/relayJwt";
 import {
   EnvironmentHttpApi,
   EnvironmentId,
   ScheduledTaskWebhookDeliveryId,
   ScheduledTaskError,
-} from "@t3tools/contracts";
+} from "@fab/contracts";
 import {
   ScheduledTaskService,
   type WebhookTriggerRequest,
@@ -56,7 +56,7 @@ const relayProof = Effect.fn("relayProof")(function* (claims: {
     typ: RELAY_HOOK_DELIVERY_TYP,
     payload: {
       iss: relayIssuer,
-      aud: `t3-env:${environmentId}`,
+      aud: `fab-env:${environmentId}`,
       sub: environmentId,
       jti: `proof:${claims.deliveryId}`,
       iat: now,
@@ -128,8 +128,8 @@ describe("webhook route", () => {
         Effect.promise(() => handler(post(path, "{}", headers)));
       const receivedAt = "2026-10-04T10:00:00.000Z";
       const relayHeaders = {
-        "x-t3-relay-delivery-id": "relay-1",
-        "x-t3-relay-received-at": receivedAt,
+        "x-fab-relay-delivery-id": "relay-1",
+        "x-fab-relay-received-at": receivedAt,
       };
       const forged = NodeCrypto.generateKeyPairSync("ed25519", {
         privateKeyEncoding: { format: "pem", type: "pkcs8" },
@@ -142,15 +142,15 @@ describe("webhook route", () => {
         hookId: "id",
         privateKey: forged.privateKey,
       });
-      yield* send("/api/hooks/id/tok", { ...relayHeaders, "x-t3-relay-delivery": proof });
+      yield* send("/api/hooks/id/tok", { ...relayHeaders, "x-fab-relay-delivery": proof });
       yield* send("/api/hooks/id/tok", relayHeaders);
-      yield* send("/api/hooks/id/tok", { ...relayHeaders, "x-t3-relay-delivery": forgedProof });
+      yield* send("/api/hooks/id/tok", { ...relayHeaders, "x-fab-relay-delivery": forgedProof });
       yield* send("/api/hooks/id/tok", {
         ...relayHeaders,
-        "x-t3-relay-delivery-id": "relay-2",
-        "x-t3-relay-delivery": proof,
+        "x-fab-relay-delivery-id": "relay-2",
+        "x-fab-relay-delivery": proof,
       });
-      yield* send("/api/hooks/other/tok", { ...relayHeaders, "x-t3-relay-delivery": proof });
+      yield* send("/api/hooks/other/tok", { ...relayHeaders, "x-fab-relay-delivery": proof });
       yield* Effect.promise(() => dispose());
       expect(received.map((request) => request.relayDeliveryId)).toEqual([
         "relay-1",
@@ -164,7 +164,7 @@ describe("webhook route", () => {
     }),
   );
 
-  it.live("trusts no relay headers on an environment not linked to T3 Connect", () =>
+  it.live("trusts no relay headers on an environment not linked to Fab Connect", () =>
     Effect.gen(function* () {
       const received: Array<WebhookTriggerRequest> = [];
       const { handler, dispose } = handlerFor((request) => {
@@ -176,9 +176,9 @@ describe("webhook route", () => {
       yield* Effect.promise(() =>
         handler(
           post("/api/hooks/id/tok", "{}", {
-            "x-t3-relay-delivery-id": "relay-1",
-            "x-t3-relay-received-at": receivedAt,
-            "x-t3-relay-delivery": proof,
+            "x-fab-relay-delivery-id": "relay-1",
+            "x-fab-relay-received-at": receivedAt,
+            "x-fab-relay-delivery": proof,
           }),
         ),
       );
@@ -207,7 +207,7 @@ describe("webhook route", () => {
       try {
         const response = await handler(post("/api/hooks/id/tok", "{}"));
         expect(response.status).toBe(status);
-        expect(response.headers.get("x-t3-hook-outcome")).toBe(outcome);
+        expect(response.headers.get("x-fab-hook-outcome")).toBe(outcome);
         if (status === 429) expect(await response.json()).toEqual({ error: outcome });
       } finally {
         await dispose();
@@ -266,7 +266,7 @@ describe("webhook route", () => {
       );
       expect(response.status).toBe(405);
       expect(response.headers.get("allow")).toBe("GET, POST, PUT, PATCH");
-      expect(response.headers.get("x-t3-hook-outcome")).toBe("method_not_allowed");
+      expect(response.headers.get("x-fab-hook-outcome")).toBe("method_not_allowed");
       expect(calls).toBe(0);
       const get = await handler(new Request("http://env.local/api/hooks/id/tok"));
       expect(get.status).toBe(202);

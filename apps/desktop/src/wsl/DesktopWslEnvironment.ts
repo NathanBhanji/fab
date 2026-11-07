@@ -9,8 +9,8 @@ import * as Schema from "effect/Schema";
 import * as Stream from "effect/Stream";
 import { ChildProcess, ChildProcessSpawner } from "effect/process";
 
-import { buildRemoteNodeEnvScript } from "@t3tools/ssh/tunnel";
-import { satisfiesSemverRange } from "@t3tools/shared/semver";
+import { buildRemoteNodeEnvScript } from "@fab/ssh/tunnel";
+import { satisfiesSemverRange } from "@fab/shared/semver";
 
 import * as DesktopEnvironment from "../app/DesktopEnvironment.ts";
 import * as DesktopManagedPolicy from "../app/DesktopManagedPolicy.ts";
@@ -117,7 +117,7 @@ export class DesktopWslEnvironment extends Context.Service<
       options?: EnsureWslNodePtyOptions,
     ) => Effect.Effect<EnsureWslNodePtyResult>;
   }
->()("@t3tools/desktop/wsl/DesktopWslEnvironment") {}
+>()("@fab/desktop/wsl/DesktopWslEnvironment") {}
 
 const buildDistroArgs = (distro: string | null): ReadonlyArray<string> =>
   distro ? ["-d", distro] : [];
@@ -250,8 +250,8 @@ const runWslShell = (
 
 const shellQuote = (value: string): string => `'${value.replaceAll("'", "'\\''")}'`;
 
-const WSL_RUNTIME_READY_MARKER = ".t3code-wsl-runtime-ready";
-const WSL_RUNTIME_SELECTED_MARKER = ".t3code-wsl-runtime-selected";
+const WSL_RUNTIME_READY_MARKER = ".fab-wsl-runtime-ready";
+const WSL_RUNTIME_SELECTED_MARKER = ".fab-wsl-runtime-selected";
 const WSL_RUNTIME_SELECTION_GRACE_MINUTES = 5;
 
 const sanitizeWslRuntimeId = (value: string): string => value.replace(/[^A-Za-z0-9._-]/g, "_");
@@ -264,15 +264,15 @@ export const buildWslRuntimeInstallScript = (
   const safeRuntimeId = sanitizeWslRuntimeId(runtimeId);
   return [
     "set -eu",
-    'runtime_parent="$HOME/.t3/wsl-runtime"',
+    'runtime_parent="$HOME/.fab/wsl-runtime"',
     `runtime_root="$runtime_parent/${safeRuntimeId}"`,
     `ready_marker="$runtime_root/${WSL_RUNTIME_READY_MARKER}"`,
     "runtime_entry_runs() {",
-    '  [ -x "$1/t3" ] && "$1/t3" --version >/dev/null',
+    '  [ -x "$1/fab" ] && "$1/fab" --version >/dev/null',
     "}",
     // Hash the entry to detect a swapped or partially written executable, even if it still runs.
     "runtime_server_entry_digest() {",
-    `  sha256sum "$1/t3" 2>/dev/null | cut -d ' ' -f 1`,
+    `  sha256sum "$1/fab" 2>/dev/null | cut -d ' ' -f 1`,
     "}",
     "runtime_is_ready() {",
     '  [ -f "$ready_marker" ] &&',
@@ -324,7 +324,7 @@ export const buildWslRuntimeInstallScript = (
     "trap cleanup_runtime_install EXIT",
     `tar -xzf ${shellQuote(linuxArchivePath)} -C "$runtime_tmp" --strip-components=1`,
     'if ! runtime_entry_runs "$runtime_tmp"; then',
-    "  printf 'WSL runtime archive does not contain a working t3 executable\\n' >&2",
+    "  printf 'WSL runtime archive does not contain a working fab executable\\n' >&2",
     "  exit 1",
     "fi",
     'installed_entry_digest=$(runtime_server_entry_digest "$runtime_tmp")',
@@ -353,7 +353,7 @@ export const buildWslRuntimePruneScript = (runtimeId: string): string => {
   const safeRuntimeId = sanitizeWslRuntimeId(runtimeId);
   return [
     "set -eu",
-    'runtime_parent="$HOME/.t3/wsl-runtime"',
+    'runtime_parent="$HOME/.fab/wsl-runtime"',
     `current_runtime="$runtime_parent/${safeRuntimeId}"`,
     '[ -d "$runtime_parent" ] || exit 0',
     // Serialize pruning so backends cannot select and delete different previous caches.
@@ -404,7 +404,7 @@ export const buildWslRuntimeInvalidateScript = (runtimeId: string): string => {
   const safeRuntimeId = sanitizeWslRuntimeId(runtimeId);
   return [
     "set -eu",
-    `rm -f "$HOME/.t3/wsl-runtime/${safeRuntimeId}/${WSL_RUNTIME_READY_MARKER}"`,
+    `rm -f "$HOME/.fab/wsl-runtime/${safeRuntimeId}/${WSL_RUNTIME_READY_MARKER}"`,
   ].join("\n");
 };
 
@@ -420,7 +420,7 @@ const NODE_PTY_BINARY_MISSING_EXIT_CODE = 4;
 
 const formatNodePtyProbeFailureReason = (exitCode: number): string | null =>
   exitCode === NODE_PTY_BINARY_MISSING_EXIT_CODE
-    ? "WSL support is missing from this T3 Code build: the packaged Linux node-pty binary was not included. Install a build that includes WSL support."
+    ? "WSL support is missing from this Fab build: the packaged Linux node-pty binary was not included. Install a build that includes WSL support."
     : null;
 
 // Capture login-shell PATH because the server launches provider CLIs by name.
@@ -460,7 +460,7 @@ NODE`;
 export const buildWslRuntimeProbeScript = (linuxAppRoot: string) =>
   [
     `bash -lc ${shellQuote(`${buildWslNodeEnvPreamble()}${RESOLVED_PATH_LINE}`)} 2>/dev/null || ${RESOLVED_PATH_LINE}`,
-    `${shellQuote(`${linuxAppRoot}/t3`)} --version >/dev/null 2>&1`,
+    `${shellQuote(`${linuxAppRoot}/fab`)} --version >/dev/null 2>&1`,
   ].join("\n");
 
 const TOOLCHAIN_CHECK_SCRIPT = [
@@ -596,7 +596,7 @@ const probeWslRuntimeImpl = Effect.fn("DesktopWslEnvironment.probeWslRuntimeImpl
     const trimmedTail = probe.stderr.trim().slice(-500);
     return {
       ok: false,
-      reason: `${linuxAppRoot}/t3 --version failed (exit ${probe.exitCode})${trimmedTail ? `: ${trimmedTail}` : ""}`,
+      reason: `${linuxAppRoot}/fab --version failed (exit ${probe.exitCode})${trimmedTail ? `: ${trimmedTail}` : ""}`,
     } as const;
   }
   const resolvedPath = parseResolvedPath(probe.stdout);

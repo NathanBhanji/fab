@@ -6,13 +6,13 @@ import { SymbolView } from "../../components/ui/AppSymbol";
 import {
   hasSavedBearerRoute,
   type EnvironmentConnectionPhase,
-} from "@t3tools/client-runtime/connection";
+} from "@fab/client-runtime/connection";
 import {
   type EnvironmentId,
   type EnvironmentMachineKind,
   type ExecutionEnvironmentDescriptor,
   resolveEnvironmentMachineKind,
-} from "@t3tools/contracts";
+} from "@fab/contracts";
 import { useAtomValue } from "@effect/atom-react";
 import { useState } from "react";
 import { Pressable, type TextLayoutEvent, View } from "react-native";
@@ -98,7 +98,7 @@ function CloudEnvironmentRowsContent(
     <View collapsable={false} className={cn("gap-3", showHeader && "mt-5")}>
       {showHeader ? (
         <View className="px-1">
-          <Text className="text-sm font-t3-bold uppercase text-foreground-muted">T3 Connect</Text>
+          <Text className="text-sm font-fab-bold uppercase text-foreground-muted">Fab Connect</Text>
         </View>
       ) : null}
 
@@ -152,8 +152,8 @@ function CloudEnvironmentRowsContent(
       controller.relayDiscovery.error &&
       !controller.relayDiscovery.isRefreshing ? (
         <View collapsable={false} className="gap-3 rounded-[24px] bg-grouped-card p-5">
-          <Text className="text-base font-t3-bold text-foreground">
-            Could not load T3 Connect environments
+          <Text className="text-base font-fab-bold text-foreground">
+            Could not load Fab Connect environments
           </Text>
           <Text className="text-sm text-foreground-muted">{controller.relayDiscovery.error}</Text>
           {controller.relayDiscovery.errorTraceId ? (
@@ -341,7 +341,7 @@ function CloudEnvironmentRowShell(props: {
             tintColorClassName="accent-foreground-muted"
           />
           <Text
-            className="min-w-0 flex-shrink text-base font-t3-bold leading-snug text-foreground"
+            className="min-w-0 flex-shrink text-base font-fab-bold leading-snug text-foreground"
             numberOfLines={1}
           >
             {props.label}

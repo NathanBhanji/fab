@@ -1,5 +1,5 @@
-import { runAtomCommand, squashAtomCommandFailure } from "@t3tools/client-runtime/state/runtime";
-import type { PreviewViewportSetting, ScopedThreadRef } from "@t3tools/contracts";
+import { runAtomCommand, squashAtomCommandFailure } from "@fab/client-runtime/state/runtime";
+import type { PreviewViewportSetting, ScopedThreadRef } from "@fab/contracts";
 
 import { toastManager } from "~/components/ui/toast";
 import { updatePreviewServerSnapshot } from "~/previewStateStore";

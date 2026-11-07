@@ -1,7 +1,7 @@
-import * as HostProcess from "@t3tools/shared/HostProcess";
-import { AgentScope } from "@t3tools/shared/AgentScope";
-import { getModelSelectionStringOptionValue } from "@t3tools/shared/model";
-import { readToolOutputImage } from "@t3tools/shared/toolOutput";
+import * as HostProcess from "@fab/shared/HostProcess";
+import { AgentScope } from "@fab/shared/AgentScope";
+import { getModelSelectionStringOptionValue } from "@fab/shared/model";
+import { readToolOutputImage } from "@fab/shared/toolOutput";
 import * as Predicate from "effect/Predicate";
 import {
   ProviderDriverKind,
@@ -21,7 +21,7 @@ import {
   type ProviderApprovalDecision,
   type ProviderInstanceId,
   type OrchestrationV2ProviderTurnTokenUsage,
-} from "@t3tools/contracts";
+} from "@fab/contracts";
 import { PiSettings } from "../settings.ts";
 import * as Cause from "effect/Cause";
 import * as DateTime from "effect/DateTime";
@@ -37,25 +37,25 @@ import * as Semaphore from "effect/Semaphore";
 import * as Stream from "effect/Stream";
 import * as ChildProcessSpawner from "effect/process/ChildProcessSpawner";
 
-import * as ProviderHost from "@t3tools/provider-core/server/ProviderHost";
-import { providerMessageTextWithAttachmentPaths } from "@t3tools/provider-core/server/attachmentPrompt";
-import { mcpToolPresentation } from "@t3tools/provider-core/server/mcpToolPresentation";
-import * as McpProviderSessions from "@t3tools/provider-core/server/McpProviderSessions";
+import * as ProviderHost from "@fab/provider-core/server/ProviderHost";
+import { providerMessageTextWithAttachmentPaths } from "@fab/provider-core/server/attachmentPrompt";
+import { mcpToolPresentation } from "@fab/provider-core/server/mcpToolPresentation";
+import * as McpProviderSessions from "@fab/provider-core/server/McpProviderSessions";
 import { parsePiCompactCommand, type PiCompactCommand } from "./commands.ts";
-import { mergeProviderInstanceEnvironment } from "@t3tools/provider-core/server/instanceEnvironment";
-import * as IdAllocator from "@t3tools/provider-core/server/IdAllocator";
-import * as ProviderAdapter from "@t3tools/provider-core/server/ProviderAdapter";
-import * as ProviderContinuationRequests from "@t3tools/provider-core/server/ProviderContinuationRequests";
+import { mergeProviderInstanceEnvironment } from "@fab/provider-core/server/instanceEnvironment";
+import * as IdAllocator from "@fab/provider-core/server/IdAllocator";
+import * as ProviderAdapter from "@fab/provider-core/server/ProviderAdapter";
+import * as ProviderContinuationRequests from "@fab/provider-core/server/ProviderContinuationRequests";
 import {
   ProviderAdapterDriverCreateError,
   type ProviderAdapterDriver,
   type ProviderAdapterDriverCreateInput,
-} from "@t3tools/provider-core/server/adapterDriver";
+} from "@fab/provider-core/server/adapterDriver";
 import {
   makeProviderFailure,
   makeProviderRetryTurnItem,
-} from "@t3tools/provider-core/server/failure";
-import { turnScopedSelectionTransition } from "@t3tools/provider-core/server/selectionTransition";
+} from "@fab/provider-core/server/failure";
+import { turnScopedSelectionTransition } from "@fab/provider-core/server/selectionTransition";
 import {
   makePiRpcConnection,
   parsePiModelSlug,
@@ -67,7 +67,7 @@ import {
 } from "./rpc.ts";
 import {
   buildPiRpcLaunch,
-  materializePiT3McpExtension,
+  materializePiFabMcpExtension,
   resolvePiLaunchArgs,
 } from "./mcpInjection.ts";
 import { PI_FILE_CHANGE_TOOLS } from "./mcpExtensionSource.ts";
@@ -83,7 +83,7 @@ const STREAM_FLUSH_MS = 50;
 const PI_REQUEST_TIMEOUT_MS = 15_000;
 const PI_SESSION_TIMEOUT_MS = 60_000;
 const PI_UNSOLICITED_ACTIVITY_ERROR =
-  "Pi started agent work outside an active T3 turn. The session was stopped to prevent invisible tool execution.";
+  "Pi started agent work outside an active Fab turn. The session was stopped to prevent invisible tool execution.";
 const SETTLE_PROBE_MAX_ATTEMPTS = 3;
 const SETTLE_PROBE_RETRY_DELAY = Duration.millis(100);
 
@@ -464,7 +464,7 @@ export const makePiAdapterV2 = Effect.fn("makePiAdapterV2")(function* (
         );
       // Always inject the permission hook even without MCP credentials; otherwise Supervised becomes unrestricted.
       const extensionPath = yield* provideCacheFs(
-        materializePiT3McpExtension(host.paths.providerStatusCacheDir),
+        materializePiFabMcpExtension(host.paths.providerStatusCacheDir),
       );
       const resolvedLaunchArgs = resolvePiLaunchArgs(options.settings.launchArgs);
       if (!resolvedLaunchArgs.ok) {
@@ -1449,7 +1449,7 @@ export const makePiAdapterV2 = Effect.fn("makePiAdapterV2")(function* (
           ).pipe(
             Effect.andThen(
               Queue.offer(connection.events, {
-                type: "t3.ui_request_expired",
+                type: "fab.ui_request_expired",
                 requestId: String(requestId),
                 pending,
               }),
@@ -1668,7 +1668,7 @@ export const makePiAdapterV2 = Effect.fn("makePiAdapterV2")(function* (
           Effect.matchEffect({
             onSuccess: (data) =>
               Queue.offer(connection.events, {
-                type: "t3.settle_probe",
+                type: "fab.settle_probe",
                 providerTurnId,
                 settleAfterAgentActivity,
                 settleProbeGeneration,
@@ -1678,7 +1678,7 @@ export const makePiAdapterV2 = Effect.fn("makePiAdapterV2")(function* (
             // Failed probes must reach the pump; command-only turns emit no agent events to settle them.
             onFailure: () =>
               Queue.offer(connection.events, {
-                type: "t3.settle_probe",
+                type: "fab.settle_probe",
                 providerTurnId,
                 settleAfterAgentActivity,
                 settleProbeGeneration,
@@ -1708,7 +1708,7 @@ export const makePiAdapterV2 = Effect.fn("makePiAdapterV2")(function* (
           threadState?.activeTurn === null &&
           pendingWake !== null &&
           !interactiveUiRequest &&
-          !String(event["type"]).startsWith("t3.") &&
+          !String(event["type"]).startsWith("fab.") &&
           event["type"] !== "response"
         ) {
           pendingWake.events.push(event);
@@ -2105,7 +2105,7 @@ export const makePiAdapterV2 = Effect.fn("makePiAdapterV2")(function* (
             }
             return;
           }
-          case "t3.ui_request_expired": {
+          case "fab.ui_request_expired": {
             const requestId = recordString(event, "requestId");
             if (requestId === undefined) return;
             const pending = pendingPrompts.get(requestId);
@@ -2114,18 +2114,18 @@ export const makePiAdapterV2 = Effect.fn("makePiAdapterV2")(function* (
             yield* cancelPrompt(pending, yield* DateTime.now);
             return;
           }
-          case "t3.flush_extension_errors": {
+          case "fab.flush_extension_errors": {
             for (const extensionError of outOfTurnExtensionErrors.splice(0)) {
               yield* emitExtensionError(extensionError);
             }
             return;
           }
-          case "t3.rollback_barrier": {
+          case "fab.rollback_barrier": {
             if (rollbackBarrier !== null && event["barrier"] === rollbackBarrier)
               yield* Deferred.succeed(rollbackBarrier, undefined);
             return;
           }
-          case "t3.settle_probe": {
+          case "fab.settle_probe": {
             const data = event["data"];
             const probeFailed = event["probeFailed"] === true;
             const settleAfterAgentActivity = event["settleAfterAgentActivity"] === true;
@@ -2670,7 +2670,7 @@ export const makePiAdapterV2 = Effect.fn("makePiAdapterV2")(function* (
                 yield* finalizeTurn(state);
               }
               if (outOfTurnExtensionErrors.length > 0) {
-                yield* Queue.offer(connection.events, { type: "t3.flush_extension_errors" });
+                yield* Queue.offer(connection.events, { type: "fab.flush_extension_errors" });
               }
             }).pipe(
               sessionEventPermit.withPermits(1),
@@ -3017,7 +3017,7 @@ export const makePiAdapterV2 = Effect.fn("makePiAdapterV2")(function* (
                   const leafId = recordString(entriesData, "leafId") ?? null;
                   // RPC responses bypass the pump; drain prior native events before replacing their binding.
                   const queued = yield* Queue.offer(connection.events, {
-                    type: "t3.rollback_barrier",
+                    type: "fab.rollback_barrier",
                     barrier,
                   });
                   if (!queued) return yield* protocolError("Pi transport closed during rollback");
@@ -3322,7 +3322,7 @@ function piForkEntry<E>(
 }
 
 /**
- * Pi shares the server clock. An adopted wake can precede its T3 turn, so search from the target
+ * Pi shares the server clock. An adopted wake can precede its Fab turn, so search from the target
  * turn's end through the boundary turn's end. A boundary turn still running has no end yet, so
  * the window stays open through the tree read. At thread start, use the earlier of thread
  * creation and turn start to include adopted wakes while preserving inherited session history.

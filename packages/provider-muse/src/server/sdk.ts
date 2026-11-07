@@ -9,9 +9,9 @@ import {
   type ProcessExit,
   type SpawnedMspConnection,
 } from "@muse-code/sdk";
-import type { RuntimeMode } from "@t3tools/contracts";
-import * as HostProcess from "@t3tools/shared/HostProcess";
-import { SpawnExecutableResolution } from "@t3tools/shared/shell";
+import type { RuntimeMode } from "@fab/contracts";
+import * as HostProcess from "@fab/shared/HostProcess";
+import { SpawnExecutableResolution } from "@fab/shared/shell";
 import * as Effect from "effect/Effect";
 
 export interface MuseSdkHost {
@@ -143,7 +143,7 @@ export function museServeArgs(
 
 export function museInitializeParams(readOnly = false) {
   return {
-    clientInfo: { name: "t3_code", title: "T3 Code", version: "1" },
+    clientInfo: { name: "fab", title: "Fab", version: "1" },
     capabilities: { requestedCapabilities: readOnly ? [] : ["sessionMcp"] },
   };
 }

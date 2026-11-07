@@ -5,7 +5,7 @@ import * as Layer from "effect/Layer";
 import * as Schema from "effect/Schema";
 import { developerIdentity } from "./developerAuth.ts";
 
-export const routePrefix = "/projects/t3code/native-clients/";
+export const routePrefix = "/projects/fab/native-clients/";
 
 export class NativeClientsError extends Schema.TaggedError<NativeClientsError>()(
   "NativeClientsError",
@@ -21,12 +21,12 @@ export class Bindings extends Context.Service<
     readonly readLimit: Cloudflare.RateLimit;
     readonly storeLimit: Cloudflare.RateLimit;
   }
->()("@t3tools/task-cache/NativeClients/Bindings") {}
+>()("@fab/task-cache/NativeClients/Bindings") {}
 
 export class NativeClients extends Context.Service<
   NativeClients,
   { readonly handle: (request: Request) => Effect.Effect<Response> }
->()("@t3tools/task-cache/NativeClients") {}
+>()("@fab/task-cache/NativeClients") {}
 
 const CompleteBody = Schema.fromJsonString(
   Schema.Struct({
@@ -56,7 +56,7 @@ const make = Effect.gen(function* () {
   const limit = Effect.fn("NativeClients.limit")(function* (writing: boolean) {
     const allowed = yield* r2(() =>
       (writing ? bindings.storeLimit : bindings.readLimit).limit({
-        key: writing ? "t3code:native-store" : "t3code:native-read",
+        key: writing ? "fab:native-store" : "fab:native-read",
       }),
     );
     if (!allowed.success)
@@ -123,20 +123,20 @@ const make = Effect.gen(function* () {
             // agent-device install-from-source picks the archive type from this name.
             // iOS clients are uploaded as a tarred .app, Android ones as the bare APK.
             "Content-Disposition": `attachment; filename="${key.split("/").at(-1)}.${key.startsWith("ios/") ? "tgz" : "apk"}"`,
-            "X-T3-Digest": object.customMetadata?.digest ?? "",
-            "X-T3-Build-Ms": object.customMetadata?.buildMs ?? "0",
+            "X-Fab-Digest": object.customMetadata?.digest ?? "",
+            "X-Fab-Build-Ms": object.customMetadata?.buildMs ?? "0",
           },
         });
       }
       if (operation === "create") {
-        const digest = request.headers.get("x-t3-digest") ?? "";
+        const digest = request.headers.get("x-fab-digest") ?? "";
         if (!digestPattern.test(digest))
           return yield* new NativeClientsError({ status: 400, reason: "invalid_digest" });
         if (yield* r2(() => bindings.CLIENTS.head(key))) {
           yield* Effect.annotateCurrentSpan({ "native.result": "exists" });
           return Response.json({ exists: true });
         }
-        const buildMs = request.headers.get("x-t3-build-ms") ?? "";
+        const buildMs = request.headers.get("x-fab-build-ms") ?? "";
         const upload = yield* r2(() =>
           bindings.CLIENTS.createMultipartUpload(key, {
             customMetadata: {

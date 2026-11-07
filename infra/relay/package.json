@@ -1,5 +1,5 @@
 {
-  "name": "t3code-relay",
+  "name": "fab-relay",
   "private": true,
   "type": "module",
   "scripts": {
@@ -22,9 +22,9 @@
     "@effect/sql-sqlite-do": "catalog:",
     "@noble/curves": "catalog:",
     "@noble/hashes": "catalog:",
-    "@t3tools/client-runtime": "workspace:*",
-    "@t3tools/contracts": "workspace:*",
-    "@t3tools/shared": "workspace:*",
+    "@fab/client-runtime": "workspace:*",
+    "@fab/contracts": "workspace:*",
+    "@fab/shared": "workspace:*",
     "alchemy": "catalog:",
     "drizzle-orm": "1.0.0-rc.5-ab785fc",
     "effect": "catalog:"

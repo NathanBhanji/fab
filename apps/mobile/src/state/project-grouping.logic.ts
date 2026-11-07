@@ -1,5 +1,5 @@
-import type { ProjectGroupingSettings } from "@t3tools/client-runtime/state/project-grouping";
-import type { SidebarProjectGroupingMode } from "@t3tools/contracts";
+import type { ProjectGroupingSettings } from "@fab/client-runtime/state/project-grouping";
+import type { SidebarProjectGroupingMode } from "@fab/contracts";
 
 import type { Preferences } from "../persistence/mobile-preferences";
 

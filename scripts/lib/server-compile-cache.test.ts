@@ -28,7 +28,7 @@ it.each(["x64", "arm64"])("skips prepared bytecode generation on Linux %s", asyn
 it("prepares macOS x64 cache on an ARM64 build host", async () => {
   const { spawnSync } = await import("node:child_process");
   const root = NodeFS.realpathSync(
-    NodeFS.mkdtempSync(NodePath.join(NodeOS.tmpdir(), "t3-rosetta-cache-")),
+    NodeFS.mkdtempSync(NodePath.join(NodeOS.tmpdir(), "fab-rosetta-cache-")),
   );
   try {
     const resources = NodePath.join(root, "Fixture.app", "Contents", "Resources");
@@ -88,7 +88,7 @@ it("prepares macOS x64 cache on an ARM64 build host", async () => {
 
 it("seeds relocated cache entries without allowing writes into shipped resources", () => {
   const root = NodeFS.realpathSync(
-    NodeFS.mkdtempSync(NodePath.join(NodeOS.tmpdir(), "t3-prepared-test-")),
+    NodeFS.mkdtempSync(NodePath.join(NodeOS.tmpdir(), "fab-prepared-test-")),
   );
   try {
     const prepared = NodePath.join(root, "resources", "server-compile-cache");
@@ -137,7 +137,7 @@ it.each(["app", "server"])(
     const { spawnSync } = await import("node:child_process");
     const helper = new URL("./server-compile-cache.ts", import.meta.url).href;
     const root = NodeFS.realpathSync(
-      NodeFS.mkdtempSync(NodePath.join(NodeOS.tmpdir(), "t3-cache-engine-")),
+      NodeFS.mkdtempSync(NodePath.join(NodeOS.tmpdir(), "fab-cache-engine-")),
     );
     const run = (code: string) => {
       const env = {

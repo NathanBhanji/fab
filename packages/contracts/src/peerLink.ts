@@ -37,7 +37,7 @@ export const PeerLinkCreateInput = Schema.Struct({
   url: TrimmedNonEmptyString,
   /** More addresses for the same peer, tried after `url`. */
   alternateUrls: Schema.optionalKey(Schema.Array(TrimmedNonEmptyString)),
-  /** A pairing code from the peer (`t3 pair` there, or its Connections settings). */
+  /** A pairing code from the peer (`fab pair` there, or its Connections settings). */
   pairingCode: TrimmedNonEmptyString,
   access: AuthMcpClientAccess,
   /**
@@ -60,7 +60,7 @@ export type PeerLinkRemoveResult = typeof PeerLinkRemoveResult.Type;
 export class PeerLinkError extends Schema.TaggedError<PeerLinkError>()("PeerLinkError", {
   reason: Schema.Literals([
     "unreachable",
-    "not_a_t3_environment",
+    "not_a_fab_environment",
     "incompatible",
     "self",
     "pairing_rejected",

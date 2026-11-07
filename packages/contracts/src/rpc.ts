@@ -1983,7 +1983,7 @@ const WsSubscribeResourceTelemetryRpc = Rpc.make(WS_METHODS.subscribeResourceTel
 });
 
 export class RpcScopeAuthorization extends RpcMiddleware.Service<RpcScopeAuthorization>()(
-  "t3/contracts/RpcScopeAuthorization",
+  "fab/contracts/RpcScopeAuthorization",
   { error: EnvironmentAuthorizationError },
 ) {}
 

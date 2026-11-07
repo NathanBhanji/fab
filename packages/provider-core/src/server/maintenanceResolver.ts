@@ -1,20 +1,20 @@
 export type {
   ProviderMaintenanceCapabilities,
   ProviderMaintenanceCommandAction,
-} from "@t3tools/provider-core/server/maintenance";
+} from "@fab/provider-core/server/maintenance";
 import type {
   ProviderMaintenanceCapabilities,
   ProviderMaintenanceCommandAction,
-} from "@t3tools/provider-core/server/maintenance";
+} from "@fab/provider-core/server/maintenance";
 import {
   ProviderDriverKind,
   type ServerProvider,
   type ServerProviderVersionAdvisory,
-} from "@t3tools/contracts";
-import { compareSemverVersions, satisfiesSemverRange } from "@t3tools/shared/semver";
-import * as HostProcess from "@t3tools/shared/HostProcess";
-import { causeErrorTag } from "@t3tools/shared/observability";
-import { resolveCommandPath, resolveSpawnCommand } from "@t3tools/shared/shell";
+} from "@fab/contracts";
+import { compareSemverVersions, satisfiesSemverRange } from "@fab/shared/semver";
+import * as HostProcess from "@fab/shared/HostProcess";
+import { causeErrorTag } from "@fab/shared/observability";
+import { resolveCommandPath, resolveSpawnCommand } from "@fab/shared/shell";
 import * as Cache from "effect/Cache";
 import * as Config from "effect/Config";
 import * as DateTime from "effect/DateTime";
@@ -482,7 +482,7 @@ export const resolvePackageManagedProviderMaintenance = Effect.fn(
   });
   const commandPaths = [context.resolvedCommandPath, context.realCommandPath];
   const packageName = definition.npmPackageName;
-  // WinGet-managed claude update exits 0 without updating; T3 does not run winget upgrade.
+  // WinGet-managed claude update exits 0 without updating; Fab does not run winget upgrade.
   if (
     definition.provider === "claudeAgent" &&
     context.platform === "win32" &&
@@ -897,7 +897,7 @@ export const makeCachedProviderMaintenanceResolution = Effect.fn(
 
 function manualUpdateMessage(latestVersion: string, installPath: string | undefined): string {
   return installPath
-    ? `Version ${latestVersion} is out. T3 Code runs ${installPath}; update it with the app or tool that installed it.`
+    ? `Version ${latestVersion} is out. Fab runs ${installPath}; update it with the app or tool that installed it.`
     : `Version ${latestVersion} is out. Update it with the app or tool that installed it.`;
 }
 

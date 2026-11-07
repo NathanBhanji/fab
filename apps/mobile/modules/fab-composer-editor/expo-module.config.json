@@ -1,0 +1,9 @@
+{
+  "platforms": ["apple", "android"],
+  "apple": {
+    "modules": ["FabComposerEditorModule"]
+  },
+  "android": {
+    "modules": ["expo.modules.fabcomposereditor.FabComposerEditorModule"]
+  }
+}

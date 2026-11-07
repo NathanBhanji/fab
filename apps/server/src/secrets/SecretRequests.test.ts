@@ -1,14 +1,14 @@
 import * as NodeCrypto from "@effect/platform-node/NodeCrypto";
 import * as NodeServices from "@effect/platform-node/NodeServices";
 import { assert, it } from "@effect/vitest";
-import * as HostProcess from "@t3tools/shared/HostProcess";
+import * as HostProcess from "@fab/shared/HostProcess";
 import {
   ProjectId,
   type OrchestrationV2ServerCommand,
   SecretRef,
   ThreadId,
   TurnItemId,
-} from "@t3tools/contracts";
+} from "@fab/contracts";
 import * as Effect from "effect/Effect";
 import * as FileSystem from "effect/FileSystem";
 import * as Layer from "effect/Layer";
@@ -264,7 +264,7 @@ it.effect("traces and counts a saved answer without ever recording the value", (
       Effect.map((snapshots) => {
         const found = snapshots.find(
           (snapshot) =>
-            snapshot.id === "t3_secret_refs_consumed_total" &&
+            snapshot.id === "fab_secret_refs_consumed_total" &&
             snapshot.attributes?.result === "used",
         );
         return found?.type === "Counter" ? Number(found.state.count) : 0;

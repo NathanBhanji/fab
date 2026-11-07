@@ -4,8 +4,8 @@ import {
   type DiscoveredLocalServer,
   type EnvironmentId,
   type ThreadId,
-} from "@t3tools/contracts";
-import { isLoopbackHost } from "@t3tools/shared/preview";
+} from "@fab/contracts";
+import { isLoopbackHost } from "@fab/shared/preview";
 
 import { previewEnvironment } from "./state/preview";
 import { useEnvironmentQuery } from "./state/query";

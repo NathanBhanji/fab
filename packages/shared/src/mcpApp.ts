@@ -4,7 +4,7 @@ export const MCP_APP_PROTOCOL_VERSION = "2026-01-26";
 export const MCP_APP_MIME_TYPE = "text/html;profile=mcp-app";
 export const MCP_APP_EXTENSION_ID = "io.modelcontextprotocol/ui";
 export const MCP_APP_RESOURCE_SCHEME = "ui://";
-export const MCP_APP_OUTPUT_KEY = "t3McpApp";
+export const MCP_APP_OUTPUT_KEY = "fabMcpApp";
 
 const MCP_APP_MIN_HEIGHT = 80;
 export const MCP_APP_DEFAULT_HEIGHT = 320;
@@ -137,7 +137,7 @@ export function mcpAppToolCallableByApp(meta: unknown): boolean {
   return !Array.isArray(visibility) || visibility.includes("app");
 }
 
-/** Block undeclared origins, including self, which would expose T3's API. */
+/** Block undeclared origins, including self, which would expose Fab's API. */
 export function mcpAppContentSecurityPolicy(csp: McpAppCsp | undefined): string {
   const resources = csp?.resourceDomains?.join(" ") ?? "";
   const list = (domains: ReadonlyArray<string> | undefined, fallback: string) =>

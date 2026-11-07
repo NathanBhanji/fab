@@ -1,4 +1,4 @@
-import { OrchestratorMcpFailure } from "@t3tools/contracts";
+import { OrchestratorMcpFailure } from "@fab/contracts";
 import * as Effect from "effect/Effect";
 
 import * as HtmlRender from "../../../htmlRender/HtmlRender.ts";
@@ -20,7 +20,7 @@ const toFailure = (error: { readonly _tag: string; readonly message: string }) =
   });
 
 const handlers = {
-  // Local-file access limits this host browser to T3-launched agents.
+  // Local-file access limits this host browser to Fab-launched agents.
   html_preview: McpToolAccess.readsAsCaller((input) =>
     Effect.gen(function* () {
       const htmlRender = yield* HtmlRender.HtmlRender;

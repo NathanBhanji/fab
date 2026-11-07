@@ -576,14 +576,14 @@ function NotFoundScreen() {
       }}
       style={[{ flex: 1 }, screenBgStyle]}
     >
-      <Text className="text-3xl font-t3-bold text-foreground" selectable>
+      <Text className="text-3xl font-fab-bold text-foreground" selectable>
         Route not found
       </Text>
       <Pressable
         style={returnHomeButtonStyle}
         onPress={() => navigation.dispatch(StackActions.replace("Home"))}
       >
-        <Text className="text-base font-t3-bold text-primary-foreground">Return home</Text>
+        <Text className="text-base font-fab-bold text-primary-foreground">Return home</Text>
       </Pressable>
     </ScrollView>
   );
@@ -975,7 +975,7 @@ const RootStackConfig = createWorkspaceStackNavigator({
       options: {
         // Android root formSheets lack a native stack bar; the route provides AndroidSheetHeader.
         ...(Platform.OS === "android" ? { headerShown: false } : SHEET_SOLID_HEADER_OPTIONS),
-        title: "Set up T3 Connect",
+        title: "Set up Fab Connect",
         gestureEnabled: true,
         ...HORIZONTAL_FORM_SHEET_OPTIONS,
         sheetAllowedDetents: formSheetDetents(0.6, 0.95),

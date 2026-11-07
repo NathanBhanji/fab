@@ -2,7 +2,7 @@ import {
   ProviderSetupError,
   type ProviderAuthMethod,
   type ProviderInstanceId,
-} from "@t3tools/contracts";
+} from "@fab/contracts";
 import type { AcpRegistrySettings } from "../settings.ts";
 import * as SecureRandom from "effect/crypto/SecureRandom";
 import * as Deferred from "effect/Deferred";
@@ -15,12 +15,12 @@ import * as Scope from "effect/Scope";
 import * as ChildProcessSpawner from "effect/process/ChildProcessSpawner";
 import type * as AcpSchema from "effect-acp/compat";
 
-import * as PtyAdapter from "@t3tools/shared/PtyAdapter";
-import * as ProviderAuthFlow from "@t3tools/provider-core/server/providerAuthFlow";
+import * as PtyAdapter from "@fab/shared/PtyAdapter";
+import * as ProviderAuthFlow from "@fab/provider-core/server/providerAuthFlow";
 import { normalizeAcpRegistryAuthMethods, normalizeAcpRegistryWebUrl } from "./probe.ts";
 import * as AcpRegistrySupport from "./AcpRegistrySupport.ts";
 import * as AcpRegistryRuntimeCoordinator from "./AcpRegistryRuntimeCoordinator.ts";
-import * as AcpSessionRuntime from "@t3tools/provider-acp/server/AcpSessionRuntime";
+import * as AcpSessionRuntime from "@fab/provider-acp/server/AcpSessionRuntime";
 
 type Runtime = Pick<
   AcpSessionRuntime.AcpSessionRuntime["Service"],
@@ -70,7 +70,7 @@ export const makeAcpRegistryAuth = Effect.fn("makeAcpRegistryAuth")(function* (o
               fs: { readTextFile: false, writeTextFile: false },
               terminal: false,
             },
-            clientInfo: { name: "t3-code-provider-auth", version: "0.0.0" },
+            clientInfo: { name: "fab-provider-auth", version: "0.0.0" },
           }).pipe(
             Layer.provide(
               Layer.mergeAll(

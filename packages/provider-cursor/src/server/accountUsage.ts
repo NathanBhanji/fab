@@ -1,4 +1,4 @@
-import type { UsageRecord } from "@t3tools/provider-core/server/usage";
+import type { UsageRecord } from "@fab/provider-core/server/usage";
 import * as Digest from "effect/crypto/Digest";
 import * as Duration from "effect/Duration";
 import * as Effect from "effect/Effect";
@@ -148,7 +148,7 @@ export const readCursorAccountUsage = Effect.fn("readCursorAccountUsage")(functi
           : credentialSource.kind === "apiKey"
             ? "Cursor account usage could not be read."
             : CursorKeychain.isCursorKeychainTimeoutError(cause)
-              ? "Allow Keychain access on the Mac running T3 Code, then refresh."
+              ? "Allow Keychain access on the Mac running Fab, then refresh."
               : "Cursor Keychain credentials could not be read.",
     };
   }

@@ -1,7 +1,7 @@
 import { assert, it } from "@effect/vitest";
 import * as NodeCrypto from "@effect/platform-node/NodeCrypto";
 import * as NodeServices from "@effect/platform-node/NodeServices";
-import { CommandId, ProjectId, ThreadId, VcsProcessSpawnError } from "@t3tools/contracts";
+import { CommandId, ProjectId, ThreadId, VcsProcessSpawnError } from "@fab/contracts";
 import * as Deferred from "effect/Deferred";
 import * as Effect from "effect/Effect";
 import * as Fiber from "effect/Fiber";
@@ -95,7 +95,7 @@ const withScratch = <A, E>(
 ) =>
   Effect.gen(function* () {
     const fileSystem = yield* FileSystem.FileSystem;
-    const baseDir = yield* fileSystem.makeTempDirectoryScoped({ prefix: "t3-managed-folders-" });
+    const baseDir = yield* fileSystem.makeTempDirectoryScoped({ prefix: "fab-managed-folders-" });
     return yield* body({ baseDir }).pipe(Effect.provide(layer(baseDir, options)));
   }).pipe(Effect.scoped, Effect.provide(Layer.mergeAll(NodeServices.layer, NodeCrypto.layer)));
 
@@ -114,9 +114,9 @@ it.effect("offers nothing when the data dir sits inside a Git checkout", () =>
   Effect.gen(function* () {
     const fileSystem = yield* FileSystem.FileSystem;
     const path = yield* Path.Path;
-    const checkout = yield* fileSystem.makeTempDirectoryScoped({ prefix: "t3-scratch-repo-" });
+    const checkout = yield* fileSystem.makeTempDirectoryScoped({ prefix: "fab-scratch-repo-" });
     yield* git(checkout, ["init", "--quiet"]);
-    const baseDir = path.join(checkout, ".t3");
+    const baseDir = path.join(checkout, ".fab");
     yield* fileSystem.makeDirectory(baseDir);
     yield* Effect.gen(function* () {
       const scratch = yield* ManagedProjectFolders.ManagedProjectFolders;
@@ -305,7 +305,7 @@ const withGitEnv = <A, E, R>(
 ) =>
   Effect.gen(function* () {
     const fileSystem = yield* FileSystem.FileSystem;
-    const emptyConfig = yield* fileSystem.makeTempFileScoped({ prefix: "t3-gitconfig-" });
+    const emptyConfig = yield* fileSystem.makeTempFileScoped({ prefix: "fab-gitconfig-" });
     return yield* Effect.acquireUseRelease(
       Effect.sync(() => {
         const saved = GIT_IDENTITY_KEYS.map((key) => [key, process.env[key]] as const);

@@ -2,8 +2,8 @@ import {
   managedNightlyDeniedMessage,
   managedUpdatesMessage,
   type ManagedPolicyDocument,
-} from "@t3tools/contracts";
-import type { CliReleaseChannel } from "@t3tools/shared/cliRelease";
+} from "@fab/contracts";
+import type { CliReleaseChannel } from "@fab/shared/cliRelease";
 
 /**
  * The update mirror the policy sends updates to, or `undefined` for the public releases. It wins

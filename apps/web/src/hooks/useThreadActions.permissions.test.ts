@@ -5,12 +5,12 @@ import {
   ProjectId,
   ThreadId,
   type ScopedThreadRef,
-} from "@t3tools/contracts";
+} from "@fab/contracts";
 import * as Cause from "effect/Cause";
 import { AsyncResult } from "effect/reactivity";
 import { beforeEach, describe, expect, it, vi } from "vite-plus/test";
 
-import { scopedThreadKey } from "@t3tools/client-runtime/environment";
+import { scopedThreadKey } from "@fab/client-runtime/environment";
 import { useDiffPanelStore } from "../diffPanelStore";
 import { browserMiniPlayerSource, usePreviewMiniPlayerStore } from "../previewMiniPlayerStore";
 import { useRightPanelStore } from "../rightPanelStore";

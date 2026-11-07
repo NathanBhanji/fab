@@ -1,19 +1,19 @@
 import {
   classifyMarkdownImageSource,
   markdownImageSourceFragment,
-} from "@t3tools/client-runtime/markdown-images";
+} from "@fab/client-runtime/markdown-images";
 import {
   audioMimeTypeFromExtension,
   mediaMimeTypeFromExtension,
-} from "@t3tools/shared/mediaPreview";
-import { splitFilePathPosition } from "@t3tools/shared/fileLinks";
-import { parseMarkdownFileLink } from "@t3tools/shared/markdownLinks";
+} from "@fab/shared/mediaPreview";
+import { splitFilePathPosition } from "@fab/shared/fileLinks";
+import { parseMarkdownFileLink } from "@fab/shared/markdownLinks";
 import {
   mediaFileReference,
   mediaUrlReference,
   mediaReferenceFileName,
-} from "@t3tools/client-runtime/media-reference";
-import type { EnvironmentId, ThreadId } from "@t3tools/contracts";
+} from "@fab/client-runtime/media-reference";
+import type { EnvironmentId, ThreadId } from "@fab/contracts";
 import { normalizeNativeMarkdownUrl, resolveMarkdownLinkPresentation } from "./markdownLinks";
 import { resolveMobileMarkdownMediaSource } from "./markdownMediaSource";
 

@@ -27,12 +27,12 @@ import {
   xAiSubagentFinishedNotice,
   XAiAskUserQuestionRequest,
 } from "./xaiAcpExtension.ts";
-import * as AcpSessionRuntime from "@t3tools/provider-acp/server/AcpSessionRuntime";
+import * as AcpSessionRuntime from "@fab/provider-acp/server/AcpSessionRuntime";
 import {
   type AcpToolCallState,
   mergeToolCallState,
   parseSessionUpdateEvent,
-} from "@t3tools/provider-acp/server/runtimeModel";
+} from "@fab/provider-acp/server/runtimeModel";
 
 const decodeXAiAskUserQuestionRequest = Schema.decodeUnknownSync(XAiAskUserQuestionRequest);
 
@@ -41,7 +41,7 @@ describe("xAiPromptCompleteFromSessionUpdate", () => {
     expect(
       xAiPromptCompleteFromSessionUpdate({
         sessionId: "root",
-        update: { sessionUpdate: "hook_execution", prompt_id: "t3-xai-prompt-1" },
+        update: { sessionUpdate: "hook_execution", prompt_id: "fab-xai-prompt-1" },
       }),
     ).toBeNull();
     expect(
@@ -1318,7 +1318,7 @@ describe("XAiAcpExtension", () => {
         sessionId: "root-session",
         update: {
           sessionUpdate: "turn_completed",
-          prompt_id: "t3-xai-prompt-1",
+          prompt_id: "fab-xai-prompt-1",
           stop_reason: "end_turn",
         },
       });

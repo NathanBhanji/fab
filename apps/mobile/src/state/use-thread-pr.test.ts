@@ -1,4 +1,4 @@
-import { ProjectId, type ThreadPullRequestLink } from "@t3tools/contracts";
+import { ProjectId, type ThreadPullRequestLink } from "@fab/contracts";
 import { describe, expect, it } from "vite-plus/test";
 
 import {
@@ -13,9 +13,9 @@ function linkedPr(
 ): ThreadPullRequestLink {
   return {
     host: "github.com",
-    repository: "t3tools/t3code",
+    repository: "nathanbhanji/fab",
     number,
-    url: `https://github.com/t3tools/t3code/pull/${number}`,
+    url: `https://github.com/nathanbhanji/fab/pull/${number}`,
     source: "manual",
     linkedAt: "2026-09-08T00:00:00.000Z",
     stack: null,
@@ -55,8 +55,8 @@ describe("presentThreadLinkedPullRequests", () => {
       presentThreadLinkedPullRequests([
         linkedPr(7, {
           host: "gitlab.com",
-          repository: "t3tools/t3code",
-          url: "https://gitlab.com/t3tools/t3code/-/merge_requests/7",
+          repository: "nathanbhanji/fab",
+          url: "https://gitlab.com/nathanbhanji/fab/-/merge_requests/7",
         }),
       ])?.accessibilityLabel,
     ).toBe("#7 merge request open");
@@ -66,11 +66,11 @@ describe("presentThreadLinkedPullRequests", () => {
 describe("resolveThreadPrSource compatibility", () => {
   const legacyRef = {
     projectId: ProjectId.make("project"),
-    repository: "t3tools/t3code",
+    repository: "nathanbhanji/fab",
     number: 1,
-    url: "https://github.com/t3tools/t3code/pull/1",
+    url: "https://github.com/nathanbhanji/fab/pull/1",
   };
-  const branchRef = { ...legacyRef, number: 2, url: "https://github.com/t3tools/t3code/pull/2" };
+  const branchRef = { ...legacyRef, number: 2, url: "https://github.com/nathanbhanji/fab/pull/2" };
 
   it("polls the stored reference before the server config loads", () => {
     expect(

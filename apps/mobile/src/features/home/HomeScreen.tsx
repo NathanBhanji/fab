@@ -8,10 +8,10 @@ import { THREAD_SIDEBAR_ROW_LAYOUT } from "../threads/threadListAnimations";
 import {
   type EnvironmentProject,
   type EnvironmentThreadShell,
-} from "@t3tools/client-runtime/state/shell";
-import { pickableProjectGroups } from "@t3tools/client-runtime/state/project-grouping";
-import { threadSearchMatchKey } from "@t3tools/client-runtime/state/thread-search";
-import { type EnvironmentId, type SidebarProjectGroupingMode } from "@t3tools/contracts";
+} from "@fab/client-runtime/state/shell";
+import { pickableProjectGroups } from "@fab/client-runtime/state/project-grouping";
+import { threadSearchMatchKey } from "@fab/client-runtime/state/thread-search";
+import { type EnvironmentId, type SidebarProjectGroupingMode } from "@fab/contracts";
 import { useAtomValue } from "@effect/atom-react";
 import { use, useEffect, useMemo, useRef, useState, type ComponentProps } from "react";
 import {
@@ -335,7 +335,7 @@ export function HomeScreen(props: HomeScreenProps) {
   };
   // Status-bar, accessibility and programmatic scrolls bypass the gate; activate visible rows after settling.
   const activationTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
-  // oxlint-disable-next-line t3code/no-unreasoned-state-sync -- clears the row activation timer on unmount
+  // oxlint-disable-next-line fab/no-unreasoned-state-sync -- clears the row activation timer on unmount
   useEffect(() => () => clearTimeout(activationTimerRef.current), []);
   const handleListScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
     onFabScroll?.(event);
@@ -494,7 +494,7 @@ export function HomeScreen(props: HomeScreenProps) {
     onSelectThread(thread);
   };
   useThreadJumpShortcuts(threadListV2Items, selectThread);
-  // oxlint-disable-next-line t3code/no-unreasoned-state-sync -- reads the list's visible range after commit to enable swipe gestures on those rows
+  // oxlint-disable-next-line fab/no-unreasoned-state-sync -- reads the list's visible range after commit to enable swipe gestures on those rows
   useEffect(() => {
     if (swipeEnabled) activateVisibleRows(threadListV2Items);
   }, [activateVisibleRows, swipeEnabled, threadListV2Items]);

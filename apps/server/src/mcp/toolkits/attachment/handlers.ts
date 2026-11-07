@@ -3,7 +3,7 @@ import {
   type ChatAttachment,
   MessageId,
   OrchestratorMcpFailure,
-} from "@t3tools/contracts";
+} from "@fab/contracts";
 import * as Clock from "effect/Clock";
 import * as Effect from "effect/Effect";
 import * as McpInvocationContext from "../../McpInvocationContext.ts";
@@ -48,7 +48,7 @@ export const layer = McpToolAccess.toLayer(
     return {
       // A pending upload belongs to its caller until a send claims it, so
       // linked callers may stage the uploads their own sends need.
-      t3_attachment_prepare_upload: McpToolAccess.writes(
+      fab_attachment_prepare_upload: McpToolAccess.writes(
         (input) =>
           Effect.gen(function* () {
             const result = yield* Upload.issueAttachmentUploadUrl(input.upload).pipe(
@@ -63,7 +63,7 @@ export const layer = McpToolAccess.toLayer(
           }),
         { linkedCallers: "allowed" },
       ),
-      t3_attachment_discard: McpToolAccess.writes(
+      fab_attachment_discard: McpToolAccess.writes(
         (input) =>
           Effect.gen(function* () {
             if (uploadOwners.get(input.attachmentId)?.owner !== (yield* uploadOwner)) {
@@ -78,7 +78,7 @@ export const layer = McpToolAccess.toLayer(
           }),
         { linkedCallers: "allowed" },
       ),
-      t3_thread_send_attachments: McpToolAccess.writesThreads(
+      fab_thread_send_attachments: McpToolAccess.writesThreads(
         (input) => [input.threadId],
         (input) =>
           Effect.gen(function* () {

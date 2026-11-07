@@ -1,4 +1,4 @@
-import type { DatabaseStorageStatus } from "@t3tools/contracts";
+import type { DatabaseStorageStatus } from "@fab/contracts";
 import * as Clock from "effect/Clock";
 import * as Context from "effect/Context";
 import * as Duration from "effect/Duration";
@@ -29,7 +29,7 @@ export class DatabaseStorage extends Context.Service<
     /** Current file accounting, re-published after each maintenance pass. Null until first read. */
     readonly status: Stream.Stream<DatabaseStorageStatus | null>;
   }
->()("t3/persistence/DatabaseStorage") {}
+>()("fab/persistence/DatabaseStorage") {}
 
 const make = Effect.gen(function* () {
   const sql = yield* SqlClient.SqlClient;
@@ -39,7 +39,7 @@ const make = Effect.gen(function* () {
   const path = yield* Path.Path;
   const statusRef = yield* SubscriptionRef.make<DatabaseStorageStatus | null>(null);
 
-  // The notice shows host-shell quoting verbatim; desktop needs its launcher because t3 is absent from PATH.
+  // The notice shows host-shell quoting verbatim; desktop needs its launcher because fab is absent from PATH.
   const { command: compactCommand } = yield* resolveHostCliCommand("doctor", [
     "--base-dir",
     config.baseDir,

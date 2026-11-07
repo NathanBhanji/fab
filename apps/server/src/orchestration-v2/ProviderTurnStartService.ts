@@ -1,5 +1,5 @@
-import { modelSelectionsEqual } from "@t3tools/shared/model";
-import { projectComposerContextForProvider } from "@t3tools/shared/composerContextReferences";
+import { modelSelectionsEqual } from "@fab/shared/model";
+import { projectComposerContextForProvider } from "@fab/shared/composerContextReferences";
 import {
   CommandId,
   latestProviderTurnForAttempt,
@@ -14,7 +14,7 @@ import {
   parseGoalCommand,
   RunId,
   ThreadId,
-} from "@t3tools/contracts";
+} from "@fab/contracts";
 import * as Context from "effect/Context";
 import * as DateTime from "effect/DateTime";
 import * as Effect from "effect/Effect";
@@ -44,17 +44,17 @@ import {
   contextUsageForHandoff,
   historicalMessage,
   latestNativeContextUsage,
-} from "@t3tools/provider-core/server/handoffBudget";
+} from "@fab/provider-core/server/handoffBudget";
 import { deliverContextHandoffs, withInlineContext } from "./ContextHandoffDelivery.ts";
-import * as ProviderAdapter from "@t3tools/provider-core/server/ProviderAdapter";
-import * as IdAllocator from "@t3tools/provider-core/server/IdAllocator";
+import * as ProviderAdapter from "@fab/provider-core/server/ProviderAdapter";
+import * as IdAllocator from "@fab/provider-core/server/IdAllocator";
 import * as ProjectionStore from "./ProjectionStore.ts";
 import * as ProviderSessionManager from "./ProviderSessionManager.ts";
 import {
   ContextHandoffBackgroundWorkError,
   knownProviderFailureMessage,
   makeProviderFailure,
-} from "@t3tools/provider-core/server/failure";
+} from "@fab/provider-core/server/failure";
 import * as RunExecutionService from "./RunExecutionService.ts";
 import * as RuntimePolicy from "./RuntimePolicy.ts";
 import {
@@ -126,7 +126,7 @@ export interface ProviderTurnStartServiceV2Shape {
 export class ProviderTurnStartServiceV2 extends Context.Service<
   ProviderTurnStartServiceV2,
   ProviderTurnStartServiceV2Shape
->()("t3/orchestration-v2/ProviderTurnStartService/ProviderTurnStartServiceV2") {}
+>()("fab/orchestration-v2/ProviderTurnStartService/ProviderTurnStartServiceV2") {}
 
 export const layer: Layer.Layer<
   ProviderTurnStartServiceV2,

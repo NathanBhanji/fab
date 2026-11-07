@@ -7,7 +7,7 @@ import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
 
 import * as Electron from "electron";
-import * as HostProcess from "@t3tools/shared/HostProcess";
+import * as HostProcess from "@fab/shared/HostProcess";
 
 import * as DesktopEarlyElectronStartup from "./DesktopEarlyElectronStartup.ts";
 import { resolveDesktopAppBranding } from "./DesktopEnvironment.ts";
@@ -47,7 +47,7 @@ export class DesktopPreReadyElectronOptions extends Context.Service<
     readonly linux: DesktopEarlyElectronStartup.EarlyLinuxElectronOptions | null;
     readonly linuxPasswordStoreCommandLine: string | null;
   }
->()("@t3tools/desktop/app/DesktopPreReadyPlatform/DesktopPreReadyElectronOptions") {}
+>()("@fab/desktop/app/DesktopPreReadyPlatform/DesktopPreReadyElectronOptions") {}
 
 /** @public */
 export const make = Effect.gen(function* () {
@@ -110,7 +110,7 @@ export const make = Effect.gen(function* () {
               appVersion: Electron.app.getVersion(),
             }).displayName,
             execTarget:
-              process.env.T3CODE_DESKTOP_LAUNCHER_PATH?.trim() ||
+              process.env.FAB_DESKTOP_LAUNCHER_PATH?.trim() ||
               process.env.APPIMAGE?.trim() ||
               process.execPath,
             scheme: ElectronProtocol.getDesktopScheme(linux.isDevelopment),

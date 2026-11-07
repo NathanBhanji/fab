@@ -1,21 +1,21 @@
 import type {
   ThreadPendingApproval,
   ThreadPendingUserInput,
-} from "@t3tools/client-runtime/state/thread-requests";
-import { turnItemIsWorkspacePreparation } from "@t3tools/client-runtime/state/turn-item-presentation";
-import type { ThreadCheckpointSummary } from "@t3tools/client-runtime/state/thread-checkpoints";
-import { formatSubagentDisplayTitle } from "@t3tools/client-runtime/state/subagent-display";
-import { isLiveSubagentTurnItem } from "@t3tools/client-runtime/state/subagentRuntime";
-import { extractToolActivityPresentation } from "@t3tools/client-runtime/work-log/tool-presentation";
+} from "@fab/client-runtime/state/thread-requests";
+import { turnItemIsWorkspacePreparation } from "@fab/client-runtime/state/turn-item-presentation";
+import type { ThreadCheckpointSummary } from "@fab/client-runtime/state/thread-checkpoints";
+import { formatSubagentDisplayTitle } from "@fab/client-runtime/state/subagent-display";
+import { isLiveSubagentTurnItem } from "@fab/client-runtime/state/subagentRuntime";
+import { extractToolActivityPresentation } from "@fab/client-runtime/work-log/tool-presentation";
 import {
   turnItemDetailRevision,
   turnItemHasDetail,
   turnItemNeedsDetailFetch,
-} from "@t3tools/client-runtime/work-log/item-detail";
+} from "@fab/client-runtime/work-log/item-detail";
 import {
   commandDisplayText,
   commandProgramName,
-} from "@t3tools/client-runtime/work-log/command-label";
+} from "@fab/client-runtime/work-log/command-label";
 import {
   contextCompactionLabel,
   liveThoughtLine,
@@ -29,13 +29,13 @@ import {
   type ToolGroupSummaryKind,
   type WorkLogPresentationEntry,
   type WorkLogToolLifecycleStatus,
-} from "@t3tools/client-runtime/work-log/presentation";
+} from "@fab/client-runtime/work-log/presentation";
 import {
-  resolveT3McpToolDefinition,
-  resolveT3McpToolPresentation,
-  type T3McpToolLogo,
-  type T3McpToolPresentation,
-} from "@t3tools/shared/t3McpToolPresentation";
+  resolveFabMcpToolDefinition,
+  resolveFabMcpToolPresentation,
+  type FabMcpToolLogo,
+  type FabMcpToolPresentation,
+} from "@fab/shared/fabMcpToolPresentation";
 import type {
   ChatAttachment,
   MessageId,
@@ -51,8 +51,8 @@ import type {
   RunAttemptId,
   ScheduledTaskId,
   TurnItemId,
-} from "@t3tools/contracts";
-import { idleCompactionOf, isCompactionCommandMessage, RunId, ThreadId } from "@t3tools/contracts";
+} from "@fab/contracts";
+import { idleCompactionOf, isCompactionCommandMessage, RunId, ThreadId } from "@fab/contracts";
 import {
   classifyToolActivity,
   collectToolFilePaths,
@@ -60,22 +60,22 @@ import {
   isJavaScriptReplTool,
   formatReadToolLabel,
   formatSearchToolLabel,
-} from "@t3tools/shared/toolActivity";
-import { claudeResumeCompactionAge } from "@t3tools/shared/claudeCompaction";
-import { formatDuration } from "@t3tools/shared/orchestrationTiming";
-import { truncate } from "@t3tools/shared/String";
-import type { HtmlRenderReference } from "@t3tools/shared/htmlRender";
-import type { McpAppReference } from "@t3tools/shared/mcpApp";
+} from "@fab/shared/toolActivity";
+import { claudeResumeCompactionAge } from "@fab/shared/claudeCompaction";
+import { formatDuration } from "@fab/shared/orchestrationTiming";
+import { truncate } from "@fab/shared/String";
+import type { HtmlRenderReference } from "@fab/shared/htmlRender";
+import type { McpAppReference } from "@fab/shared/mcpApp";
 import {
   compactDynamicToolOutput,
   htmlRenderFromToolItem,
   mcpAppFromToolItem,
-} from "@t3tools/shared/toolOutput";
+} from "@fab/shared/toolOutput";
 import * as DateTime from "effect/DateTime";
 import {
   IDLE_COMPACTION_TITLES,
   IDLE_COMPACTING_LABELS,
-} from "@t3tools/client-runtime/user-message";
+} from "@fab/client-runtime/user-message";
 
 export type PendingApproval = ThreadPendingApproval;
 export type PendingUserInput = ThreadPendingUserInput;
@@ -110,7 +110,7 @@ export interface ThreadFeedActivity {
     | "warning"
     | "wrench"
     | "zap";
-  readonly logo: T3McpToolLogo | null;
+  readonly logo: FabMcpToolLogo | null;
   readonly toolLike: boolean;
   readonly prominent: boolean;
   readonly status: "success" | "failure" | "neutral" | null;
@@ -124,7 +124,7 @@ export interface ThreadFeedActivity {
 }
 
 export interface ThreadFeedMessage {
-  readonly context?: import("@t3tools/contracts").OrchestrationMessageContext | undefined;
+  readonly context?: import("@fab/contracts").OrchestrationMessageContext | undefined;
   readonly id: MessageId;
   readonly role: "user" | "assistant";
   readonly text: string;
@@ -136,7 +136,7 @@ export interface ThreadFeedMessage {
   readonly creationSource?: OrchestrationV2CreationSource;
   readonly scheduledTaskId?: ScheduledTaskId;
   readonly senderThreadId?: ThreadId;
-  readonly idleCompaction?: import("@t3tools/contracts").OrchestrationV2IdleCompaction;
+  readonly idleCompaction?: import("@fab/contracts").OrchestrationV2IdleCompaction;
   readonly visibility: OrchestrationV2ProjectedTurnItem["visibility"];
   readonly sourceThreadId: ThreadId;
   readonly createdAt: string;
@@ -215,7 +215,7 @@ type ThreadFeedEntryContent =
       readonly summaryKind: ToolGroupSummaryKind;
       readonly toolSurface?: WorkLogPresentationEntry["toolSurface"];
       readonly toolIcon?: WorkLogPresentationEntry["toolIcon"];
-      readonly summaryToolIcon?: "browser" | "device" | "t3-code" | "pull-request";
+      readonly summaryToolIcon?: "browser" | "device" | "fab" | "pull-request";
       readonly hasFailure: boolean;
       readonly live: boolean;
       readonly shimmer: boolean;
@@ -564,19 +564,19 @@ function itemIcon(item: OrchestrationV2TurnItem): ThreadFeedActivity["icon"] {
   }
 }
 
-function itemToolPresentation(item: OrchestrationV2TurnItem): T3McpToolPresentation | null {
+function itemToolPresentation(item: OrchestrationV2TurnItem): FabMcpToolPresentation | null {
   if (item.type !== "dynamic_tool") {
     return null;
   }
   return (
-    resolveT3McpToolPresentation(item.toolName, item.input) ??
-    resolveT3McpToolPresentation(item.title, item.input)
+    resolveFabMcpToolPresentation(item.toolName, item.input) ??
+    resolveFabMcpToolPresentation(item.title, item.input)
   );
 }
 
 function itemSummary(
   item: OrchestrationV2TurnItem,
-  toolPresentation: T3McpToolPresentation | null = null,
+  toolPresentation: FabMcpToolPresentation | null = null,
 ): string {
   if (item.type === "notification") return item.summary;
   if (item.type === "system_notice") return item.message;
@@ -914,7 +914,7 @@ function groupAdjacentActivities(
         item.type === "dynamic_tool" &&
         item.runId !== null &&
         (item.status === "running" || item.status === "completed") &&
-        resolveT3McpToolDefinition(item.toolName)?.summaryAction === "delegate" &&
+        resolveFabMcpToolDefinition(item.toolName)?.summaryAction === "delegate" &&
         !workEntryDisplayIndicatesToolFailure(entry.activity.workEntry)
       ) {
         const output = compactDynamicToolOutput(item.output);

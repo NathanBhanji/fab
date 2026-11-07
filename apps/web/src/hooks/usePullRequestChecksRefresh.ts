@@ -1,5 +1,5 @@
-import { pullRequestChecksRefreshIntervalMs } from "@t3tools/client-runtime/pull-request-checks";
-import type { PullRequestCheck } from "@t3tools/contracts";
+import { pullRequestChecksRefreshIntervalMs } from "@fab/client-runtime/pull-request-checks";
+import type { PullRequestCheck } from "@fab/contracts";
 
 import { useLiveRefresh } from "./useLiveRefresh";
 

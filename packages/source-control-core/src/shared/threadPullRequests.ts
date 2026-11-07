@@ -3,8 +3,8 @@ import type {
   ThreadLinkedPullRequest,
   ThreadPullRequestKey,
   ThreadPullRequestLink,
-} from "@t3tools/contracts";
-import { visibleThreadPullRequests } from "@t3tools/shared/threadPullRequests";
+} from "@fab/contracts";
+import { visibleThreadPullRequests } from "@fab/shared/threadPullRequests";
 
 import type { SourceControlDefinitionRegistry } from "./definition.ts";
 

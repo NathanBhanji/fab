@@ -1,5 +1,5 @@
 {
-  "name": "@t3tools/client-runtime",
+  "name": "@fab/client-runtime",
   "private": true,
   "type": "module",
   "exports": {
@@ -135,9 +135,9 @@
       "types": "./src/voice-input/index.ts",
       "default": "./src/voice-input/index.ts"
     },
-    "./t3ToolSummary": {
-      "types": "./src/t3ToolSummary.ts",
-      "default": "./src/t3ToolSummary.ts"
+    "./fabToolSummary": {
+      "types": "./src/fabToolSummary.ts",
+      "default": "./src/fabToolSummary.ts"
     },
     "./relay": {
       "types": "./src/relay/index.ts",
@@ -526,19 +526,19 @@
   },
   "dependencies": {
     "@pierre/diffs": "catalog:",
-    "@t3tools/contracts": "workspace:*",
-    "@t3tools/provider-acp-registry": "workspace:*",
-    "@t3tools/provider-core": "workspace:*",
-    "@t3tools/provider-cursor": "workspace:*",
-    "@t3tools/provider-fx": "workspace:*",
-    "@t3tools/provider-grok": "workspace:*",
-    "@t3tools/provider-kiro": "workspace:*",
-    "@t3tools/provider-muse": "workspace:*",
-    "@t3tools/provider-opencode": "workspace:*",
-    "@t3tools/provider-pi": "workspace:*",
-    "@t3tools/shared": "workspace:*",
-    "@t3tools/source-control-core": "workspace:*",
-    "@t3tools/source-control-definitions": "workspace:*",
+    "@fab/contracts": "workspace:*",
+    "@fab/provider-acp-registry": "workspace:*",
+    "@fab/provider-core": "workspace:*",
+    "@fab/provider-cursor": "workspace:*",
+    "@fab/provider-fx": "workspace:*",
+    "@fab/provider-grok": "workspace:*",
+    "@fab/provider-kiro": "workspace:*",
+    "@fab/provider-muse": "workspace:*",
+    "@fab/provider-opencode": "workspace:*",
+    "@fab/provider-pi": "workspace:*",
+    "@fab/shared": "workspace:*",
+    "@fab/source-control-core": "workspace:*",
+    "@fab/source-control-definitions": "workspace:*",
     "effect": "catalog:",
     "jszip": "3.10.1",
     "three": "0.180.0"

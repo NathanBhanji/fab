@@ -1,6 +1,6 @@
 import * as NodeServices from "@effect/platform-node/NodeServices";
 import { assert, describe, it } from "@effect/vitest";
-import * as HostProcess from "@t3tools/shared/HostProcess";
+import * as HostProcess from "@fab/shared/HostProcess";
 import * as Cause from "effect/Cause";
 import * as Deferred from "effect/Deferred";
 import * as Effect from "effect/Effect";
@@ -33,11 +33,11 @@ const makeEnvironment = (path: Path.Path, overrides: Record<string, unknown> = {
     platform: "linux",
     isPackaged: true,
     isDevelopment: false,
-    displayName: "T3 Code (Alpha)",
-    linuxDesktopEntryName: "com.t3tools.T3Code.desktop",
+    displayName: "Fab (Alpha)",
+    linuxDesktopEntryName: "dev.bhanji.Fab.desktop",
     linuxApplicationsDir: "/home/alice/.local/share/applications",
     desktopLauncherPath: Option.none(),
-    appImagePath: Option.some("/home/alice/Applications/T3-Code.AppImage"),
+    appImagePath: Option.some("/home/alice/Applications/Fab.AppImage"),
     path,
     ...overrides,
   } as unknown as DesktopEnvironment.DesktopEnvironment["Service"]);
@@ -167,22 +167,22 @@ const emptyRecording = (): RecordedRegistration => ({
 describe("DesktopLinuxUrlHandler", () => {
   it("renders a scheme-handler desktop entry with freedesktop Exec quoting", () => {
     const entry = DesktopLinuxUrlHandler.renderUrlHandlerDesktopEntry({
-      displayName: "T3 Code (Nightly)",
-      execTarget: '/home/al ice/Apps/T3 "100%" $HOME\\x.AppImage',
-      scheme: "t3code",
-      iconPath: "/home/al ice/icons/T3\\x.png",
+      displayName: "Fab (Nightly)",
+      execTarget: '/home/al ice/Apps/Fab "100%" $HOME\\x.AppImage',
+      scheme: "fab",
+      iconPath: "/home/al ice/icons/Fab\\x.png",
     });
 
     assert.include(entry, "[Desktop Entry]");
-    assert.include(entry, "Name=T3 Code (Nightly)");
+    assert.include(entry, "Name=Fab (Nightly)");
     assert.include(
       entry,
-      'Exec="/home/al ice/Apps/T3 \\\\"100%%\\\\" \\\\$HOME\\\\\\\\x.AppImage" %U',
+      'Exec="/home/al ice/Apps/Fab \\\\"100%%\\\\" \\\\$HOME\\\\\\\\x.AppImage" %U',
     );
     assert.include(entry, "NoDisplay=true");
     assert.notInclude(entry, "StartupWMClass=");
-    assert.include(entry, "MimeType=x-scheme-handler/t3code;");
-    assert.include(entry, "Icon=/home/al ice/icons/T3\\\\x.png");
+    assert.include(entry, "MimeType=x-scheme-handler/fab;");
+    assert.include(entry, "Icon=/home/al ice/icons/Fab\\\\x.png");
   });
 
   it.effect(
@@ -197,13 +197,13 @@ describe("DesktopLinuxUrlHandler", () => {
         assert.equal(recorded.files.length, 1);
         assert.equal(
           recorded.files[0]?.path,
-          "/home/alice/.local/share/applications/com.t3tools.T3Code.desktop",
+          "/home/alice/.local/share/applications/dev.bhanji.Fab.desktop",
         );
         assert.include(
           recorded.files[0]?.content,
-          "Exec=/home/alice/Applications/T3-Code.AppImage %U",
+          "Exec=/home/alice/Applications/Fab.AppImage %U",
         );
-        assert.include(recorded.files[0]?.content, "MimeType=x-scheme-handler/t3code;");
+        assert.include(recorded.files[0]?.content, "MimeType=x-scheme-handler/fab;");
         assert.deepEqual(recorded.commands, [
           {
             command: "update-desktop-database",
@@ -211,7 +211,7 @@ describe("DesktopLinuxUrlHandler", () => {
           },
           {
             command: "xdg-mime",
-            args: ["default", "com.t3tools.T3Code.desktop", "x-scheme-handler/t3code"],
+            args: ["default", "dev.bhanji.Fab.desktop", "x-scheme-handler/fab"],
           },
         ]);
       });
@@ -227,10 +227,10 @@ describe("DesktopLinuxUrlHandler", () => {
       assert.include(
         recorded.files[0]?.content,
         DesktopLinuxUrlHandler.renderUrlHandlerDesktopEntry({
-          displayName: "T3 Code (Alpha)",
+          displayName: "Fab (Alpha)",
           execTarget: process.execPath,
-          scheme: "t3code",
-          iconPath: "/home/alice/.local/share/icons/com.t3tools.T3Code.desktop.png",
+          scheme: "fab",
+          iconPath: "/home/alice/.local/share/icons/dev.bhanji.Fab.desktop.png",
         }),
       );
     });
@@ -241,10 +241,10 @@ describe("DesktopLinuxUrlHandler", () => {
 
     return Effect.gen(function* () {
       yield* runRegister(recorded, {
-        environment: { desktopLauncherPath: Option.some("/opt/T3 Code/t3code") },
+        environment: { desktopLauncherPath: Option.some("/opt/Fab Desktop/fab") },
       });
 
-      assert.include(recorded.files[0]?.content, 'Exec="/opt/T3 Code/t3code" %U');
+      assert.include(recorded.files[0]?.content, 'Exec="/opt/Fab Desktop/fab" %U');
     });
   });
 
@@ -254,10 +254,10 @@ describe("DesktopLinuxUrlHandler", () => {
     return Effect.gen(function* () {
       yield* runRegister(recorded, {
         existingEntry: DesktopLinuxUrlHandler.renderUrlHandlerDesktopEntry({
-          displayName: "T3 Code (Alpha)",
-          execTarget: "/home/alice/Applications/T3-Code.AppImage",
-          scheme: "t3code",
-          iconPath: "/home/alice/.local/share/icons/com.t3tools.T3Code.desktop.png",
+          displayName: "Fab (Alpha)",
+          execTarget: "/home/alice/Applications/Fab.AppImage",
+          scheme: "fab",
+          iconPath: "/home/alice/.local/share/icons/dev.bhanji.Fab.desktop.png",
         }),
       });
 
@@ -270,7 +270,7 @@ describe("DesktopLinuxUrlHandler", () => {
         },
         {
           command: "xdg-mime",
-          args: ["default", "com.t3tools.T3Code.desktop", "x-scheme-handler/t3code"],
+          args: ["default", "dev.bhanji.Fab.desktop", "x-scheme-handler/fab"],
         },
       ]);
     });
@@ -278,20 +278,20 @@ describe("DesktopLinuxUrlHandler", () => {
 
   it.effect("installs a persistent icon even when the desktop entry is already current", () => {
     const recorded = emptyRecording();
-    const iconPath = "/home/alice/.local/share/icons/com.t3tools.T3Code.desktop.png";
+    const iconPath = "/home/alice/.local/share/icons/dev.bhanji.Fab.desktop.png";
     return Effect.gen(function* () {
       yield* runRegister(recorded, {
-        iconSource: "/tmp/.mount_T3/resources/icon.png",
+        iconSource: "/tmp/.mount_Fab/resources/icon.png",
         existingEntry: DesktopLinuxUrlHandler.renderUrlHandlerDesktopEntry({
-          displayName: "T3 Code (Alpha)",
-          execTarget: "/home/alice/Applications/T3-Code.AppImage",
-          scheme: "t3code",
+          displayName: "Fab (Alpha)",
+          execTarget: "/home/alice/Applications/Fab.AppImage",
+          scheme: "fab",
           iconPath,
         }),
       });
       assert.deepEqual(recorded.files, []);
       assert.deepEqual(recorded.copies, [
-        { source: "/tmp/.mount_T3/resources/icon.png", destination: iconPath },
+        { source: "/tmp/.mount_Fab/resources/icon.png", destination: iconPath },
       ]);
       assert.equal(recorded.commands.at(-1)?.command, "xdg-mime");
     });
@@ -301,7 +301,7 @@ describe("DesktopLinuxUrlHandler", () => {
     const recorded = emptyRecording();
     return Effect.gen(function* () {
       yield* runRegister(recorded, {
-        iconSource: "/tmp/.mount_T3/resources/icon.png",
+        iconSource: "/tmp/.mount_Fab/resources/icon.png",
         iconCopyError: PlatformError.systemError({
           _tag: "PermissionDenied",
           module: "FileSystem",
@@ -326,14 +326,14 @@ describe("DesktopLinuxUrlHandler", () => {
       yield* runRegister(unpackaged, {
         environment: {
           isPackaged: false,
-          linuxDesktopEntryName: "com.t3tools.T3Code.Development.desktop",
+          linuxDesktopEntryName: "dev.bhanji.Fab.Development.desktop",
         },
       });
 
       assert.deepEqual(nonLinux.files, []);
       assert.equal(
         unpackaged.files[0]?.path,
-        "/home/alice/.local/share/applications/com.t3tools.T3Code.Development.desktop",
+        "/home/alice/.local/share/applications/dev.bhanji.Fab.Development.desktop",
       );
       assert.deepEqual(unpackaged.commands, []);
     });
@@ -353,7 +353,7 @@ describe("DesktopLinuxUrlHandler", () => {
           module: "FileSystem",
           method: "writeFileString",
           description: "read-only filesystem",
-          pathOrDescriptor: "/home/alice/.local/share/applications/com.t3tools.T3Code.desktop",
+          pathOrDescriptor: "/home/alice/.local/share/applications/dev.bhanji.Fab.desktop",
         }),
       });
 
@@ -536,7 +536,7 @@ const themeIconFixture = (source: Uint8Array) =>
   Effect.gen(function* () {
     const fileSystem = yield* FileSystem.FileSystem;
     const path = yield* Path.Path;
-    const root = yield* fileSystem.makeTempDirectoryScoped({ prefix: "t3-theme-icons-" });
+    const root = yield* fileSystem.makeTempDirectoryScoped({ prefix: "fab-theme-icons-" });
     yield* fileSystem.makeDirectory(path.join(root, "resources", "icons"), { recursive: true });
     yield* fileSystem.writeFile(path.join(root, "resources", "icons", "256x256.png"), source);
     const hicolorDir = path.join(root, "icons", "hicolor");
@@ -568,17 +568,17 @@ it.layer(NodeServices.layer)("DesktopLinuxUrlHandler theme icons", (it) => {
 
       yield* registerWithRealFileSystem(run);
       assert.deepEqual([...(yield* fileSystem.readDirectory(fixture.appsDir))].sort(), [
-        "com.t3tools.T3Code.png",
-        "com.t3tools.t3code.png",
+        "dev.bhanji.Fab.png",
+        "dev.bhanji.fab.png",
       ]);
-      for (const name of ["com.t3tools.t3code", "com.t3tools.T3Code"]) {
+      for (const name of ["dev.bhanji.fab", "dev.bhanji.Fab"]) {
         const target = path.join(fixture.appsDir, `${name}.png`);
         assert.deepEqual([...(yield* fileSystem.readFile(target))], [...icon]);
         yield* fileSystem.utimes(target, fixture.pastSeconds, fixture.pastSeconds);
       }
 
       yield* registerWithRealFileSystem(run);
-      for (const name of ["com.t3tools.t3code", "com.t3tools.T3Code"]) {
+      for (const name of ["dev.bhanji.fab", "dev.bhanji.Fab"]) {
         const info = yield* fileSystem.stat(path.join(fixture.appsDir, `${name}.png`));
         assert.equal(Option.getOrThrow(info.mtime).getTime(), fixture.pastSeconds * 1000);
       }
@@ -593,8 +593,8 @@ it.layer(NodeServices.layer)("DesktopLinuxUrlHandler theme icons", (it) => {
       const path = yield* Path.Path;
       const fixture = yield* themeIconFixture(new Uint8Array([1, 2, 3]));
       yield* fixture.seedCache;
-      const lower = path.join(fixture.appsDir, "com.t3tools.t3code.png");
-      const upper = path.join(fixture.appsDir, "com.t3tools.T3Code.png");
+      const lower = path.join(fixture.appsDir, "dev.bhanji.fab.png");
+      const upper = path.join(fixture.appsDir, "dev.bhanji.Fab.png");
       yield* fileSystem.writeFile(lower, new Uint8Array([3, 2, 1]));
       yield* fileSystem.writeFile(upper, new Uint8Array([1, 2, 3]));
       for (const target of [lower, upper]) {
@@ -635,7 +635,7 @@ it.layer(NodeServices.layer)("DesktopLinuxUrlHandler theme icons", (it) => {
 
       yield* registerWithRealFileSystem(run);
 
-      assert.isTrue(yield* fileSystem.exists(path.join(fixture.appsDir, "com.t3tools.T3Code.png")));
+      assert.isTrue(yield* fileSystem.exists(path.join(fixture.appsDir, "dev.bhanji.Fab.png")));
       assert.equal(iconCacheRuns(run), 1);
     }).pipe(Effect.scoped),
   );

@@ -4,17 +4,17 @@ import {
   CodexSettings,
   isProviderDriverKind,
   ProviderDriverKind,
-} from "@t3tools/contracts";
-import { acpRegistryClient } from "@t3tools/provider-acp-registry/client";
-import { makeProviderClientRegistry } from "@t3tools/provider-core/client";
-import { modelShortName } from "@t3tools/provider-core/modelShortName";
-import { cursorClient } from "@t3tools/provider-cursor/client";
-import { fxClient } from "@t3tools/provider-fx/client";
-import { grokClient } from "@t3tools/provider-grok/client";
-import { kiroClient } from "@t3tools/provider-kiro/client";
-import { museClient } from "@t3tools/provider-muse/client";
-import { openCodeClient } from "@t3tools/provider-opencode/client";
-import { piClient } from "@t3tools/provider-pi/client";
+} from "@fab/contracts";
+import { acpRegistryClient } from "@fab/provider-acp-registry/client";
+import { makeProviderClientRegistry } from "@fab/provider-core/client";
+import { modelShortName } from "@fab/provider-core/modelShortName";
+import { cursorClient } from "@fab/provider-cursor/client";
+import { fxClient } from "@fab/provider-fx/client";
+import { grokClient } from "@fab/provider-grok/client";
+import { kiroClient } from "@fab/provider-kiro/client";
+import { museClient } from "@fab/provider-muse/client";
+import { openCodeClient } from "@fab/provider-opencode/client";
+import { piClient } from "@fab/provider-pi/client";
 
 export const providerClients = makeProviderClientRegistry([
   {

@@ -10,7 +10,7 @@ function windowIndex(nowMs: number): number {
 
 function deriveToken(secret: string, window: number): string {
   return NodeCrypto.createHmac("sha256", secret)
-    .update(`t3-desktop-bootstrap:${window}`)
+    .update(`fab-desktop-bootstrap:${window}`)
     .digest("hex");
 }
 

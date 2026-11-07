@@ -1,4 +1,4 @@
-import { splitPullRequestBody } from "@t3tools/client-runtime/pull-request-markdown";
+import { splitPullRequestBody } from "@fab/client-runtime/pull-request-markdown";
 import {
   PullRequestImageAttachment,
   PullRequestMedia,
@@ -120,7 +120,7 @@ export function PullRequestDescription(props: {
                 }
                 className="min-h-11 flex-row items-center justify-center gap-1 py-2 active:opacity-70"
               >
-                <Text className="text-xs font-t3-medium text-foreground">
+                <Text className="text-xs font-fab-medium text-foreground">
                   {expanded ? "Show less" : "Show more"}
                 </Text>
                 <SymbolView

@@ -4,7 +4,7 @@ import {
   type ServerProvider,
   type ServerProviderSlashCommand,
   type ServerProviderResetCredits,
-} from "@t3tools/contracts";
+} from "@fab/contracts";
 import * as Cause from "effect/Cause";
 import * as DateTime from "effect/DateTime";
 import * as Effect from "effect/Effect";
@@ -14,8 +14,8 @@ import * as Path from "effect/Path";
 import * as Ref from "effect/Ref";
 import * as Result from "effect/Result";
 import { ChildProcess, ChildProcessSpawner } from "effect/process";
-import { createModelCapabilities } from "@t3tools/shared/model";
-import { resolveSpawnCommand } from "@t3tools/shared/shell";
+import { createModelCapabilities } from "@fab/shared/model";
+import { resolveSpawnCommand } from "@fab/shared/shell";
 import {
   query as claudeQuery,
   type Options as ClaudeQueryOptions,
@@ -34,12 +34,12 @@ import {
   providerModelsFromSettings,
   spawnAndCollect,
   type ServerProviderDraft,
-} from "@t3tools/provider-core/server/snapshotProbe";
+} from "@fab/provider-core/server/snapshotProbe";
 import { resolveClaudeSdkExecutablePath } from "./Drivers/ClaudeExecutable.ts";
 import { hasClaudeManagedMcpConfig, makeClaudeEnvironment } from "./Drivers/ClaudeHome.ts";
 import { discoverClaudeSkills, readClaudeSettingsEnv } from "./Drivers/ClaudeSkills.ts";
-import type { ProviderWorkspaceSnapshot } from "@t3tools/provider-core/server/driver";
-import { makeUnavailableUsageLimits } from "@t3tools/provider-core/server/usageLimits";
+import type { ProviderWorkspaceSnapshot } from "@fab/provider-core/server/driver";
+import { makeUnavailableUsageLimits } from "@fab/provider-core/server/usageLimits";
 import {
   type ClaudeScopedLimitNames,
   claudeUsageResponseToLimits,
@@ -483,7 +483,7 @@ export const checkClaudeProviderStatus = Effect.fn("checkClaudeProviderStatus")(
         version: null,
         status: "warning",
         auth: { status: "unknown" },
-        message: "Claude is disabled in T3 Code settings.",
+        message: "Claude is disabled in Fab settings.",
       },
     });
   }
@@ -704,7 +704,7 @@ export const makePendingClaudeProvider = Effect.fn("ClaudeProvider.makePendingCl
           version: null,
           status: "warning",
           auth: { status: "unknown" },
-          message: "Claude is disabled in T3 Code settings.",
+          message: "Claude is disabled in Fab settings.",
         },
       });
     }

@@ -1,7 +1,7 @@
-import type { EnvironmentPresentation, NetworkStatus } from "@t3tools/client-runtime/connection";
-import type { EnvironmentCatalogState } from "@t3tools/client-runtime/state/connections";
-import type { EnvironmentId } from "@t3tools/contracts";
-import { createEnvironmentSummaryAtoms } from "@t3tools/client-runtime/state/presentation";
+import type { EnvironmentPresentation, NetworkStatus } from "@fab/client-runtime/connection";
+import type { EnvironmentCatalogState } from "@fab/client-runtime/state/connections";
+import type { EnvironmentId } from "@fab/contracts";
+import { createEnvironmentSummaryAtoms } from "@fab/client-runtime/state/presentation";
 import { Atom } from "effect/reactivity";
 
 import { projectWorkspaceConnectionState } from "./workspaceModel";

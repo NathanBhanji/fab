@@ -25,7 +25,7 @@ export class Bindings extends Context.Service<
     readonly readLimit: Cloudflare.RateLimit;
     readonly storeLimit: Cloudflare.RateLimit;
   }
->()("@t3tools/task-cache/Cache/Bindings") {}
+>()("@fab/task-cache/Cache/Bindings") {}
 
 export class Cache extends Context.Service<
   Cache,
@@ -36,7 +36,7 @@ export class Cache extends Context.Service<
     ) => Effect.Effect<Response>;
     readonly cleanup: Effect.Effect<void, CacheError>;
   }
->()("@t3tools/task-cache/Cache") {}
+>()("@fab/task-cache/Cache") {}
 
 const make = Effect.gen(function* () {
   const bindings = yield* Bindings;
@@ -75,7 +75,7 @@ const make = Effect.gen(function* () {
   const checkLimit = Effect.fn("TaskCache.checkLimit")(function* (operation: string) {
     const allowed = yield* protocol(() =>
       (operation === "store" ? bindings.storeLimit : bindings.readLimit).limit({
-        key: `t3code:${operation.startsWith("blob/") ? "blob" : operation}`,
+        key: `fab:${operation.startsWith("blob/") ? "blob" : operation}`,
       }),
     );
     if (!allowed.success) return yield* new CacheError({ status: 429, reason: "rate_limit" });
@@ -84,7 +84,7 @@ const make = Effect.gen(function* () {
   const handle = Effect.fn("TaskCache.handle")(
     function* (request: Request, context: Pick<Cloudflare.ExecutionContext, "waitUntil">) {
       const url = new URL(request.url);
-      const route = /^\/projects\/t3code\/(fetch|store|telemetry|blob\/([0-9a-f-]{36}))$/.exec(
+      const route = /^\/projects\/fab\/(fetch|store|telemetry|blob\/([0-9a-f-]{36}))$/.exec(
         url.pathname,
       );
       const operation = route?.[1] ?? "unknown";
@@ -142,7 +142,7 @@ const make = Effect.gen(function* () {
                 ),
               );
               if (!writing && operation !== "telemetry") yield* checkLimit(operation);
-              const scope = yield* protocol(() => getScope(bindings.INDEX, "t3code", stats));
+              const scope = yield* protocol(() => getScope(bindings.INDEX, "fab", stats));
               if (operation === "telemetry") {
                 let identity = developer ?? undefined;
                 if (identity === undefined) {
@@ -194,12 +194,12 @@ const make = Effect.gen(function* () {
               }
               if (operation === "fetch") {
                 const result = yield* protocol(() =>
-                  fetchMetadata(request, bindings, "t3code", defaults, deadline, stats),
+                  fetchMetadata(request, bindings, "fab", defaults, deadline, stats),
                 );
                 return cborResponse(result);
               }
               const selected = yield* protocol(() =>
-                selectBlob(bindings.INDEX, "t3code", route[2]!, stats),
+                selectBlob(bindings.INDEX, "fab", route[2]!, stats),
               );
               if (!selected) return yield* new CacheError({ status: 404, reason: "blob_missing" });
               stats.r2_operations++;

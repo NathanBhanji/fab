@@ -16,9 +16,9 @@ import {
   type OrchestrationV2RunAttempt,
   type OrchestrationV2ProjectedTurnItem,
   type OrchestrationV2TurnItem,
-} from "@t3tools/contracts";
-import { deriveThreadCheckpointSummaries } from "@t3tools/client-runtime/state/thread-checkpoints";
-import { summarizeToolGroup } from "@t3tools/client-runtime/work-log/presentation";
+} from "@fab/contracts";
+import { deriveThreadCheckpointSummaries } from "@fab/client-runtime/state/thread-checkpoints";
+import { summarizeToolGroup } from "@fab/client-runtime/work-log/presentation";
 import { getReviewSectionIdForCheckpoint } from "../features/review/reviewModel";
 import * as DateTime from "effect/DateTime";
 import { describe, expect, it } from "vite-plus/test";
@@ -52,7 +52,7 @@ it("shows a captured MCP app for a failed deferred write", () => {
     toolName: "github.create_pull_request",
     status: "failed",
     input: {},
-    output: { t3McpApp: mcpApp, result: { content: [], isError: true } },
+    output: { fabMcpApp: mcpApp, result: { content: [], isError: true } },
   };
   expect(buildThreadFeed([projected(item, 0)])).toMatchObject([{ type: "mcp-app", app: mcpApp }]);
 });
@@ -1337,7 +1337,7 @@ describe("retained v2 feed presentation", () => {
           {
             ...base(id, "2026-06-20T00:00:02.000Z", index),
             type: "dynamic_tool",
-            toolName: "t3-code.delegate_task",
+            toolName: "fab.delegate_task",
             input: { task: "Identical task" },
             output,
             ...overrides,
@@ -1681,7 +1681,7 @@ describe("streamed feed updates", () => {
   const delegation: OrchestrationV2TurnItem = {
     ...item("delegation", 3, runs[0]),
     type: "dynamic_tool",
-    toolName: "t3-code.delegate_task",
+    toolName: "fab.delegate_task",
     input: { task: "Check" },
     output: { taskId: "child" },
   };

@@ -1,5 +1,5 @@
 {
-  "name": "@t3tools/source-control-definitions",
+  "name": "@fab/source-control-definitions",
   "private": true,
   "type": "module",
   "exports": {
@@ -12,12 +12,12 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@t3tools/source-control-azure-devops": "workspace:*",
-    "@t3tools/source-control-bitbucket": "workspace:*",
-    "@t3tools/source-control-core": "workspace:*",
-    "@t3tools/source-control-forgejo": "workspace:*",
-    "@t3tools/source-control-gitcafe": "workspace:*",
-    "@t3tools/source-control-github": "workspace:*",
-    "@t3tools/source-control-gitlab": "workspace:*"
+    "@fab/source-control-azure-devops": "workspace:*",
+    "@fab/source-control-bitbucket": "workspace:*",
+    "@fab/source-control-core": "workspace:*",
+    "@fab/source-control-forgejo": "workspace:*",
+    "@fab/source-control-gitcafe": "workspace:*",
+    "@fab/source-control-github": "workspace:*",
+    "@fab/source-control-gitlab": "workspace:*"
   }
 }

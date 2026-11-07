@@ -19,42 +19,42 @@ describe("loadRepoEnv", () => {
     const repoRoot = makeTemporaryDirectory();
     NodeFS.writeFileSync(
       NodePath.join(repoRoot, ".env"),
-      "T3CODE_CLERK_PUBLISHABLE_KEY=pk_root\nT3CODE_CLERK_JWT_TEMPLATE=template_root\nT3CODE_CLERK_CLI_OAUTH_CLIENT_ID=oauth_root\nT3CODE_RELAY_URL=https://root.example.test\n",
+      "FAB_CLERK_PUBLISHABLE_KEY=pk_root\nFAB_CLERK_JWT_TEMPLATE=template_root\nFAB_CLERK_CLI_OAUTH_CLIENT_ID=oauth_root\nFAB_RELAY_URL=https://root.example.test\n",
     );
     NodeFS.writeFileSync(
       NodePath.join(repoRoot, ".env.local"),
-      "T3CODE_CLERK_PUBLISHABLE_KEY=pk_local\nT3CODE_CLERK_JWT_TEMPLATE=template_local\nT3CODE_CLERK_CLI_OAUTH_CLIENT_ID=oauth_local\nT3CODE_RELAY_URL=https://local.example.test\n",
+      "FAB_CLERK_PUBLISHABLE_KEY=pk_local\nFAB_CLERK_JWT_TEMPLATE=template_local\nFAB_CLERK_CLI_OAUTH_CLIENT_ID=oauth_local\nFAB_RELAY_URL=https://local.example.test\n",
     );
 
-    expect(loadRepoEnv({ baseEnv: {}, repoRoot }).T3CODE_RELAY_URL).toBe(
+    expect(loadRepoEnv({ baseEnv: {}, repoRoot }).FAB_RELAY_URL).toBe(
       "https://local.example.test",
     );
     expect(
       loadRepoEnv({
         baseEnv: {
-          T3CODE_CLERK_PUBLISHABLE_KEY: "pk_ci",
-          T3CODE_CLERK_JWT_TEMPLATE: "template_ci",
-          T3CODE_CLERK_CLI_OAUTH_CLIENT_ID: "oauth_ci",
-          T3CODE_RELAY_URL: "https://ci.example.test",
+          FAB_CLERK_PUBLISHABLE_KEY: "pk_ci",
+          FAB_CLERK_JWT_TEMPLATE: "template_ci",
+          FAB_CLERK_CLI_OAUTH_CLIENT_ID: "oauth_ci",
+          FAB_RELAY_URL: "https://ci.example.test",
         },
         repoRoot,
       }),
     ).toMatchObject({
-      T3CODE_CLERK_PUBLISHABLE_KEY: "pk_ci",
-      T3CODE_CLERK_CLI_OAUTH_CLIENT_ID: "oauth_ci",
+      FAB_CLERK_PUBLISHABLE_KEY: "pk_ci",
+      FAB_CLERK_CLI_OAUTH_CLIENT_ID: "oauth_ci",
       VITE_CLERK_PUBLISHABLE_KEY: "pk_ci",
       EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY: "pk_ci",
-      T3CODE_CLERK_JWT_TEMPLATE: "template_ci",
+      FAB_CLERK_JWT_TEMPLATE: "template_ci",
       VITE_CLERK_JWT_TEMPLATE: "template_ci",
       EXPO_PUBLIC_CLERK_JWT_TEMPLATE: "template_ci",
-      T3CODE_RELAY_URL: "https://ci.example.test",
-      VITE_T3CODE_RELAY_URL: "https://ci.example.test",
+      FAB_RELAY_URL: "https://ci.example.test",
+      VITE_FAB_RELAY_URL: "https://ci.example.test",
     });
   });
 });
 
 function makeTemporaryDirectory() {
-  const directory = NodeFS.mkdtempSync(NodePath.join(NodeOS.tmpdir(), "t3code-public-config-"));
+  const directory = NodeFS.mkdtempSync(NodePath.join(NodeOS.tmpdir(), "fab-public-config-"));
   temporaryDirectories.push(directory);
   return directory;
 }

@@ -7,18 +7,18 @@ import {
   PROVIDER_SEND_TURN_MAX_IMAGE_BYTES,
   COMPOSER_CONTEXT_MAX_RECORDS,
   type EnvironmentId,
-} from "@t3tools/contracts";
+} from "@fab/contracts";
 import {
   decodeComposerContextClipboardHtml,
   decodeComposerContextFragment,
   encodeComposerContextFragment,
-} from "@t3tools/shared/composerContextClipboard";
+} from "@fab/shared/composerContextClipboard";
 import {
   threadContextsOutsideEnvironment,
   threadLinkContextReferences,
-} from "@t3tools/shared/composerContextReferences";
-import { executeAtomQuery, squashAtomCommandFailure } from "@t3tools/client-runtime/state/runtime";
-import { resolveAssetUrl } from "@t3tools/client-runtime/state/assets";
+} from "@fab/shared/composerContextReferences";
+import { executeAtomQuery, squashAtomCommandFailure } from "@fab/client-runtime/state/runtime";
+import { resolveAssetUrl } from "@fab/client-runtime/state/assets";
 import * as Option from "effect/Option";
 import { appAtomRegistry } from "../state/atom-registry";
 import { assetEnvironment } from "../state/assets";
@@ -52,7 +52,7 @@ function checkAborted(signal: AbortSignal): void {
 const nativeClipboard = () =>
   requireNativeModule<{
     writeContextClipboard: (text: string, fragment: string) => Promise<void>;
-  }>("T3ComposerEditor");
+  }>("FabComposerEditor");
 
 export function writeComposerContextClipboard(
   text: string,

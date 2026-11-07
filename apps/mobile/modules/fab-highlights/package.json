@@ -1,0 +1,17 @@
+{
+  "name": "@fab/mobile-highlights-native",
+  "version": "0.0.0",
+  "private": true,
+  "expo-module": {
+    "ios": {
+      "modules": [
+        "FabHighlightsModule"
+      ]
+    },
+    "android": {
+      "modules": [
+        "expo.modules.fabhighlights.FabHighlightsModule"
+      ]
+    }
+  }
+}

@@ -4,8 +4,8 @@ import {
   connectReachabilityHelpUrl,
   type EnvironmentConnectReachability,
   formatConnectReachable,
-} from "@t3tools/contracts";
-import { readTailscaleExitNode, type TailscaleExitNode } from "@t3tools/tailscale";
+} from "@fab/contracts";
+import { readTailscaleExitNode, type TailscaleExitNode } from "@fab/tailscale";
 import * as Context from "effect/Context";
 import * as DateTime from "effect/DateTime";
 import * as Duration from "effect/Duration";
@@ -65,21 +65,21 @@ export function classifyReachability(
     fix: string,
     hint: string | null = null,
   ): Unreachable => ({ status: "unreachable", checkedAt, cause, reason, hint, fix });
-  const restart = "Restart T3 Code. If it stays, run `t3 connect` again.";
+  const restart = "Restart Fab. If it stays, run `fab connect` again.";
 
   if (!facts.managedTunnelConfigured) {
-    // A running server reads the link `t3 connect` stores only at startup.
+    // A running server reads the link `fab connect` stores only at startup.
     return fail(
       "not_linked",
-      "The server has not set up a T3 Connect tunnel.",
-      "Run `t3 connect`, then restart T3 Code so it applies the link.",
+      "The server has not set up a Fab Connect tunnel.",
+      "Run `fab connect`, then restart Fab so it applies the link.",
     );
   }
   if (connector === null) {
     return fail(
       "connector_not_running",
       "The tunnel client (cloudflared) is not running.",
-      "Restart T3 Code. If it stays down, check the server log for relay client errors.",
+      "Restart Fab. If it stays down, check the server log for relay client errors.",
     );
   }
   const status = endpoint?.kind === "status" ? endpoint.status : null;
@@ -111,8 +111,8 @@ export function classifyReachability(
   if (status === 502) {
     return fail(
       "origin_unreachable",
-      "The tunnel is up, but it cannot reach the T3 server on this machine.",
-      "Restart T3 Code so the tunnel uses the port the server listens on.",
+      "The tunnel is up, but it cannot reach the Fab server on this machine.",
+      "Restart Fab so the tunnel uses the port the server listens on.",
     );
   }
   if (endpoint === null || connector.readyConnections === 0) {
@@ -133,20 +133,20 @@ export function classifyReachability(
   if (status !== null) {
     return fail(
       "unexpected_response",
-      `The T3 Connect address answered with HTTP ${status}.`,
+      `The Fab Connect address answered with HTTP ${status}.`,
       restart,
     );
   }
   return endpoint.kind === "dns_failed"
     ? fail(
         "dns_failed",
-        "The T3 Connect address does not resolve from this machine.",
+        "The Fab Connect address does not resolve from this machine.",
         "Check the DNS settings on this machine or its VPN.",
         exitNodeHint(exitNode),
       )
     : fail(
         "timeout",
-        "The T3 Connect address did not answer from this machine.",
+        "The Fab Connect address did not answer from this machine.",
         "Check the network, VPN, or proxy on this machine.",
         exitNodeHint(exitNode),
       );
@@ -155,7 +155,7 @@ export function classifyReachability(
 /** The loud diagnosis the CLI prints and the server logs. */
 export function formatReachabilityFailure(result: Unreachable): string {
   return [
-    "✕ T3 Connect is NOT reachable from other devices",
+    "✕ Fab Connect is NOT reachable from other devices",
     `  ${result.reason}`,
     ...(result.hint ? [`  ${result.hint}`] : []),
     `  Fix: ${result.fix}`,
@@ -196,7 +196,7 @@ export class ConnectReachability extends Context.Service<
     readonly check: Effect.Effect<EnvironmentConnectReachability>;
     readonly latest: Effect.Effect<Option.Option<EnvironmentConnectReachability>>;
   }
->()("t3/cloud/ConnectReachability") {}
+>()("fab/cloud/ConnectReachability") {}
 
 const make = Effect.gen(function* () {
   const runtime = yield* ManagedEndpointRuntime.CloudManagedEndpointRuntime;
@@ -214,7 +214,7 @@ const make = Effect.gen(function* () {
   );
 
   const probeEndpoint = (hostname: string) =>
-    httpClient.get(`https://${hostname}/.well-known/t3/environment`).pipe(
+    httpClient.get(`https://${hostname}/.well-known/fab/environment`).pipe(
       Effect.map((response): EndpointProbe => ({ kind: "status", status: response.status })),
       Effect.scoped,
       Effect.timeoutOption(ENDPOINT_REQUEST_TIMEOUT),
@@ -287,7 +287,7 @@ const make = Effect.gen(function* () {
       );
     } else {
       yield* Effect.logInfo(
-        `T3 Connect is reachable from other devices. ${formatConnectReachable(result)}`,
+        `Fab Connect is reachable from other devices. ${formatConnectReachable(result)}`,
       );
     }
     return result;

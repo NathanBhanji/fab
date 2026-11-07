@@ -20,7 +20,7 @@ import { use, type ComponentProps } from "react";
 import { Platform, View } from "react-native";
 import { useWorkspaceSurface } from "../workspace/useWorkspaceSurface";
 import { useNativeColumnLayoutMetrics } from "../../native/native-layout-metrics";
-import { deriveProjectGroupLabel } from "@t3tools/client-runtime/state/project-grouping";
+import { deriveProjectGroupLabel } from "@fab/client-runtime/state/project-grouping";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { hasCloudPublicConfig } from "../cloud/publicConfig";
@@ -122,7 +122,7 @@ function ConfiguredSettingsRouteScreen() {
         {
           id: "account",
           icon: "person.crop.circle",
-          label: "T3 Account",
+          label: "Fab Account",
           value: accountLabel,
           disabled: !isLoaded,
           onPress: () => navigation.navigate("SettingsAuth"),

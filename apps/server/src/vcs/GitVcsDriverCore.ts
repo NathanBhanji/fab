@@ -25,21 +25,21 @@ import { ChildProcess, ChildProcessSpawner } from "effect/process";
 import {
   GitCommandError,
   type GitCommandFailureReason,
-  T3_PROJECT_FILE_NAME,
+  FAB_PROJECT_FILE_NAME,
   type ReviewBranchCommitsInput,
   type ReviewDiffFileContentsInput,
   type ReviewDiffPreviewInput,
   type ReviewDiffFileStat,
   type ReviewDiffPreviewSource,
   type VcsRef,
-} from "@t3tools/contracts";
-import { dedupeRemoteBranchesWithLocalMatches } from "@t3tools/shared/git";
-import * as HostProcess from "@t3tools/shared/HostProcess";
-import { compactTraceAttributes } from "@t3tools/shared/observability";
-import { decodeJsonResult } from "@t3tools/shared/schemaJson";
-import { resolveSpawnCommand } from "@t3tools/shared/shell";
-import { parseT3ProjectFile } from "@t3tools/shared/t3ProjectFile";
-import { resolveProjectFileBackedSetting } from "@t3tools/shared/projectSettings";
+} from "@fab/contracts";
+import { dedupeRemoteBranchesWithLocalMatches } from "@fab/shared/git";
+import * as HostProcess from "@fab/shared/HostProcess";
+import { compactTraceAttributes } from "@fab/shared/observability";
+import { decodeJsonResult } from "@fab/shared/schemaJson";
+import { resolveSpawnCommand } from "@fab/shared/shell";
+import { parseFabProjectFile } from "@fab/shared/fabProjectFile";
+import { resolveProjectFileBackedSetting } from "@fab/shared/projectSettings";
 import { gitCommandDuration, gitCommandsTotal, withMetrics } from "../observability/Metrics.ts";
 import * as GitVcsDriver from "./GitVcsDriver.ts";
 import { removeEmptyDirectory } from "./removeEmptyDirectory.ts";
@@ -56,10 +56,10 @@ import * as ServerConfig from "../config.ts";
 import { sourceControlDefinitions } from "../sourceControl/sourceControlDefinitions.ts";
 
 const DEFAULT_TIMEOUT_MS = 30_000;
-/** T3's record of the branch, named as on the host, that a branch was cut from. */
-const branchBaseConfigKey = (branch: string) => `branch.${branch}.t3-merge-base`;
+/** Fab's record of the branch, named as on the host, that a branch was cut from. */
+const branchBaseConfigKey = (branch: string) => `branch.${branch}.fab-merge-base`;
 /**
- * Where T3 kept that record before it had a key of its own, for every host alike: the GitHub
+ * Where Fab kept that record before it had a key of its own, for every host alike: the GitHub
  * CLI's key, which branches cut before then still carry instead.
  */
 const legacyBranchBaseConfigKey = (branch: string) => `branch.${branch}.gh-merge-base`;
@@ -683,7 +683,7 @@ const createTrace2Monitor = Effect.fnUntraced(function* (
   const fs = yield* FileSystem.FileSystem;
   const path = yield* Path.Path;
   const traceFilePath = yield* fs.makeTempFileScoped({
-    prefix: `t3code-git-trace2-${process.pid}-`,
+    prefix: `fab-git-trace2-${process.pid}-`,
     suffix: ".json",
   });
   const hookStartByChildKey = new Map<string, { hookName: string; startedAtMs: number }>();
@@ -1254,7 +1254,7 @@ export const makeGitVcsDriverCore = Effect.fn("makeGitVcsDriverCore")(function* 
     cwd: string,
     requestedBranch: string,
   ) {
-    // A branch at a parent path (such as `t3`) blocks every ref nested under it, so no suffix
+    // A branch at a parent path (such as `fab`) blocks every ref nested under it, so no suffix
     // would help; flatten to a sibling the way temporary worktree branches already do.
     const segments = requestedBranch.split("/");
     let blockedByParent = false;
@@ -1262,7 +1262,7 @@ export const makeGitVcsDriverCore = Effect.fn("makeGitVcsDriverCore")(function* 
       blockedByParent = yield* branchExists(cwd, segments.slice(0, index).join("/"));
     }
     const desiredBranch = blockedByParent ? segments.join("-") : requestedBranch;
-    // A branch nested under the name (`t3-fix/child`) blocks it as surely as one with the name.
+    // A branch nested under the name (`fab-fix/child`) blocks it as surely as one with the name.
     const isBranchNameTaken = (name: string) =>
       Effect.zipWith(
         branchExists(cwd, name),
@@ -1868,7 +1868,7 @@ export const makeGitVcsDriverCore = Effect.fn("makeGitVcsDriverCore")(function* 
       readonly knownOriginDefaultBranch?: string | null;
     },
   ) {
-    const configuredBaseRef = yield* readConfigValue(cwd, `branch.${refName}.t3-merge-base-ref`);
+    const configuredBaseRef = yield* readConfigValue(cwd, `branch.${refName}.fab-merge-base-ref`);
     if (
       configuredBaseRef?.startsWith("refs/heads/") ||
       configuredBaseRef?.startsWith("refs/remotes/")
@@ -2500,7 +2500,7 @@ export const makeGitVcsDriverCore = Effect.fn("makeGitVcsDriverCore")(function* 
           );
           const indexPath = path.resolve(cwd, indexValue.trim());
           const directory = yield* fileSystem.makeTempDirectoryScoped({
-            prefix: "t3code-commit-index-",
+            prefix: "fab-commit-index-",
           });
           const tempIndexPath = path.join(directory, "index");
           const env = { GIT_INDEX_FILE: tempIndexPath } satisfies NodeJS.ProcessEnv;
@@ -2780,10 +2780,10 @@ export const makeGitVcsDriverCore = Effect.fn("makeGitVcsDriverCore")(function* 
             key: branchBaseConfigKey(branch),
             value: currentUpstream.branchName,
           });
-          if (!(yield* readConfigValue(cwd, `branch.${branch}.t3-merge-base-ref`))) {
+          if (!(yield* readConfigValue(cwd, `branch.${branch}.fab-merge-base-ref`))) {
             yield* writeConfigValue({
               cwd,
-              key: `branch.${branch}.t3-merge-base-ref`,
+              key: `branch.${branch}.fab-merge-base-ref`,
               value: `refs/remotes/${currentUpstream.upstreamRef}`,
             });
           }
@@ -3052,7 +3052,7 @@ export const makeGitVcsDriverCore = Effect.fn("makeGitVcsDriverCore")(function* 
       ? indexValue.trim()
       : path.resolve(cwd, indexValue.trim());
     const tempIndexPath = yield* fileSystem.makeTempFileScoped({
-      prefix: `t3code-review-index-${process.pid}-`,
+      prefix: `fab-review-index-${process.pid}-`,
     });
     const indexExists = yield* fileSystem.exists(indexPath);
     if (indexExists) {
@@ -3771,7 +3771,7 @@ export const makeGitVcsDriverCore = Effect.fn("makeGitVcsDriverCore")(function* 
       Effect.map((trimmed) => (trimmed.length > 0 ? trimmed : null)),
     );
 
-  // Git never waits for .git/config.lock, and git run outside T3, such as an agent's, can hold it.
+  // Git never waits for .git/config.lock, and git run outside Fab, such as an agent's, can hold it.
   // Only writes that are safe to repeat retry.
   const retryWhileConfigLocked = <A>(effect: Effect.Effect<A, GitCommandError>) =>
     effect.pipe(
@@ -4295,11 +4295,11 @@ export const makeGitVcsDriverCore = Effect.fn("makeGitVcsDriverCore")(function* 
           options?.submodules ?? null,
           options?.submodules != null
             ? null
-            : yield* fileSystem.readFileString(path.join(worktreePath, T3_PROJECT_FILE_NAME)).pipe(
+            : yield* fileSystem.readFileString(path.join(worktreePath, FAB_PROJECT_FILE_NAME)).pipe(
                 Effect.flatMap((contents) => {
-                  const file = parseT3ProjectFile(contents);
+                  const file = parseFabProjectFile(contents);
                   return file === null
-                    ? Effect.logWarning("t3.json is invalid; initializing submodules recursively", {
+                    ? Effect.logWarning("fab.json is invalid; initializing submodules recursively", {
                         worktreePath,
                       }).pipe(Effect.as(null))
                     : Effect.succeed(file);
@@ -4309,7 +4309,7 @@ export const makeGitVcsDriverCore = Effect.fn("makeGitVcsDriverCore")(function* 
         );
     if (hasSubmodules && submoduleMode.value === "none" && progress?.onSubmodulesDisabled) {
       yield* progress.onSubmodulesDisabled({
-        source: submoduleMode.source === "t3.json" ? "t3.json" : "settings",
+        source: submoduleMode.source === "fab.json" ? "fab.json" : "settings",
       });
     }
     if (submoduleMode.value !== "none") {
@@ -4374,7 +4374,7 @@ export const makeGitVcsDriverCore = Effect.fn("makeGitVcsDriverCore")(function* 
           // The base key names a branch on the host; this one keeps the remote it came from.
           yield* writeConfigValue({
             cwd: input.cwd,
-            key: `branch.${newRefName}.t3-merge-base-ref`,
+            key: `branch.${newRefName}.fab-merge-base-ref`,
             value: base.baseRef,
           });
         }
@@ -4477,7 +4477,7 @@ export const makeGitVcsDriverCore = Effect.fn("makeGitVcsDriverCore")(function* 
         yield* executeGit(
           "GitVcsDriver.refreshCheckedOutBranch.keepPrevious",
           input.cwd,
-          ["update-ref", "refs/t3code/pre-refresh", headCommit],
+          ["update-ref", "refs/fab/pre-refresh", headCommit],
           { fallbackErrorDetail: "git failed to record the previous checkout commit" },
         );
       }

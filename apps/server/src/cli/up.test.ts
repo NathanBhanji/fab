@@ -1,8 +1,8 @@
 import * as NodeCrypto from "@effect/platform-node/NodeCrypto";
 import * as NodeServices from "@effect/platform-node/NodeServices";
 import { expect, it } from "@effect/vitest";
-import * as HostProcess from "@t3tools/shared/HostProcess";
-import * as NetService from "@t3tools/shared/Net";
+import * as HostProcess from "@fab/shared/HostProcess";
+import * as NetService from "@fab/shared/Net";
 import * as Cause from "effect/Cause";
 import * as ConfigProvider from "effect/ConfigProvider";
 import * as Effect from "effect/Effect";
@@ -24,13 +24,13 @@ const none = Option.none<boolean>();
 
 it.each([
   {
-    label: "a new machine starts from T3 Connect and asks",
+    label: "a new machine starts from Fab Connect and asks",
     setup: { installed: false, connect: false, lan: false },
     flags: { connect: none, lan: none },
     expected: { routes: { connect: true, lan: false }, ask: ["connect", "lan"] },
   },
   {
-    label: "a build without T3 Connect never offers it",
+    label: "a build without Fab Connect never offers it",
     setup: { installed: false, connect: null, lan: false },
     flags: { connect: none, lan: none },
     expected: { routes: { connect: false, lan: false }, ask: ["lan"] },
@@ -61,8 +61,8 @@ const SERVICE = {
   supported: true,
   installed: true,
   current: true,
-  unitPath: "/home/me/.config/systemd/user/t3code.service",
-  logPath: "/home/me/.t3/userdata/logs/boot-service.log",
+  unitPath: "/home/me/.config/systemd/user/fab.service",
+  logPath: "/home/me/.fab/userdata/logs/boot-service.log",
 } as const;
 
 it.each([
@@ -114,7 +114,7 @@ it.each([
     revoked: false,
     on: false,
   },
-] as const)("T3 Connect is on for $label: $on", ({ label: _, on, ...link }) => {
+] as const)("Fab Connect is on for $label: $on", ({ label: _, on, ...link }) => {
   expect(connectEnabled(link)).toBe(on);
 });
 
@@ -153,7 +153,7 @@ const answering = (text: string) =>
     display: () => Effect.void,
   });
 
-it.layer(Layer.mergeAll(NodeServices.layer, NodeCrypto.layer, NetService.layer))("t3 up", (it) => {
+it.layer(Layer.mergeAll(NodeServices.layer, NodeCrypto.layer, NetService.layer))("fab up", (it) => {
   afterEach(() => vi.restoreAllMocks());
 
   it.effect.each<{
@@ -174,21 +174,21 @@ it.layer(Layer.mergeAll(NodeServices.layer, NodeCrypto.layer, NetService.layer))
     {
       label: "nothing changed",
       installed: true,
-      env: "T3CODE_LAN=false\n",
+      env: "FAB_LAN=false\n",
       args: ["--no-lan"],
       installs: 0,
       restarts: 0,
-      envAfter: "T3CODE_LAN=false\n",
+      envAfter: "FAB_LAN=false\n",
     },
     {
       label: "the local network opens",
-      prints: "Run `t3 pair --base-dir <baseDir>`.",
+      prints: "Run `fab pair --base-dir <baseDir>`.",
       installed: true,
-      env: "T3CODE_LAN=false\n",
+      env: "FAB_LAN=false\n",
       args: ["--lan"],
       installs: 0,
       restarts: 1,
-      envAfter: "T3CODE_LAN=true\n",
+      envAfter: "FAB_LAN=true\n",
     },
     {
       label: "a new service starts with its settings",
@@ -197,31 +197,31 @@ it.layer(Layer.mergeAll(NodeServices.layer, NodeCrypto.layer, NetService.layer))
       args: ["--lan"],
       installs: 1,
       restarts: 0,
-      envAfter: "T3CODE_LAN=true\n",
+      envAfter: "FAB_LAN=true\n",
     },
     {
       label: "a route turns off with no service to run",
       installed: false,
-      env: "T3CODE_LAN=true\n",
+      env: "FAB_LAN=true\n",
       args: ["--no-lan"],
       installs: 0,
       restarts: 0,
-      envAfter: "T3CODE_LAN=false\n",
+      envAfter: "FAB_LAN=false\n",
     },
     {
       label: "a stopped newer service starts as it is",
       installed: true,
       status: { current: false, installedVersion: "999.0.0", problems: ["service-stopped"] },
-      env: "T3CODE_LAN=false\n",
+      env: "FAB_LAN=false\n",
       args: ["--yes"],
       installs: 0,
       restarts: 1,
-      envAfter: "T3CODE_LAN=false\n",
+      envAfter: "FAB_LAN=false\n",
     },
     {
       label: "a failed update keeps service.env matching the old service",
       // The old service still runs, so no foreground server is offered.
-      prints: "Fix that, then run `t3 up` again.",
+      prints: "Fix that, then run `fab up` again.",
       installed: true,
       status: { current: false },
       installFails: true,
@@ -235,22 +235,22 @@ it.layer(Layer.mergeAll(NodeServices.layer, NodeCrypto.layer, NetService.layer))
       label: "a failed restart puts service.env back and restarts on it",
       installed: true,
       restartFails: true,
-      env: "T3CODE_LAN=false\n",
+      env: "FAB_LAN=false\n",
       args: ["--lan"],
       installs: 0,
       restarts: 2,
-      envAfter: "T3CODE_LAN=false\n",
+      envAfter: "FAB_LAN=false\n",
     },
     {
       label: "declining an update changes nothing",
       installed: true,
       status: { current: false },
       answer: "n",
-      env: "T3CODE_LAN=false\n",
+      env: "FAB_LAN=false\n",
       args: ["--lan"],
       installs: 0,
       restarts: 0,
-      envAfter: "T3CODE_LAN=false\n",
+      envAfter: "FAB_LAN=false\n",
     },
     {
       label: "no service manager still records the choice",
@@ -260,7 +260,7 @@ it.layer(Layer.mergeAll(NodeServices.layer, NodeCrypto.layer, NetService.layer))
       args: ["--lan"],
       installs: 0,
       restarts: 0,
-      envAfter: "T3CODE_LAN=true\n",
+      envAfter: "FAB_LAN=true\n",
     },
     {
       label: "the old default is kept",
@@ -269,12 +269,12 @@ it.layer(Layer.mergeAll(NodeServices.layer, NodeCrypto.layer, NetService.layer))
       args: ["--yes"],
       installs: 0,
       restarts: 0,
-      envAfter: "T3CODE_LAN=true\n",
+      envAfter: "FAB_LAN=true\n",
     },
   ])("restarts the service only when it must: $label", (input) =>
     Effect.gen(function* () {
       const fs = yield* FileSystem.FileSystem;
-      const baseDir = yield* fs.makeTempDirectoryScoped({ prefix: "t3-up-test-" });
+      const baseDir = yield* fs.makeTempDirectoryScoped({ prefix: "fab-up-test-" });
       yield* fs.writeFileString(`${baseDir}/service.env`, input.env);
       let installs = 0;
       let restarts = 0;
@@ -305,7 +305,7 @@ it.layer(Layer.mergeAll(NodeServices.layer, NodeCrypto.layer, NetService.layer))
                 : Effect.sync(() => {
                     installs++;
                     return {
-                      program: ["t3"],
+                      program: ["fab"],
                       baseDir,
                       unitPath: status.unitPath,
                       logPath: status.logPath,
@@ -351,9 +351,9 @@ it.layer(Layer.mergeAll(NodeServices.layer, NodeCrypto.layer, NetService.layer))
 });
 
 it("rewrites only the named service.env keys and keeps the user's lines", () => {
-  const before = ["# my settings", "T3CODE_PORT=4000", "export T3CODE_LAN=0", "T3CODE_LAN=1", ""];
-  expect(upsertServiceEnv(before.join("\n"), { T3CODE_LAN: "true", T3CODE_HOST: undefined })).toBe(
-    ["# my settings", "T3CODE_PORT=4000", "T3CODE_LAN=true", ""].join("\n"),
+  const before = ["# my settings", "FAB_PORT=4000", "export FAB_LAN=0", "FAB_LAN=1", ""];
+  expect(upsertServiceEnv(before.join("\n"), { FAB_LAN: "true", FAB_HOST: undefined })).toBe(
+    ["# my settings", "FAB_PORT=4000", "FAB_LAN=true", ""].join("\n"),
   );
-  expect(upsertServiceEnv("", { T3CODE_LAN: "false" })).toBe("T3CODE_LAN=false\n");
+  expect(upsertServiceEnv("", { FAB_LAN: "false" })).toBe("FAB_LAN=false\n");
 });

@@ -1,5 +1,5 @@
-import type { SubagentPillSegment } from "@t3tools/client-runtime/state/thread-subagents";
-import { formatDuration } from "@t3tools/shared/orchestrationTiming";
+import type { SubagentPillSegment } from "@fab/client-runtime/state/thread-subagents";
+import { formatDuration } from "@fab/shared/orchestrationTiming";
 import { GlassContainer, GlassView } from "expo-glass-effect";
 import { type ReactNode, useEffect, useRef, useState } from "react";
 import {
@@ -108,7 +108,7 @@ export function FloatingWorkingControl(props: {
   );
   const separationProgress = useSharedValue(props.showScrollToEnd ? 1 : 0);
 
-  // oxlint-disable-next-line t3code/no-unreasoned-state-sync -- animates the Reanimated separation value when scroll-to-end visibility changes
+  // oxlint-disable-next-line fab/no-unreasoned-state-sync -- animates the Reanimated separation value when scroll-to-end visibility changes
   useEffect(() => {
     separationProgress.set(withTiming(props.showScrollToEnd ? 1 : 0, CONTROL_TIMING));
   }, [props.showScrollToEnd, separationProgress]);
@@ -138,7 +138,7 @@ export function FloatingWorkingControl(props: {
   };
   const hasStatus = props.status !== null;
   const hasCapsule = hasStatus || hasQueue || hasAgents || hasPreview;
-  // oxlint-disable-next-line t3code/no-unreasoned-state-sync -- clears the Reanimated capsule width value and measured width when the status goes away
+  // oxlint-disable-next-line fab/no-unreasoned-state-sync -- clears the Reanimated capsule width value and measured width when the status goes away
   useEffect(() => {
     if (!hasStatus) {
       measuredWidthRef.current = null;
@@ -209,7 +209,7 @@ export function FloatingWorkingControl(props: {
             onPress={action.onPress}
             className={`h-11 items-center justify-center px-3 active:opacity-70 ${action.disabled ? "opacity-50" : ""}`}
           >
-            <Text className="font-t3-medium text-xs text-foreground" numberOfLines={1}>
+            <Text className="font-fab-medium text-xs text-foreground" numberOfLines={1}>
               {action.label}
             </Text>
           </Pressable>
@@ -240,7 +240,7 @@ export function FloatingWorkingControl(props: {
         >
           {hasStatus || hasPreview ? <View className="absolute left-0 h-4 w-px bg-border" /> : null}
           <SymbolView name="person.2" size={13} tintColorClassName="accent-foreground-muted" />
-          <Text className="font-t3-medium text-xs tabular-nums" numberOfLines={1}>
+          <Text className="font-fab-medium text-xs tabular-nums" numberOfLines={1}>
             {agents.label}
           </Text>
         </Pressable>
@@ -259,7 +259,7 @@ export function FloatingWorkingControl(props: {
             <View className="absolute left-0 h-4 w-px bg-border" />
           ) : null}
           <SymbolView name="list.number" size={13} tintColorClassName="accent-foreground-muted" />
-          <Text className="shrink font-t3-medium text-xs tabular-nums" numberOfLines={1}>
+          <Text className="shrink font-fab-medium text-xs tabular-nums" numberOfLines={1}>
             {props.queuedCount} queued
           </Text>
         </Pressable>
@@ -365,7 +365,7 @@ function CompactingLabel(props: { readonly onLayout: (event: LayoutChangeEvent) 
         tintColorClassName="foreground"
         type="monochrome"
       />
-      <Text className="font-t3-medium text-xs text-foreground">Compacting…</Text>
+      <Text className="font-fab-medium text-xs text-foreground">Compacting…</Text>
     </StatusLabelRow>
   );
 }
@@ -383,7 +383,7 @@ function FloatingStatusLabel(props: {
         onLayout={props.onLayout}
       >
         <AppActivityIndicator size="small" colorClassName="accent-icon-muted" />
-        <Text className="shrink font-t3-medium text-xs text-foreground" numberOfLines={1}>
+        <Text className="shrink font-fab-medium text-xs text-foreground" numberOfLines={1}>
           {props.status.label}
         </Text>
       </StatusLabelRow>
@@ -403,7 +403,7 @@ function FloatingStatusLabel(props: {
         onPress={props.status.onPress}
       >
         <SymbolView name="text.bubble" size={13} tintColorClassName="foreground" />
-        <Text className="shrink font-t3-medium text-xs text-foreground" numberOfLines={1}>
+        <Text className="shrink font-fab-medium text-xs text-foreground" numberOfLines={1}>
           {props.status.label}
         </Text>
       </StatusLabelRow>
@@ -425,7 +425,7 @@ function FloatingStatusLabel(props: {
           <View className="h-2 w-2 rounded-full bg-red-500" />
         )}
         <Text
-          className="max-w-[260px] shrink font-t3-medium text-xs text-foreground"
+          className="max-w-[260px] shrink font-fab-medium text-xs text-foreground"
           numberOfLines={1}
         >
           {props.status.label}
@@ -447,7 +447,7 @@ function FloatingStatusLabel(props: {
           tintColorClassName="foreground"
           type="monochrome"
         />
-        <Text className="shrink font-t3-medium text-xs text-foreground" numberOfLines={1}>
+        <Text className="shrink font-fab-medium text-xs text-foreground" numberOfLines={1}>
           {props.status.label}
         </Text>
       </StatusLabelRow>
@@ -469,7 +469,7 @@ function FloatingStatusLabel(props: {
           tintColorClassName="foreground"
           type="monochrome"
         />
-        <Text className="shrink font-t3-medium text-xs text-foreground" numberOfLines={1}>
+        <Text className="shrink font-fab-medium text-xs text-foreground" numberOfLines={1}>
           {props.status.label}
         </Text>
       </StatusLabelRow>
@@ -493,7 +493,7 @@ function FloatingStatusLabel(props: {
         ) : (
           <AppActivityIndicator size="small" colorClassName="accent-icon-muted" />
         )}
-        <Text className="shrink font-t3-medium text-xs text-foreground" numberOfLines={1}>
+        <Text className="shrink font-fab-medium text-xs text-foreground" numberOfLines={1}>
           {props.status.label}
         </Text>
       </StatusLabelRow>
@@ -508,7 +508,7 @@ function FloatingStatusLabel(props: {
         onLayout={props.onLayout}
       >
         <SymbolView name="target" size={13} tintColorClassName="foreground" type="monochrome" />
-        <Text className="shrink font-t3-medium text-xs text-foreground" numberOfLines={1}>
+        <Text className="shrink font-fab-medium text-xs text-foreground" numberOfLines={1}>
           {props.status.label}
         </Text>
       </StatusLabelRow>
@@ -530,7 +530,7 @@ function FloatingStatusLabel(props: {
         />
         <ShimmeringWorkContent
           className="flex-none"
-          textClassName="font-t3-medium"
+          textClassName="font-fab-medium"
           compact
           icon="arrow.triangle.branch"
           iconSubtleColor="transparent"

@@ -1,5 +1,5 @@
-import type { EnvironmentThreadShell } from "@t3tools/client-runtime/state/shell";
-import type { EnvironmentId } from "@t3tools/contracts";
+import type { EnvironmentThreadShell } from "@fab/client-runtime/state/shell";
+import type { EnvironmentId } from "@fab/contracts";
 import type { ReactNode } from "react";
 import { act } from "react";
 import { createRoot } from "react-dom/client";

@@ -9,16 +9,16 @@ import {
   type DeviceSummary,
   type ServerSettings as Settings,
   type SshDeviceHostConfig,
-} from "@t3tools/contracts";
+} from "@fab/contracts";
 import * as NodeCrypto from "@effect/platform-node/NodeCrypto";
 import * as NodeServices from "@effect/platform-node/NodeServices";
-import * as NetService from "@t3tools/shared/Net";
+import * as NetService from "@fab/shared/Net";
 import * as Effect from "effect/Effect";
 import * as Exit from "effect/Exit";
 import * as Deferred from "effect/Deferred";
 import * as Fiber from "effect/Fiber";
 import * as FileSystem from "effect/FileSystem";
-import * as SecretResolver from "@t3tools/secret-provider-core/server/SecretResolver";
+import * as SecretResolver from "@fab/secret-provider-core/server/SecretResolver";
 import * as Layer from "effect/Layer";
 import * as Option from "effect/Option";
 import * as PubSub from "effect/PubSub";
@@ -34,7 +34,7 @@ import * as ProcessRunner from "../processRunner.ts";
 import * as ServerSettings from "../serverSettings.ts";
 import * as DeviceHost from "./DeviceHost.ts";
 import { makeDeviceHubOperations } from "./DeviceHubOperations.ts";
-import { NodeRuntimeUnavailableError } from "@t3tools/shared/nodeRuntime";
+import { NodeRuntimeUnavailableError } from "@fab/shared/nodeRuntime";
 
 import * as DeviceService from "./DeviceService.ts";
 import { agentDeviceSession, releaseAgentDeviceSession } from "./AgentDeviceTarget.ts";
@@ -853,7 +853,7 @@ it.effect.each(["shutdown", "close"] as const)(
         stopAgent: Effect.void,
         stop: Effect.void,
       };
-      const launchers = new Set(["t3-from-a-previous-run"]);
+      const launchers = new Set(["fab-from-a-previous-run"]);
       const released: Array<[string, boolean]> = [];
       // Whether the device was still on when each session was released.
       const releasedWhileBooted: Array<boolean> = [];
@@ -1340,7 +1340,7 @@ it.effect("failed manual installation leaves lifecycle state unchanged and can b
 it.effect("reconciles SSH host settings without publishing no-op changes", () =>
   Effect.gen(function* () {
     const fs = yield* FileSystem.FileSystem;
-    const baseDir = yield* fs.makeTempDirectoryScoped({ prefix: "t3-device-reconcile-" });
+    const baseDir = yield* fs.makeTempDirectoryScoped({ prefix: "fab-device-reconcile-" });
     const settings = yield* ServerSettings.ServerSettingsService;
     // Each change is acknowledged after reconciliation consumed it, so no-ops are observable.
     const changes = yield* Queue.unbounded<{ value: Settings; done: Deferred.Deferred<void> }>();
@@ -1508,7 +1508,7 @@ it.effect("a failed tool update reports npm's exit code but not its output", () 
       Layer.mergeAll(
         ServerSettings.layerTest({ enableDeviceSupport: true }),
         layerSecretResolver,
-        ServerConfig.layerTest(process.cwd(), { prefix: "t3-device-update-" }),
+        ServerConfig.layerTest(process.cwd(), { prefix: "fab-device-update-" }),
         NodeCrypto.layer,
         NetService.layer,
       ).pipe(Layer.provideMerge(NodeServices.layer)),

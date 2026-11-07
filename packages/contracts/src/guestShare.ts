@@ -11,7 +11,7 @@ import {
 } from "./baseSchemas.ts";
 
 /**
- * A guest share lets one unauthenticated browser watch a thread over T3 Connect and propose
+ * A guest share lets one unauthenticated browser watch a thread over Fab Connect and propose
  * messages the owner must send or dismiss. The thread projection holds this public state; the
  * credentials are derived from the share id with a server key and never stored.
  */
@@ -42,7 +42,7 @@ export type ThreadGuestMessage = typeof ThreadGuestMessage.Type;
 
 export const ThreadGuestShare = Schema.Struct({
   id: GuestShareId,
-  /** The T3 Connect tunnel hostname the link points at. Guest routes require it to still serve. */
+  /** The Fab Connect tunnel hostname the link points at. Guest routes require it to still serve. */
   host: TrimmedNonEmptyString,
   createdAt: IsoDateTime,
   expiresAt: IsoDateTime,
@@ -66,7 +66,7 @@ export type GuestShareCreateResult = typeof GuestShareCreateResult.Type;
 
 const GUEST_SHARE_CREATE_MESSAGES = {
   disabled: "Guest links are off. Turn them on in Settings > Labs.",
-  connect_unavailable: "Guest links need a running T3 Connect tunnel.",
+  connect_unavailable: "Guest links need a running Fab Connect tunnel.",
   thread_unavailable: "This thread cannot be shared.",
   read_failed: "Failed to read the shared thread.",
   changed: "The guest link changed while it was being created.",
@@ -124,7 +124,7 @@ export const GUEST_SHARE_PARAM = "share";
  * One session cookie per share, so a guest keeps every link they joined on a host, and a page
  * for one share never acts with another share's session.
  */
-export const guestSessionCookieName = (shareId: string) => `t3_guest_${shareId}`;
+export const guestSessionCookieName = (shareId: string) => `fab_guest_${shareId}`;
 /** Serves one HTML render in the shared thread: `?share=<share id>&item=<turn item id>`. */
 export const GUEST_RENDER_ROUTE = `${GUEST_ROUTE_PREFIX}/render`;
 /** One item of the shared thread, as an expanded row loads it: `?share=<share id>&item=<id>`. */

@@ -1,4 +1,4 @@
-import type { ServerUpdateState } from "@t3tools/client-runtime/state/server";
+import type { ServerUpdateState } from "@fab/client-runtime/state/server";
 import {
   type DesktopUpdateChannel,
   type EnvironmentId,
@@ -6,9 +6,9 @@ import {
   managedUpdatesDenial,
   type ServerConfig,
   type ServerSelfUpdateCapability,
-} from "@t3tools/contracts";
-import { cliReleaseChannelOf, desktopUpdateChannelOf } from "@t3tools/shared/cliRelease";
-import { compareSemverVersions } from "@t3tools/shared/semver";
+} from "@fab/contracts";
+import { cliReleaseChannelOf, desktopUpdateChannelOf } from "@fab/shared/cliRelease";
+import { compareSemverVersions } from "@fab/shared/semver";
 
 import {
   resolveServerSelfUpdateCapability,
@@ -297,7 +297,7 @@ export function collectChannelSwitchTargets(
       compareSemverVersions(release.version, serverVersion) <= 0
     ) {
       skip(
-        `run \`t3 update --channel ${release.channel === "nightly" ? "nightly" : "stable"} --allow-downgrade\` there`,
+        `run \`fab update --channel ${release.channel === "nightly" ? "nightly" : "stable"} --allow-downgrade\` there`,
       );
       continue;
     }

@@ -3,7 +3,7 @@ import {
   type ServerConfigStreamEvent,
   WsSubscribeServerConfigRpc,
   WS_METHODS,
-} from "@t3tools/contracts";
+} from "@fab/contracts";
 import * as Cause from "effect/Cause";
 import * as Context from "effect/Context";
 import * as Deferred from "effect/Deferred";
@@ -71,7 +71,7 @@ export class RpcSessionFactory extends Context.Service<
       connection: PreparedConnection,
     ) => Effect.Effect<RpcSession, ConnectionAttemptError, Scope.Scope>;
   }
->()("@t3tools/client-runtime/rpc/session/RpcSessionFactory") {}
+>()("@fab/client-runtime/rpc/session/RpcSessionFactory") {}
 
 type InitialConfigError = Effect.Error<
   ReturnType<WsRpcProtocolClient[typeof WS_METHODS.serverGetConfig]>
@@ -157,7 +157,7 @@ function mapSessionRpcError(
   }
 }
 
-/** Over T3 Connect the relay already reached the host, so a socket that drops failed between this device and the tunnel. */
+/** Over Fab Connect the relay already reached the host, so a socket that drops failed between this device and the tunnel. */
 function socketFailureLocation(via: "relay" | "direct") {
   return { hop: via === "relay" ? "tunnel" : "server", via } as const;
 }

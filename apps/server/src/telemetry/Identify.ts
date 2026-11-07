@@ -8,9 +8,9 @@ import * as PlatformError from "effect/PlatformError";
 import * as Result from "effect/Result";
 import * as Schema from "effect/Schema";
 
-import { writeFileStringAtomically } from "@t3tools/shared/atomicWrite";
-import * as HostProcess from "@t3tools/shared/HostProcess";
-import { hashTelemetryId } from "@t3tools/shared/telemetryId";
+import { writeFileStringAtomically } from "@fab/shared/atomicWrite";
+import * as HostProcess from "@fab/shared/HostProcess";
+import { hashTelemetryId } from "@fab/shared/telemetryId";
 import * as ServerSecretStore from "../auth/ServerSecretStore.ts";
 import { CLOUD_LINKED_USER_ID } from "../cloud/config.ts";
 import * as ServerConfig from "../config.ts";
@@ -48,7 +48,7 @@ const IdTokenClaims = Schema.Struct({
 const decodeIdTokenClaims = Schema.decodeUnknownOption(Schema.fromJsonString(IdTokenClaims));
 
 /**
- * Who an install belongs to, from strongest to weakest. `connect` is the T3
+ * Who an install belongs to, from strongest to weakest. `connect` is the Fab
  * Connect account. `openai` and `claude` are provider accounts. `device` is a
  * client device that connected.
  */
@@ -176,7 +176,7 @@ const readIdentityFile = (
 
 /**
  * The OpenAI account id in a ChatGPT id_token, read without verifying it:
- * analytics needs only a stable id. Codex CLI and T3's own sign-in both use it.
+ * analytics needs only a stable id. Codex CLI and Fab's own sign-in both use it.
  */
 export const openAiUserId = (idToken: string) => {
   const payload = Base64Url.decodeString(idToken.split(".")[1] ?? "");
@@ -300,7 +300,7 @@ export const getTelemetryIdentity = Effect.flatMap(
 );
 
 /**
- * Owners the server can read without a client: the linked T3 Connect account
+ * Owners the server can read without a client: the linked Fab Connect account
  * and the provider logins under `homeDirectory`. Clients add `connect` and
  * `device` owners when they connect.
  */
@@ -311,7 +311,7 @@ export const getServerOwnersForHome = Effect.fn("getServerOwnersForHome")(functi
   const connectUser = yield* secrets.get(CLOUD_LINKED_USER_ID).pipe(
     Effect.map(Option.map((bytes) => new TextDecoder().decode(bytes))),
     Effect.catch((cause) =>
-      Effect.logWarning("Failed to read the linked T3 Connect account for telemetry", {
+      Effect.logWarning("Failed to read the linked Fab Connect account for telemetry", {
         errorTag: cause._tag,
       }).pipe(Effect.as(Option.none<string>())),
     ),

@@ -6,9 +6,9 @@ import {
   buildMenuItems,
   getGitActionDisabledReason,
   requiresDefaultBranchConfirmation,
-} from "@t3tools/client-runtime/state/vcs";
-import { EnvironmentId, ThreadId } from "@t3tools/contracts";
-import { sourceControlClients } from "@t3tools/client-runtime/source-control-clients";
+} from "@fab/client-runtime/state/vcs";
+import { EnvironmentId, ThreadId } from "@fab/contracts";
+import { sourceControlClients } from "@fab/client-runtime/source-control-clients";
 import {
   CommonActions,
   StackActions,
@@ -65,7 +65,7 @@ export function GitOverviewSheet(props: GitOverviewSheetProps) {
   const navigation = useNavigation();
   const { environmentId, threadId } = props.route.params;
   const isBlankLink = environmentId.trim().length === 0 || threadId.trim().length === 0;
-  // oxlint-disable-next-line t3code/no-unreasoned-state-sync -- pops the navigator when the route link names a blank environment or thread
+  // oxlint-disable-next-line fab/no-unreasoned-state-sync -- pops the navigator when the route link names a blank environment or thread
   useEffect(() => {
     if (isBlankLink) navigation.goBack();
   }, [isBlankLink, navigation]);
@@ -458,10 +458,10 @@ function GitOverviewSheetContent(props: GitOverviewSheetProps) {
               />
             </Pressable>
           )}
-          <Text className="text-xs font-t3-bold tracking-[1px] uppercase text-foreground-muted">
+          <Text className="text-xs font-fab-bold tracking-[1px] uppercase text-foreground-muted">
             Repository
           </Text>
-          <Text className="pr-10 text-xl font-t3-bold">{currentBranchLabel}</Text>
+          <Text className="pr-10 text-xl font-fab-bold">{currentBranchLabel}</Text>
           <Text className="text-foreground-secondary text-sm font-medium leading-normal">
             {currentStatusSummary}
           </Text>

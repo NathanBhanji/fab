@@ -8,9 +8,9 @@ import * as Semaphore from "effect/Semaphore";
 
 import * as MobileSecureStorage from "./mobile-secure-storage";
 
-const AGENT_AWARENESS_DEVICE_ID_KEY = "t3code.agent-awareness.device-id";
-const AGENT_AWARENESS_REGISTRATION_KEY = "t3code.agent-awareness.registration";
-const RECENT_THREAD_SHORTCUTS_KEY = "t3code.recent-thread-shortcuts";
+const AGENT_AWARENESS_DEVICE_ID_KEY = "fab.agent-awareness.device-id";
+const AGENT_AWARENESS_REGISTRATION_KEY = "fab.agent-awareness.registration";
+const RECENT_THREAD_SHORTCUTS_KEY = "fab.recent-thread-shortcuts";
 
 export class MobileStorageDecodeError extends Schema.TaggedError<MobileStorageDecodeError>()(
   "MobileStorageDecodeError",
@@ -93,7 +93,7 @@ export class MobileStorage extends Context.Service<
       MobileSecureStorage.MobileSecureStorageError | MobileStorageEncodeError
     >;
   }
->()("@t3tools/mobile/persistence/MobileStorage") {}
+>()("@fab/mobile/persistence/MobileStorage") {}
 
 export const make = Effect.fn("MobileStorage.make")(function* () {
   const secureStorage = yield* MobileSecureStorage.MobileSecureStorage;

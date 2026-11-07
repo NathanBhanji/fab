@@ -10,7 +10,7 @@ export function remoteCacheUrl(root: string, env = process.env, home = NodeOS.ho
       NodeFS.readFileSync(NodePath.join(root, ".task-cache.json"), "utf8"),
     );
     const credentials = JSON.parse(
-      NodeFS.readFileSync(NodePath.join(home, ".config/t3-task-cache/credentials.json"), "utf8"),
+      NodeFS.readFileSync(NodePath.join(home, ".config/fab-task-cache/credentials.json"), "utf8"),
     );
     const credential = credentials[endpoint];
     if (

@@ -5,7 +5,7 @@ import {
   AuthRelayWriteScope,
   type AuthSessionState,
   managedCapabilityDenial,
-} from "@t3tools/contracts";
+} from "@fab/contracts";
 import { AsyncResult, Atom } from "effect/reactivity";
 import { useState } from "react";
 
@@ -27,9 +27,9 @@ import {
 import { usePrimaryManagedPolicy } from "~/state/managedPolicy";
 import { environmentSession, readEnvironmentScope, useEnvironmentScope } from "~/state/session";
 import {
-  type T3ConnectAccountPageUrl,
-  useT3ConnectAccountPage,
-} from "../clerk/T3ConnectAccountPages";
+  type FabConnectAccountPageUrl,
+  useFabConnectAccountPage,
+} from "../clerk/FabConnectAccountPages";
 import { CloudEnvironmentConnectRows } from "./CloudEnvironmentConnectList";
 import { TunnelLimitAlert } from "./TunnelUsage";
 import { Button } from "../ui/button";
@@ -78,7 +78,7 @@ function ConfiguredConnectOnboardingDialog() {
     primaryEnvironmentId === null ? environmentsReady : primarySessionState._tag !== "Initial";
 
   const controller = useCloudLinkController();
-  const accountPage = useT3ConnectAccountPage();
+  const accountPage = useFabConnectAccountPage();
   const showPublishStep = canManageRelay && controller.linkState.target !== null;
   const steps: ReadonlyArray<OnboardingStep> = showPublishStep
     ? ["publish", "devices"]
@@ -188,9 +188,9 @@ function ConfiguredConnectOnboardingDialog() {
     if (!ok) return;
     toastManager.add({
       type: "success",
-      title: "T3 Connect enabled",
+      title: "Fab Connect enabled",
       description: exposeEnvironment
-        ? "This environment is available to your other devices through T3 Connect."
+        ? "This environment is available to your other devices through Fab Connect."
         : "This environment publishes agent activity to your mobile clients.",
     });
     setStep("devices");
@@ -199,7 +199,7 @@ function ConfiguredConnectOnboardingDialog() {
   const openAccountPage = accountPage.open;
   // The account page is a Clerk modal, so close this dialog before it opens.
   const leaveForAccountPage = openAccountPage
-    ? (page: T3ConnectAccountPageUrl) => {
+    ? (page: FabConnectAccountPageUrl) => {
         complete();
         openAccountPage(page);
       }
@@ -214,7 +214,7 @@ function ConfiguredConnectOnboardingDialog() {
     >
       <WizardPopup>
         <WizardHeader
-          title="Set up T3 Connect"
+          title="Set up Fab Connect"
           description={
             <>
               Mesh your devices together. Publish this environment and connect the rest, all in one
@@ -327,7 +327,7 @@ function PublishStep({
   readonly disabled: boolean;
   readonly operationError: string | null;
   readonly tunnelLimit: number | null;
-  readonly onOpenAccountPage: ((page: T3ConnectAccountPageUrl) => void) | null;
+  readonly onOpenAccountPage: ((page: FabConnectAccountPageUrl) => void) | null;
   readonly onExposeEnvironmentChange: (enabled: boolean) => void;
   readonly onPublishAgentActivityChange: (enabled: boolean) => void;
 }) {
@@ -336,7 +336,7 @@ function PublishStep({
       <div className="rounded-lg border">
         <OnboardingToggleRow
           title="Publish this environment"
-          description="Make this environment available to your other devices through T3 Connect."
+          description="Make this environment available to your other devices through Fab Connect."
           checked={exposeEnvironment}
           disabled={disabled}
           onCheckedChange={onExposeEnvironmentChange}
@@ -360,14 +360,14 @@ function PublishStep({
 function OnboardingTunnelLimitAlert({
   onOpenAccountPage,
 }: {
-  readonly onOpenAccountPage: ((page: T3ConnectAccountPageUrl) => void) | null;
+  readonly onOpenAccountPage: ((page: FabConnectAccountPageUrl) => void) | null;
 }) {
   const { upgrade } = useManagedTunnelUsage();
   return (
     <TunnelLimitAlert
       upgrade={upgrade}
       onLinkT3Chat={onOpenAccountPage ? () => onOpenAccountPage("t3-chat") : null}
-      onManageTunnels={onOpenAccountPage ? () => onOpenAccountPage("t3-connect") : null}
+      onManageTunnels={onOpenAccountPage ? () => onOpenAccountPage("fab-connect") : null}
     />
   );
 }

@@ -1,10 +1,10 @@
-import { EnvironmentId, ThreadId, type ScopedThreadRef } from "@t3tools/contracts";
+import { EnvironmentId, ThreadId, type ScopedThreadRef } from "@fab/contracts";
 import * as Option from "effect/Option";
 import * as Schema from "effect/Schema";
 
 import { DEFAULT_HOSTED_APP_URL } from "./connectAuth.ts";
 
-export const THREAD_LINK_PROTOCOL = "t3-thread";
+export const THREAD_LINK_PROTOCOL = "fab-thread";
 const V1_PREFIX = `${THREAD_LINK_PROTOCOL}://v1/`;
 const V2_PREFIX = `${THREAD_LINK_PROTOCOL}://v2/`;
 const HOSTED_PREFIX = `${DEFAULT_HOSTED_APP_URL}/threads/`;
@@ -12,7 +12,7 @@ const HOSTED_SEGMENT = "[A-Za-z0-9_%-]+";
 const HOSTED_LINK = `${HOSTED_PREFIX.replace(/[.*+?^${}()|[\]\\/]/g, "\\$&")}${HOSTED_SEGMENT}/${HOSTED_SEGMENT}`;
 // Code comes first in the alternation so a link written inside a code span or fence is skipped.
 const THREAD_LINK_OUTSIDE_CODE = new RegExp(
-  String.raw`(?<fence>(\`{3,}|~{3,})[\s\S]*?(?:\2|$))|(?<span>(\`+)[^\n]*?\4)|\[(?<label>[^\]\n]*)\]\((?<href>t3-thread:\/\/v[12]\/[^\s)]+|${HOSTED_LINK})\)|<(?<autolink>t3-thread:\/\/v[12]\/[^\s<>]+|${HOSTED_LINK})>|(?<bare>${HOSTED_LINK})(?![\w%/?#-])`,
+  String.raw`(?<fence>(\`{3,}|~{3,})[\s\S]*?(?:\2|$))|(?<span>(\`+)[^\n]*?\4)|\[(?<label>[^\]\n]*)\]\((?<href>fab-thread:\/\/v[12]\/[^\s)]+|${HOSTED_LINK})\)|<(?<autolink>fab-thread:\/\/v[12]\/[^\s<>]+|${HOSTED_LINK})>|(?<bare>${HOSTED_LINK})(?![\w%/?#-])`,
   "g",
 );
 
@@ -128,7 +128,7 @@ export function formatThreadLink(ref: ThreadLink, label?: string): string {
   return cleaned ? `[${cleaned}](${threadLinkHref(ref)})` : `<${threadLinkHref(ref)}>`;
 }
 
-/** What a person copies out of T3 Code: a Markdown link that opens the thread anywhere. */
+/** What a person copies out of Fab: a Markdown link that opens the thread anywhere. */
 export function formatHostedThreadLink(
   ref: ScopedThreadRef,
   label: string,

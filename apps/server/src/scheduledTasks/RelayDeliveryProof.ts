@@ -1,11 +1,11 @@
 // Trust relay headers only with a mint-key-signed proof; otherwise handle the webhook as a direct request.
-import { RelayHookDeliveryProofPayload } from "@t3tools/contracts/relay";
+import { RelayHookDeliveryProofPayload } from "@fab/contracts/relay";
 import {
   normalizeRelayIssuer,
   RELAY_HOOK_DELIVERY_HEADER,
   RELAY_HOOK_DELIVERY_TYP,
   verifyRelayJwt,
-} from "@t3tools/shared/relayJwt";
+} from "@fab/shared/relayJwt";
 import * as Clock from "effect/Clock";
 import * as Context from "effect/Context";
 import * as Effect from "effect/Effect";
@@ -34,7 +34,7 @@ export class RelayDeliveryProof extends Context.Service<
       Option.Option<{ readonly deliveryId: string; readonly receivedAt: string }>
     >;
   }
->()("t3/scheduledTasks/RelayDeliveryProof") {}
+>()("fab/scheduledTasks/RelayDeliveryProof") {}
 
 const make = Effect.gen(function* () {
   const secrets = yield* ServerSecretStore.ServerSecretStore;
@@ -42,8 +42,8 @@ const make = Effect.gen(function* () {
   const verify: RelayDeliveryProof["Service"]["verify"] = Effect.fn("webhook.verifyRelayDelivery")(
     function* (input) {
       const proof = input.headers[RELAY_HOOK_DELIVERY_HEADER];
-      const deliveryId = input.headers["x-t3-relay-delivery-id"];
-      const receivedAt = input.headers["x-t3-relay-received-at"];
+      const deliveryId = input.headers["x-fab-relay-delivery-id"];
+      const receivedAt = input.headers["x-fab-relay-received-at"];
       if (proof === undefined || deliveryId === undefined || receivedAt === undefined) {
         return Option.none();
       }
@@ -60,7 +60,7 @@ const make = Effect.gen(function* () {
         token: proof,
         typ: RELAY_HOOK_DELIVERY_TYP,
         issuer: normalizeRelayIssuer(relayIssuer.value),
-        audience: `t3-env:${environmentId}`,
+        audience: `fab-env:${environmentId}`,
         nowEpochSeconds: Math.floor((yield* Clock.currentTimeMillis) / 1_000),
         maxTokenAge: MAX_PROOF_AGE_SECONDS,
       }).pipe(Effect.map(decodePayload), Effect.orElseSucceed(Option.none));

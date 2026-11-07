@@ -1,5 +1,5 @@
 {
-  "name": "@t3tools/provider-grok",
+  "name": "@fab/provider-grok",
   "private": true,
   "type": "module",
   "exports": {
@@ -29,16 +29,16 @@
     "test": "vp test run --config ../../vite.config.ts --dir ."
   },
   "dependencies": {
-    "@t3tools/contracts": "workspace:*",
-    "@t3tools/provider-acp": "workspace:*",
-    "@t3tools/provider-core": "workspace:*",
-    "@t3tools/shared": "workspace:*",
+    "@fab/contracts": "workspace:*",
+    "@fab/provider-acp": "workspace:*",
+    "@fab/provider-core": "workspace:*",
+    "@fab/shared": "workspace:*",
     "effect": "catalog:"
   },
   "devDependencies": {
     "@effect/platform-node": "catalog:",
     "@effect/vitest": "catalog:",
-    "@t3tools/provider-testing": "workspace:*",
+    "@fab/provider-testing": "workspace:*",
     "@types/node": "catalog:",
     "effect-acp": "workspace:*",
     "vite-plus": "catalog:"

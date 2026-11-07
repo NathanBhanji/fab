@@ -11,9 +11,9 @@ import {
   DESKTOP_APP_ACTIVATION_PROTOCOL_VERSION,
   DesktopAppActivationRequest,
   type DesktopAppActivationResponse,
-} from "@t3tools/contracts";
-import { resolveDesktopAppControlAddress } from "@t3tools/shared/desktopAppControl";
-import * as HostProcess from "@t3tools/shared/HostProcess";
+} from "@fab/contracts";
+import { resolveDesktopAppControlAddress } from "@fab/shared/desktopAppControl";
+import * as HostProcess from "@fab/shared/HostProcess";
 import * as Context from "effect/Context";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
@@ -162,7 +162,7 @@ export async function startDesktopAppControlServer(input: {
       activeRequestId = parsed.requestId;
       void input.handle(parsed).then(finish, () => {
         finish(
-          invalidResponse(parsed.requestId, "T3 Code could not process the desktop app request."),
+          invalidResponse(parsed.requestId, "Fab could not process the desktop app request."),
         );
       });
     });
@@ -290,7 +290,7 @@ export class DesktopAppActivation extends Context.Service<
     readonly setRendererReady: (ready: boolean) => Effect.Effect<void>;
     readonly complete: (response: DesktopAppActivationResponse) => Effect.Effect<void>;
   }
->()("@t3tools/desktop/app/DesktopAppActivation") {}
+>()("@fab/desktop/app/DesktopAppActivation") {}
 
 const { logWarning } = makeComponentLogger("desktop-app-activation");
 

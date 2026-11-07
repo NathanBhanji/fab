@@ -1,5 +1,5 @@
-import type { ChangeRequestTerminology } from "@t3tools/client-runtime/source-control-clients";
-import type { PullRequestDiffResult } from "@t3tools/contracts";
+import type { ChangeRequestTerminology } from "@fab/client-runtime/source-control-clients";
+import type { PullRequestDiffResult } from "@fab/contracts";
 import { buildReviewParsedDiff, type ReviewParsedDiff } from "../review/reviewModel";
 
 export interface PullRequestDiffPage {

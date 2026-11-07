@@ -1,7 +1,7 @@
 import * as NodeOS from "node:os";
 
-import { parsePersistedServerObservabilitySettings } from "@t3tools/shared/serverSettings";
-import { currentDesktopBootstrapToken } from "@t3tools/shared/desktopBootstrapToken";
+import { parsePersistedServerObservabilitySettings } from "@fab/shared/serverSettings";
+import { currentDesktopBootstrapToken } from "@fab/shared/desktopBootstrapToken";
 import * as Clock from "effect/Clock";
 import * as Context from "effect/Context";
 import * as SecureRandom from "effect/crypto/SecureRandom";
@@ -54,7 +54,7 @@ export class DesktopBackendConfiguration extends Context.Service<
     readonly resolvePrimaryLabel: Effect.Effect<string>;
     readonly currentBootstrapToken: Effect.Effect<string, PlatformError.PlatformError>;
   }
->()("@t3tools/desktop/backend/DesktopBackendConfiguration") {}
+>()("@fab/desktop/backend/DesktopBackendConfiguration") {}
 
 interface BackendObservabilitySettings {
   readonly otlpTracesUrl: Option.Option<string>;
@@ -69,32 +69,32 @@ const emptyBackendObservabilitySettings: BackendObservabilitySettings = {
 };
 
 const DESKTOP_BACKEND_ENV_NAMES = [
-  "T3CODE_PORT",
-  "T3CODE_MODE",
-  "T3CODE_NO_BROWSER",
-  "T3CODE_HOST",
-  "T3CODE_DESKTOP_WS_URL",
-  "T3CODE_DESKTOP_LAN_HOST",
-  "T3CODE_DESKTOP_HTTPS_ENDPOINTS",
-  "T3CODE_TAILSCALE_SERVE",
-  "T3CODE_TAILSCALE_SERVE_PORT",
+  "FAB_PORT",
+  "FAB_MODE",
+  "FAB_NO_BROWSER",
+  "FAB_HOST",
+  "FAB_DESKTOP_WS_URL",
+  "FAB_DESKTOP_LAN_HOST",
+  "FAB_DESKTOP_HTTPS_ENDPOINTS",
+  "FAB_TAILSCALE_SERVE",
+  "FAB_TAILSCALE_SERVE_PORT",
 ] as const;
 
 // Windows forwards these variables into WSL only through WSLENV.
 const WSL_FORWARDED_ENV_NAMES = [
   "OPENAI_API_KEY",
   "ANTHROPIC_API_KEY",
-  "T3CODE_TELEMETRY_ENABLED",
-  "T3CODE_GITHUB_APP_CLIENT_ID",
+  "FAB_TELEMETRY_ENABLED",
+  "FAB_GITHUB_APP_CLIENT_ID",
   // Otherwise the WSL server keeps exporting to endpoints from the bootstrap.
-  "T3CODE_OTEL_SDK_DISABLED",
+  "FAB_OTEL_SDK_DISABLED",
   "OTEL_SDK_DISABLED",
-  "T3CODE_OTLP_HEADERS",
-  "T3CODE_OTLP_PROTOCOL",
-  // Untranslated T3 URLs must override bootstrap endpoints inside WSL, as they do on Windows.
-  "T3CODE_OTLP_TRACES_URL",
-  "T3CODE_OTLP_METRICS_URL",
-  "T3CODE_OTLP_LOGS_URL",
+  "FAB_OTLP_HEADERS",
+  "FAB_OTLP_PROTOCOL",
+  // Untranslated Fab URLs must override bootstrap endpoints inside WSL, as they do on Windows.
+  "FAB_OTLP_TRACES_URL",
+  "FAB_OTLP_METRICS_URL",
+  "FAB_OTLP_LOGS_URL",
   "OTEL_EXPORTER_OTLP_ENDPOINT",
   "OTEL_EXPORTER_OTLP_TRACES_ENDPOINT",
   "OTEL_EXPORTER_OTLP_METRICS_ENDPOINT",
@@ -162,7 +162,7 @@ const logBackendObservabilitySettingsReadFailure = (
 };
 
 function resourceMonitorBinaryName(platform: NodeJS.Platform): string {
-  return platform === "win32" ? "t3-resource-monitor.exe" : "t3-resource-monitor";
+  return platform === "win32" ? "fab-resource-monitor.exe" : "fab-resource-monitor";
 }
 
 const resolveResourceMonitorPath = Effect.fn(
@@ -397,7 +397,7 @@ const runWslPreflight = Effect.fn("desktop.backendConfiguration.wslPreflight")(f
           _tag: "Ready",
           runningDistro,
           windowsEntryPath: environment.backendEntryPath,
-          runtime: { kind: "executable", entryPath: `${runtime.linuxAppRoot}/t3` },
+          runtime: { kind: "executable", entryPath: `${runtime.linuxAppRoot}/fab` },
           resolvedPath: stagedProbe.resolvedPath,
           runtimeId: input.runtimeArchive.runtimeId,
         } as const;
@@ -500,7 +500,7 @@ const resolvePrimaryStartConfig = Effect.fn("desktop.backendConfiguration.resolv
       mode: "desktop" as const,
       noBrowser: true,
       port: backendExposure.port,
-      t3Home: environment.baseDir,
+      fabHome: environment.baseDir,
       host: backendExposure.bindHost,
       desktopBootstrapToken: input.bootstrapToken,
       desktopBootstrapSecret: input.bootstrapSecret,
@@ -532,8 +532,8 @@ const resolvePrimaryStartConfig = Effect.fn("desktop.backendConfiguration.resolv
       env: {
         ...backendChildEnvPatch(),
         ELECTRON_RUN_AS_NODE: "1",
-        T3CODE_DESKTOP_SHELL_DISCOVERY_PENDING: "1",
-        T3CODE_CLI_PATH: Option.getOrUndefined(input.cliPath),
+        FAB_DESKTOP_SHELL_DISCOVERY_PENDING: "1",
+        FAB_CLI_PATH: Option.getOrUndefined(input.cliPath),
       },
       extendEnv: true,
       bootstrap,
@@ -569,7 +569,7 @@ const resolveWslStartConfig = Effect.fn("desktop.backendConfiguration.resolveWsl
     mode: "desktop" as const,
     noBrowser: true,
     port: input.port,
-    // Omit t3Home to keep the Linux backend from sharing the primary's Windows SQLite file.
+    // Omit fabHome to keep the Linux backend from sharing the primary's Windows SQLite file.
     host: wslBindHost,
     desktopBootstrapToken: input.bootstrapToken,
     desktopBootstrapSecret: input.bootstrapSecret,
@@ -639,12 +639,12 @@ const resolveWslStartConfig = Effect.fn("desktop.backendConfiguration.resolveWsl
     }
   }
 
-  const parentEnvWithoutT3Home: Record<string, string | undefined> = {};
+  const parentEnvWithoutFabHome: Record<string, string | undefined> = {};
   for (const [key, value] of Object.entries(process.env)) {
-    if (key === "T3CODE_HOME") continue;
-    parentEnvWithoutT3Home[key] = value;
+    if (key === "FAB_HOME") continue;
+    parentEnvWithoutFabHome[key] = value;
   }
-  const wslEnv = mergeWslEnv(parentEnvWithoutT3Home.WSLENV, forwardedEnvNames);
+  const wslEnv = mergeWslEnv(parentEnvWithoutFabHome.WSLENV, forwardedEnvNames);
 
   const baseConfig = {
     executablePath: "wsl.exe",
@@ -652,12 +652,12 @@ const resolveWslStartConfig = Effect.fn("desktop.backendConfiguration.resolveWsl
       preflight._tag === "Ready" ? preflight.windowsEntryPath : environment.backendEntryPath,
     cwd: environment.backendCwd,
     env: {
-      ...parentEnvWithoutT3Home,
+      ...parentEnvWithoutFabHome,
       ...backendChildEnvPatch(),
       ...forwardedEnv,
       ...(wslEnv !== undefined ? { WSLENV: wslEnv } : {}),
     },
-    // env already excludes T3CODE_HOME; merging process.env would restore it.
+    // env already excludes FAB_HOME; merging process.env would restore it.
     extendEnv: false,
     bootstrap,
     bootstrapDelivery: "stdin" as const,

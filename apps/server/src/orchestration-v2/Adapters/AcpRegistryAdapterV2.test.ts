@@ -12,9 +12,9 @@ import {
   ProviderInstanceId,
   ProviderSessionId,
   ThreadId,
-} from "@t3tools/contracts";
-import { pendingBackgroundTurnItems } from "@t3tools/shared/orchestrationV2PendingBackgroundWork";
-import { resolveSelfInvocation, selfInvocationArgs } from "@t3tools/shared/nodeRuntime";
+} from "@fab/contracts";
+import { pendingBackgroundTurnItems } from "@fab/shared/orchestrationV2PendingBackgroundWork";
+import { resolveSelfInvocation, selfInvocationArgs } from "@fab/shared/nodeRuntime";
 import * as Exit from "effect/Exit";
 import * as Fiber from "effect/Fiber";
 import * as DateTime from "effect/DateTime";
@@ -30,37 +30,37 @@ import * as HttpClientResponse from "effect/http/HttpClientResponse";
 import * as ChildProcessSpawner from "effect/process/ChildProcessSpawner";
 import * as EffectAcpErrors from "effect-acp/errors";
 
-import { makeProviderFailure } from "@t3tools/provider-core/server/failure";
-import * as McpProviderSessions from "@t3tools/provider-core/server/McpProviderSessions";
-import * as TestProviderHost from "@t3tools/provider-testing/TestProviderHost";
+import { makeProviderFailure } from "@fab/provider-core/server/failure";
+import * as McpProviderSessions from "@fab/provider-core/server/McpProviderSessions";
+import * as TestProviderHost from "@fab/provider-testing/TestProviderHost";
 import {
   makeProviderReplayGate,
   type ProviderReplayGate,
-} from "@t3tools/provider-testing/replayGate";
-import type { ProviderContinuationRequest } from "@t3tools/provider-core/server/ProviderContinuationRequests";
+} from "@fab/provider-testing/replayGate";
+import type { ProviderContinuationRequest } from "@fab/provider-core/server/ProviderContinuationRequests";
 import * as ServerSettings from "../../serverSettings.ts";
-import type { AcpRegistryLiveConfiguration } from "@t3tools/provider-acp-registry/testing";
-import * as AcpRegistrySupport from "@t3tools/provider-acp-registry/server/AcpRegistrySupport";
-import * as AcpRegistryRuntimeCoordinator from "@t3tools/provider-acp-registry/server/AcpRegistryRuntimeCoordinator";
-import { ACP_SESSION_MODE_OPTION_ID } from "@t3tools/provider-acp/server/sessionConfig";
-import * as AcpSessionRuntime from "@t3tools/provider-acp/server/AcpSessionRuntime";
-import { t3AcpPromptWithInstructions } from "@t3tools/provider-core/server/orchestrationInstructions";
-import { buildRuntimeInstructions } from "@t3tools/provider-core/server/runtimeInstructions";
-import * as IdAllocator from "@t3tools/provider-core/server/IdAllocator";
+import type { AcpRegistryLiveConfiguration } from "@fab/provider-acp-registry/testing";
+import * as AcpRegistrySupport from "@fab/provider-acp-registry/server/AcpRegistrySupport";
+import * as AcpRegistryRuntimeCoordinator from "@fab/provider-acp-registry/server/AcpRegistryRuntimeCoordinator";
+import { ACP_SESSION_MODE_OPTION_ID } from "@fab/provider-acp/server/sessionConfig";
+import * as AcpSessionRuntime from "@fab/provider-acp/server/AcpSessionRuntime";
+import { fabAcpPromptWithInstructions } from "@fab/provider-core/server/orchestrationInstructions";
+import { buildRuntimeInstructions } from "@fab/provider-core/server/runtimeInstructions";
+import * as IdAllocator from "@fab/provider-core/server/IdAllocator";
 import {
   decodeAcpReplayTranscript,
   makeAcpReplayCompletenessAssertion,
   makeAcpReplayRuntime,
   makeTurnInput,
 } from "./AcpAdapterV2.testkit.ts";
-import * as ProviderAdapter from "@t3tools/provider-core/server/ProviderAdapter";
-import { AcpRegistryAdapterV2Driver } from "@t3tools/provider-acp-registry/server";
+import * as ProviderAdapter from "@fab/provider-core/server/ProviderAdapter";
+import { AcpRegistryAdapterV2Driver } from "@fab/provider-acp-registry/server";
 import {
   ACP_REGISTRY_PROVIDER,
   makeAcpRegistryAdapterV2,
   acpRegistryPromptFailure,
   acpRegistryProbeResult,
-} from "@t3tools/provider-acp-registry/testing";
+} from "@fab/provider-acp-registry/testing";
 
 const decodeAcpRegistryAdapterSettings = Schema.decodeUnknownEffect(
   AcpRegistryAdapterV2Driver.configSchema,
@@ -212,7 +212,7 @@ const openClaudeReplaySession = Effect.fn("openClaudeReplaySession")(function* (
   const fileSystem = yield* FileSystem.FileSystem;
   const path = yield* Path.Path;
   const childProcessSpawner = yield* ChildProcessSpawner.ChildProcessSpawner;
-  const replayDir = yield* fileSystem.makeTempDirectoryScoped({ prefix: "t3-claude-lifecycle-" });
+  const replayDir = yield* fileSystem.makeTempDirectoryScoped({ prefix: "fab-claude-lifecycle-" });
   const transcript = yield* decodeAcpReplayTranscript(
     {
       provider: ACP_REGISTRY_PROVIDER,
@@ -492,7 +492,7 @@ describe("AcpRegistryAdapterV2", () => {
       const fileSystem = yield* FileSystem.FileSystem;
       const path = yield* Path.Path;
       const replayDir = yield* fileSystem.makeTempDirectoryScoped({
-        prefix: "t3-acp-registry-stored-picks-",
+        prefix: "fab-acp-registry-stored-picks-",
       });
       const statusPath = path.join(replayDir, "status.json");
       const transcript = yield* decodeAcpReplayTranscript(
@@ -1118,7 +1118,7 @@ describe("AcpRegistryAdapterV2", () => {
     }).pipe(Effect.provide(layerTest), Effect.scoped),
   );
 
-  it.effect("gives Copilot T3's MCP server over HTTP when it advertises HTTP", () =>
+  it.effect("gives Copilot Fab's MCP server over HTTP when it advertises HTTP", () =>
     Effect.gen(function* () {
       const selfInvocation = yield* resolveSelfInvocation();
       const mockAgentPath = yield* (yield* Path.Path).fromFileUrl(
@@ -1162,7 +1162,7 @@ describe("AcpRegistryAdapterV2", () => {
                   spawn: {
                     command: process.execPath,
                     args: [mockAgentPath],
-                    env: { T3_ACP_SESSION_LIFECYCLE: "1", ...agentEnvironment },
+                    env: { FAB_ACP_SESSION_LIFECYCLE: "1", ...agentEnvironment },
                   },
                 }),
             }),
@@ -1207,33 +1207,33 @@ describe("AcpRegistryAdapterV2", () => {
       const http = (authorization: string) => [
         {
           type: "http",
-          name: "t3-code",
+          name: "fab",
           url: endpoint,
           headers: [{ name: "Authorization", value: authorization }],
         },
       ];
       const stdio = (authorization: string) => [
         {
-          name: "t3-code",
+          name: "fab",
           command: selfInvocation.command,
           args: [...selfInvocationArgs(selfInvocation, ["acp-mcp-bridge"])],
           env: [
             { name: "ELECTRON_RUN_AS_NODE", value: "1" },
-            { name: "T3_ACP_MCP_ENDPOINT", value: endpoint },
-            { name: "T3_ACP_MCP_AUTHORIZATION", value: authorization },
+            { name: "FAB_ACP_MCP_ENDPOINT", value: endpoint },
+            { name: "FAB_ACP_MCP_AUTHORIZATION", value: authorization },
           ],
         },
       ];
 
       assert.deepEqual(
-        yield* sessionMcpServers({ agentId: "github-copilot-cli" }, { T3_ACP_MCP_HTTP: "1" }),
+        yield* sessionMcpServers({ agentId: "github-copilot-cli" }, { FAB_ACP_MCP_HTTP: "1" }),
         { new: http("Bearer opened-token"), load: http("Bearer rotated-token") },
       );
-      const acp = [{ type: "acp", name: "t3-code", serverId: "t3-code" }];
+      const acp = [{ type: "acp", name: "fab", serverId: "fab" }];
       assert.deepEqual(
         yield* sessionMcpServers(
           { agentId: "github-copilot-cli" },
-          { T3_ACP_MCP_HTTP: "1", T3_ACP_MCP_ACP: "1" },
+          { FAB_ACP_MCP_HTTP: "1", FAB_ACP_MCP_ACP: "1" },
         ),
         { new: acp, load: acp },
       );
@@ -1241,7 +1241,7 @@ describe("AcpRegistryAdapterV2", () => {
         new: stdio("Bearer opened-token"),
         load: stdio("Bearer rotated-token"),
       });
-      assert.deepEqual(yield* sessionMcpServers({ agentId: "gemini" }, { T3_ACP_MCP_HTTP: "1" }), {
+      assert.deepEqual(yield* sessionMcpServers({ agentId: "gemini" }, { FAB_ACP_MCP_HTTP: "1" }), {
         new: stdio("Bearer opened-token"),
         load: stdio("Bearer rotated-token"),
       });
@@ -1261,9 +1261,9 @@ describe("AcpRegistryAdapterV2", () => {
             type: "text",
             text:
               ordinal === 1
-                ? t3AcpPromptWithInstructions({
+                ? fabAcpPromptWithInstructions({
                     prompt: "test prompt",
-                    state: { interactionMode: "default", hasT3Mcp: false, hasDeviceTools: false },
+                    state: { interactionMode: "default", hasFabMcp: false, hasDeviceTools: false },
                   })
                 : "test prompt",
           },
@@ -1788,7 +1788,7 @@ describe("AcpRegistryAdapterV2", () => {
               ...update("grandchild", {
                 sessionUpdate: "terminal_update",
                 terminalId: "nested-terminal",
-                command: "/usr/bin/node /srv/t3/bin.ts acp-mcp-call orchestrator_capabilities {}",
+                command: "/usr/bin/node /srv/fab/bin.ts acp-mcp-call orchestrator_capabilities {}",
               }),
               label: "nested-output",
             },
@@ -1938,7 +1938,7 @@ describe("AcpRegistryAdapterV2", () => {
               event.turnItem.nativeItemRef?.nativeId ===
                 "agent-1:session:grandchild:tool:terminal-tool" &&
               event.turnItem.threadId === row.subagent.childThreadId &&
-              event.turnItem.toolName === "t3-code.orchestrator_capabilities",
+              event.turnItem.toolName === "fab.orchestrator_capabilities",
           ),
           "embedded agent-terminal commands preserve nested MCP identity",
         );
@@ -2230,7 +2230,7 @@ describe("AcpRegistryAdapterV2", () => {
       const childProcessSpawner = yield* ChildProcessSpawner.ChildProcessSpawner;
       const fileSystem = yield* FileSystem.FileSystem;
       const path = yield* Path.Path;
-      const replayDir = yield* fileSystem.makeTempDirectoryScoped({ prefix: "t3-copilot-lost-" });
+      const replayDir = yield* fileSystem.makeTempDirectoryScoped({ prefix: "fab-copilot-lost-" });
       const scriptPath = yield* path.fromFileUrl(
         new URL("../../../scripts/acp-replay-agent.ts", import.meta.url),
       );

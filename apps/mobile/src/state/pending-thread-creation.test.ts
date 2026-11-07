@@ -5,7 +5,7 @@ import {
   ProjectId,
   ProviderInstanceId,
   ThreadId,
-} from "@t3tools/contracts";
+} from "@fab/contracts";
 import { describe, expect, it } from "vite-plus/test";
 
 import {

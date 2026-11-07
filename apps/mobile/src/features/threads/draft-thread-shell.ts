@@ -1,4 +1,4 @@
-import { presentThreadShell } from "@t3tools/client-runtime/state/shell";
+import { presentThreadShell } from "@fab/client-runtime/state/shell";
 import type {
   EnvironmentId,
   ThreadId,
@@ -6,7 +6,7 @@ import type {
   ModelSelection,
   RuntimeMode,
   ProviderInteractionMode,
-} from "@t3tools/contracts";
+} from "@fab/contracts";
 import * as DateTime from "effect/DateTime";
 
 export function draftThreadShell(input: {

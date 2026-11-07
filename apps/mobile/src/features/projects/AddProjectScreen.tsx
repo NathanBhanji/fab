@@ -30,24 +30,24 @@ import {
   resolveAddProjectPath,
   sortAddProjectProviderSources,
   type AddProjectRemoteSource,
-} from "@t3tools/client-runtime/operations/projects";
+} from "@fab/client-runtime/operations/projects";
 import {
   connectionStatusText,
   type EnvironmentConnectionPhase,
-} from "@t3tools/client-runtime/connection";
+} from "@fab/client-runtime/connection";
 import {
   canPreloadBrowsePath,
   createBrowseNavigationCoordinator,
   filterFilesystemBrowseEntries,
   getFilesystemBrowsePath,
   resolveFilesystemReadAccess,
-} from "@t3tools/client-runtime/state/filesystem";
+} from "@fab/client-runtime/state/filesystem";
 import {
   appendBrowsePathSegment,
   inferProjectTitleFromPath,
   isWindowsPlatform,
-} from "@t3tools/client-runtime/state/projects";
-import { resolvePastedPath } from "@t3tools/shared/path";
+} from "@fab/client-runtime/state/projects";
+import { resolvePastedPath } from "@fab/shared/path";
 import {
   AuthOrchestrationOperateScope,
   AuthSourceControlWriteScope,
@@ -58,7 +58,7 @@ import {
   ProjectId,
   resolveEnvironmentMachineKind,
   SourceControlProviderKind,
-} from "@t3tools/contracts";
+} from "@fab/contracts";
 import {
   StackActions,
   useNavigation,
@@ -85,7 +85,7 @@ import { AppText as Text, AppTextInput as TextInput } from "../../components/ui/
 import { EnvironmentMachineSymbol } from "../../components/EnvironmentMachineSymbol";
 import { ErrorBanner } from "../../components/ui/ErrorBanner";
 import { SourceControlIcon } from "./SourceControlIcon";
-import { sourceControlClients } from "@t3tools/client-runtime/source-control-clients";
+import { sourceControlClients } from "@fab/client-runtime/source-control-clients";
 import { ThemedSwitch } from "../../components/ui/ThemedSwitch";
 import { uuidv4 } from "../../lib/uuid";
 import { useAtomCommand } from "../../state/use-atom-command";
@@ -149,8 +149,8 @@ function SectionTitle(props: { readonly children: string }) {
     <Text
       className={
         Platform.OS === "android"
-          ? "px-4 text-sm font-t3-medium text-primary-text"
-          : "px-1 text-2xs font-t3-bold tracking-[0.7px] uppercase text-foreground-muted"
+          ? "px-4 text-sm font-fab-medium text-primary-text"
+          : "px-1 text-2xs font-fab-bold tracking-[0.7px] uppercase text-foreground-muted"
       }
     >
       {props.children}
@@ -240,7 +240,7 @@ function ListRow(props: {
           {props.icon}
         </View>
         <View className="flex-1 gap-0.5">
-          <Text className="text-base leading-snug font-t3-bold">{props.title}</Text>
+          <Text className="text-base leading-snug font-fab-bold">{props.title}</Text>
           {props.subtitle ? (
             <Text className="text-sm leading-snug text-foreground-muted" numberOfLines={2}>
               {props.subtitle}
@@ -368,7 +368,7 @@ function useBrowsePathInput(environment: EnvironmentOption | null, pinnedDirecto
     return committed;
   };
 
-  // oxlint-disable-next-line t3code/no-unreasoned-state-sync -- invalidates the browse navigation coordinator on unmount so in-flight browses do not commit
+  // oxlint-disable-next-line fab/no-unreasoned-state-sync -- invalidates the browse navigation coordinator on unmount so in-flight browses do not commit
   useEffect(
     () => () => {
       browseNavigation.invalidate();
@@ -447,7 +447,7 @@ function EmptyEnvironmentState() {
 
   return (
     <View className="items-center gap-3 rounded-2xl bg-grouped-card px-5 py-8">
-      <Text className="text-center text-lg font-t3-bold">Environment unavailable</Text>
+      <Text className="text-center text-lg font-fab-bold">Environment unavailable</Text>
       <Text className="text-center text-sm leading-normal text-foreground-muted">
         Start or reconnect an environment before adding a project.
       </Text>
@@ -1449,7 +1449,7 @@ export function AddProjectDestinationScreen(props: {
       {error ? <ErrorBanner message={error} /> : null}
       {repositoryTitle ? (
         <View className="rounded-[24px] bg-grouped-card px-4 py-3">
-          <Text className="text-base font-t3-bold">{repositoryTitle}</Text>
+          <Text className="text-base font-fab-bold">{repositoryTitle}</Text>
           <Text className="mt-0.5 text-xs text-foreground-muted" numberOfLines={2}>
             {remoteUrl}
           </Text>

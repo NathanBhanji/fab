@@ -6,8 +6,8 @@ import * as Layer from "effect/Layer";
 import * as Effect from "effect/Effect";
 import * as Schema from "effect/Schema";
 import { assert, expect, it } from "@effect/vitest";
-import { ComposerContextId, EnvironmentId, ThreadId } from "@t3tools/contracts";
-import { projectComposerContextForProvider } from "@t3tools/shared/composerContextReferences";
+import { ComposerContextId, EnvironmentId, ThreadId } from "@fab/contracts";
+import { projectComposerContextForProvider } from "@fab/shared/composerContextReferences";
 
 import {
   buildBase,
@@ -25,9 +25,9 @@ import {
   shellOutput,
   shellRequest,
   summarize,
-  t3Default,
-  t3SystemAppend,
-  t3SubagentContext,
+  fabDefault,
+  fabSystemAppend,
+  fabSubagentContext,
   withDevices,
 } from "./run.ts";
 import { briefRoute, gradeDevice, shellInvocations } from "./device-grading.ts";
@@ -37,7 +37,7 @@ it("grades Codex shell and subagent calls with the shared rules", () => {
   const calls = [
     { name: "exec_command", input: { cmd: "sleep 60" } },
     { name: "collaboration.spawn_agent", input: { task: "review" } },
-    { name: "mcp__t3_code__delegate_task", input: {} },
+    { name: "mcp__fab__delegate_task", input: {} },
   ].map(({ name, input }) => ({
     step: 0,
     tool: normalizeToolName(name),
@@ -85,7 +85,7 @@ it("counts the new threads an agent asks for, one brief per thread, over both cr
     input: { threads: prompts.map((prompt) => ({ prompt })) },
   });
   const launch = (message: string, failed = false) => ({
-    tool: "t3_thread_launch",
+    tool: "fab_thread_launch",
     input: { message },
     failed,
   });
@@ -104,7 +104,7 @@ it("counts the new threads an agent asks for, one brief per thread, over both cr
   assert.deepEqual(failed(expect, run(batch("reconnect, csv, admin", "csv", "csv"))), [label]);
   assert.deepEqual(failed(expect, run(batch("reconnect", "csv", "admin", "docs"))), [label]);
   for (const call of [
-    { tool: "t3_thread_launch", input: { prompt: "csv" } },
+    { tool: "fab_thread_launch", input: { prompt: "csv" } },
     { tool: "create_threads", input: { threads: [{ message: "csv" }] } },
   ]) {
     assert.deepEqual(failed(expect, run(launch("reconnect"), launch("admin"), call)), [label]);
@@ -113,7 +113,7 @@ it("counts the new threads an agent asks for, one brief per thread, over both cr
     failed(
       expect,
       run(launch("reconnect"), launch("admin"), {
-        tool: "t3_thread_launch",
+        tool: "fab_thread_launch",
         input: { title: "CSV", message: "Fix reconnect" },
       }),
     ),
@@ -158,13 +158,13 @@ it("passes a good run and names every rule a bad run breaks", () => {
   const expect = {
     calls: [{ tool: "delegate_task", args: { task: "~FINDING", "target.options": "~max" } }],
     callsMustNot: [{ tool: "delegate_task", args: { runtimeMode: "approval-required" } }],
-    notCalls: ["t3_thread_send"],
+    notCalls: ["fab_thread_send"],
     order: ["orchestrator_capabilities", "delegate_task"],
     minCalls: { orchestrator_capabilities: 1 },
     maxCalls: { task_status: 0 },
     endsTurnAfter: "delegate_task",
     shellMustNot: ["\\bsleep\\b"],
-    textMust: ["t3-thread://v2/"],
+    textMust: ["fab-thread://v2/"],
     textMustNot: ["Paste .*token"],
     linked: ["~/pull/124"],
     linkedNumbers: [124],
@@ -178,7 +178,7 @@ it("passes a good run and names every rule a bad run breaks", () => {
         input: { task: "Prior findings: ...", target: { options: { reasoningEffort: "max" } } },
       },
     ],
-    text: "Started <t3-thread://v2/eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee/11111111-1111-4111-8111-111111111111>. Do not paste a token.",
+    text: "Started <fab-thread://v2/eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee/11111111-1111-4111-8111-111111111111>. Do not paste a token.",
     stopReason: "end_turn",
     linked: ["https://github.com/acme/app/pull/124"],
   };
@@ -191,7 +191,7 @@ it("passes a good run and names every rule a bad run breaks", () => {
         tool: "delegate_task",
         input: { task: "Review again", runtimeMode: "approval-required" },
       },
-      { step: 1, tool: "t3_thread_send", input: {} },
+      { step: 1, tool: "fab_thread_send", input: {} },
       { step: 2, tool: "Monitor", input: { command: "sleep 60" } },
       { step: 3, tool: "task_status", input: { taskId: "task-1" } },
     ],
@@ -201,13 +201,13 @@ it("passes a good run and names every rule a bad run breaks", () => {
   assert.deepEqual(failed(expect, bad), [
     'calls delegate_task {"task":"~FINDING","target.options":"~max"}',
     'callsMustNot delegate_task {"runtimeMode":"approval-required"}',
-    "notCalls t3_thread_send",
+    "notCalls fab_thread_send",
     "order orchestrator_capabilities > delegate_task",
     "minCalls orchestrator_capabilities >= 1",
     "maxCalls task_status <= 0",
     "endsTurnAfter delegate_task",
     "shellMustNot /\\bsleep\\b/",
-    "textMust /t3-thread://v2//",
+    "textMust /fab-thread://v2//",
     "textMustNot /Paste .*token/",
     "linked ~/pull/124",
     "linkedNumbers",
@@ -217,13 +217,13 @@ it("passes a good run and names every rule a bad run breaks", () => {
 it("bounds numbers and reads target.options in either schema form", () => {
   const expect = {
     calls: [
-      { tool: "t3_thread_read", args: { limit: "<=20" } },
+      { tool: "fab_thread_read", args: { limit: "<=20" } },
       { tool: "delegate_task", args: { "target.options.effort": "max", timeoutMs: ">=60000" } },
     ],
   };
   const run = (limit: unknown, options: unknown, timeoutMs: number): SampleRun => ({
     calls: [
-      { step: 0, tool: "t3_thread_read", input: { limit } },
+      { step: 0, tool: "fab_thread_read", input: { limit } },
       { step: 0, tool: "delegate_task", input: { target: { options }, timeoutMs } },
     ],
     text: "",
@@ -256,19 +256,19 @@ const template = {
     {
       role: "system",
       content:
-        "Main prompt.\n - Primary working directory: /home/alice/app\n\n<runtime_info>old</runtime_info>\n\n## T3 Code orchestration\nold text",
+        "Main prompt.\n - Primary working directory: /home/alice/app\n\n<runtime_info>old</runtime_info>\n\n## Fab orchestration\nold text",
     },
     {
       role: "system",
       content:
-        "You are powered by the model named Opus 5.5. The exact model ID is claude-opus-5-5.\n\nThe following deferred tools are now available via ToolSearch. Load them first:\nMonitor\nmcp__t3-code__retired_tool\n\nAfter the list.",
+        "You are powered by the model named Opus 5.5. The exact model ID is claude-opus-5-5.\n\nThe following deferred tools are now available via ToolSearch. Load them first:\nMonitor\nmcp__fab__retired_tool\n\nAfter the list.",
     },
     { role: "assistant", content: [{ type: "text", text: "A later turn." }] },
   ],
   tools: [
     { name: "mcp__host__term_Bash", input_schema: { type: "object" } },
     { name: "mcp__host__clown_ToolSearch", input_schema: { type: "object" } },
-    { name: "mcp__t3-code__retired_tool", input_schema: { type: "object" }, defer_loading: true },
+    { name: "mcp__fab__retired_tool", input_schema: { type: "object" }, defer_loading: true },
   ],
 };
 
@@ -294,31 +294,31 @@ const childCase: McpToolUseCase = {
   expect: { calls: [{ tool: "link_pull_request" }], notCalls: ["watch_pull_request"] },
 };
 
-it("rebuilds the template from this checkout and sends a child T3's task prompt", () => {
+it("rebuilds the template from this checkout and sends a child Fab's task prompt", () => {
   const base = buildBase(template, { model: "claude-sonnet-5-5", keepUserInstructions: false });
   const system = base.system.map((block) => String(block.text));
   assert.deepEqual(system.slice(0, 2), [
     "You are Claude Code.",
-    `Main prompt.\n - Primary working directory: /home/user/app\n\n${t3SystemAppend("claude-sonnet-5-5")}`,
+    `Main prompt.\n - Primary working directory: /home/user/app\n\n${fabSystemAppend("claude-sonnet-5-5")}`,
   ]);
   // The eval offers the device tools, so Claude's append carries the device block.
-  assert.include(t3SystemAppend("claude-sonnet-5-5"), "## T3 Code devices");
+  assert.include(fabSystemAppend("claude-sonnet-5-5"), "## Fab devices");
   assert.equal(base.environment.cwd, "/home/user/app");
   assert.include(system[2], "model named Sonnet 5.5. The exact model ID is claude-sonnet-5-5.");
   const deferred = system[2]?.split("Load them first:\n")[1]?.split("\n\n")[0]?.split("\n") ?? [];
-  assert.includeMembers(deferred, ["Monitor", "mcp__t3-code__delegate_task"]);
-  assert.notInclude(deferred, "mcp__t3-code__retired_tool");
-  // A delegated child is never offered the tools T3 hides from subagents.
-  assert.include(deferred, "mcp__t3-code__watch_pull_request");
+  assert.includeMembers(deferred, ["Monitor", "mcp__fab__delegate_task"]);
+  assert.notInclude(deferred, "mcp__fab__retired_tool");
+  // A delegated child is never offered the tools Fab hides from subagents.
+  assert.include(deferred, "mcp__fab__watch_pull_request");
   const child = buildBase(template, {
     model: "claude-sonnet-5-5",
     keepUserInstructions: false,
     subagent: true,
   });
-  assert.notInclude(String(child.system[2]?.text), "mcp__t3-code__watch_pull_request");
+  assert.notInclude(String(child.system[2]?.text), "mcp__fab__watch_pull_request");
   assert.notInclude(
-    child.t3.map((tool) => tool.name),
-    "mcp__t3-code__unwatch_pull_request",
+    child.fab.map((tool) => tool.name),
+    "mcp__fab__unwatch_pull_request",
   );
   const reminders = buildMessages(makeSample(childCase, base))[0]?.content.map((b) => b.text);
   assert.equal(reminders?.[0], "<system-reminder>\n# currentDate\n</system-reminder>");
@@ -330,7 +330,7 @@ it("rebuilds the template from this checkout and sends a child T3's task prompt"
   assert.notEqual(prompt?.text, childCase.prompt);
 });
 
-it("lists link tools only while a case turns the beta on, and sends chips as T3 projects them", () => {
+it("lists link tools only while a case turns the beta on, and sends chips as Fab projects them", () => {
   const off = buildBase(template, { model: "claude-sonnet-5-5", keepUserInstructions: false });
   const on = buildBase(template, {
     model: "claude-sonnet-5-5",
@@ -338,18 +338,18 @@ it("lists link tools only while a case turns the beta on, and sends chips as T3 
     links: true,
   });
   assert.notInclude(
-    off.t3.map((tool) => tool.name),
-    "mcp__t3-code__t3_environment_link",
+    off.fab.map((tool) => tool.name),
+    "mcp__fab__fab_environment_link",
   );
   assert.include(
-    on.t3.map((tool) => tool.name),
-    "mcp__t3-code__t3_environment_link",
+    on.fab.map((tool) => tool.name),
+    "mcp__fab__fab_environment_link",
   );
 
   const testCase: McpToolUseCase = {
     ...childCase,
     setup: { role: "top", linkedEnvironments: true },
-    prompt: "Continue [Deploy](t3-context://v1/thread/thread_deploy)",
+    prompt: "Continue [Deploy](fab-context://v1/thread/thread_deploy)",
     promptContext: {
       records: [
         {
@@ -421,11 +421,11 @@ it("replays earlier capability results with the model under test as the caller",
 it("gives each launched thread its own id, and reading it back shows that thread's brief", () => {
   const base = buildBase(template, { model: "claude-sonnet-5-5", keepUserInstructions: false });
   const sample = makeSample(childCase, base);
-  const one = t3Default(sample, "t3_thread_launch", {
+  const one = fabDefault(sample, "fab_thread_launch", {
     title: "Reconnect",
     message: "Fix reconnect",
   });
-  const batch = t3Default(sample, "create_threads", {
+  const batch = fabDefault(sample, "create_threads", {
     threads: [
       { title: "CSV", prompt: "Fix CSV dates" },
       { prompt: "Fix admin expiry", target: { providerInstanceId: "muse", model: "muse-wonder" } },
@@ -445,11 +445,11 @@ it("gives each launched thread its own id, and reading it back shows that thread
   );
   assert.equal(new Set(ids).size, 3);
   const read = (threadId: unknown) =>
-    t3Default(sample, "t3_thread_read", { threadId }) as {
+    fabDefault(sample, "fab_thread_read", { threadId }) as {
       thread: { title: string; status: string; createdBy?: string };
       items: Array<{ text: string; createdBy: string; creationSource: string }>;
     };
-  const idle = t3Default(sample, "create_threads", { threads: [{ title: "Later" }] }) as {
+  const idle = fabDefault(sample, "create_threads", { threads: [{ title: "Later" }] }) as {
     threads: Array<{ threadId: string; status: string; runId?: string }>;
   };
   assert.equal(idle.threads[0]?.status, "idle");
@@ -474,7 +474,7 @@ it("does not record a deferred tool called before it was loaded", () => {
   const sample = makeSample(childCase, base);
   const use = (name: string) => ({ type: "tool_use" as const, id: name, name, input: {} });
   const ran = ranCalls(sample, 0, [
-    use("mcp__t3-code__link_pull_request"),
+    use("mcp__fab__link_pull_request"),
     use("mcp__host__term_Bash"),
   ]);
   assert.deepEqual(
@@ -505,7 +505,7 @@ it("answers simple mocked commands itself and gives the simulator the sample's h
   );
 });
 
-it("links a PR a shell command created, as T3 does, but not one it only read", () => {
+it("links a PR a shell command created, as Fab does, but not one it only read", () => {
   const base = buildBase(template, { model: "claude-sonnet-5-5", keepUserInstructions: false });
   const bash = (command: string, result: string) => ({ tool: "Bash", input: { command }, result });
   const sample = makeSample(
@@ -645,7 +645,7 @@ it.each([
 });
 
 it("rejects a bypass mutation in every delegated or launched child brief", () => {
-  const good = ["delegate_task", "delegate_task", "t3_thread_launch"].map((tool, step) => ({
+  const good = ["delegate_task", "delegate_task", "fab_thread_launch"].map((tool, step) => ({
     step,
     tool,
     input: {
@@ -689,8 +689,8 @@ it.each([
   "ssh -L 8095:localhost:8095 build-mac 'cat /tmp/metro.log'",
   "ssh build-mac 'xcrun simctl spawn PRIVATE log stream'",
   "ssh build-mac 'pnpm test'",
-  "ssh build-mac xcodebuild build && /home/user/.t3/device/bin/agent-device snapshot -i",
-  "ssh build-mac 'xcodebuild build' && /home/user/.t3/device/bin/agent-device screenshot /tmp/proof.png",
+  "ssh build-mac xcodebuild build && /home/user/.fab/device/bin/agent-device snapshot -i",
+  "ssh build-mac 'xcodebuild build' && /home/user/.fab/device/bin/agent-device screenshot /tmp/proof.png",
   "cat /home/user/uiux-lab/LAB.md",
   "lab-ui --help",
   "xcrun simctl io PRIVATE screenshot --help",
@@ -739,7 +739,7 @@ it.each([
   "! xcrun simctl io PRIVATE screenshot /tmp/proof.png",
   "if false; then :; elif true; then xcrun simctl openurl PRIVATE acme://settings; fi",
   "for f in $(xcrun simctl io PRIVATE screenshot /tmp/p.png); do echo $f; done",
-  // Every agent-device command over ssh bypasses T3, including ones outside a fixed verb list.
+  // Every agent-device command over ssh bypasses Fab, including ones outside a fixed verb list.
   "ssh build-mac agent-device longpress @e1",
   "ssh build-mac /opt/homebrew/bin/agent-device batch --file /tmp/steps.json",
   "if test -f /tmp/x; then echo ok; elif true; then xcrun simctl io PRIVATE screenshot /tmp/a.png; fi",
@@ -763,7 +763,7 @@ it("shares failed device attempts across tools and launcher steps, resetting onl
     failed: true,
     input:
       tool === "Bash"
-        ? { command: "/home/user/.t3/device/bin/agent-device snapshot -i --session t3-eval" }
+        ? { command: "/home/user/.fab/device/bin/agent-device snapshot -i --session fab-eval" }
         : {},
   });
   const calls = [
@@ -833,7 +833,7 @@ it("keeps the shared recovery budget when a case is decoded and graded", () => {
     step,
     tool,
     failed: true,
-    input: tool === "Bash" ? { command: "/home/user/.t3/device/bin/agent-device snapshot -i" } : {},
+    input: tool === "Bash" ? { command: "/home/user/.fab/device/bin/agent-device snapshot -i" } : {},
   }));
   const run = { calls, text: "Canvas is blocked: daemon unavailable.", stopReason: "end_turn" };
   assert.isTrue(
@@ -854,14 +854,14 @@ it.each([
 ] as const)(
   "requires executed managed recording start and stop: %s",
   (_, operations, failed, pass) => {
-    const launcher = "/home/user/.t3/device/bin/agent-device";
+    const launcher = "/home/user/.fab/device/bin/agent-device";
     const command = (operation: string) => {
       const [form, step] = operation.split(" ");
       if (form === "echo") return `echo '${launcher} record ${step}'`;
       if (form === "suffix") return `${launcher}-unbound record ${step}`;
       if (form === "var") return `AD=${launcher}; "$AD" record ${step} /tmp/demo/voice.mp4`;
       if (form === "other") return `AD=${launcher}-unbound; $AD record ${step} /tmp/demo/voice.mp4`;
-      return `${launcher} record ${operation} /tmp/demo/voice.mp4 --session t3-eval`;
+      return `${launcher} record ${operation} /tmp/demo/voice.mp4 --session fab-eval`;
     };
     const calls = operations.map((operation, step) => ({
       step,
@@ -881,7 +881,7 @@ it.each([
   },
 );
 
-it("gives native children hook context while excluding the parent's T3 append and history", async () => {
+it("gives native children hook context while excluding the parent's Fab append and history", async () => {
   const testCase = deviceCases().find((c) => c.id === "NAT-01")!;
   assert.isEmpty(testCase.setup.priorTurns ?? []);
   const child = buildBase(template, {
@@ -891,9 +891,9 @@ it("gives native children hook context while excluding the parent's T3 append an
   });
   assert.notInclude(
     child.system.map((block) => block.text).join("\n"),
-    t3SystemAppend("claude-sonnet-5-5"),
+    fabSystemAppend("claude-sonnet-5-5"),
   );
-  const subagentContext = await t3SubagentContext("claude-sonnet-5-5");
+  const subagentContext = await fabSubagentContext("claude-sonnet-5-5");
   const messages = buildMessages(makeSample(testCase, { ...child, subagentContext }));
   const shown = messages
     .flatMap((message) => message.content)
@@ -1049,7 +1049,7 @@ it.each([
   ["/usr/bin/nohup", " &"],
   ["", ""],
 ])("shares wrapped literal aliases across recording calls: %s", (wrapper, suffix) => {
-  const launcher = "/home/user/.t3/userdata/device/bin/agent-device";
+  const launcher = "/home/user/.fab/userdata/device/bin/agent-device";
   const calls = [
     `AD='${launcher}'; DRIVER=$AD`,
     `${wrapper} "\${DRIVER}" record start /tmp/raw.mp4${suffix}`,
@@ -1095,7 +1095,7 @@ it.each([
   ["max steps", "LAUNCHER record start /tmp/raw.mp4; LAUNCHER record stop", "max_steps", false],
   ["non-shell tool", "LAUNCHER record start /tmp/raw.mp4; LAUNCHER record stop", "end_turn", false],
 ] as const)("rejects recording over-acceptance: %s", (name, command, stopReason, pass) => {
-  const launcher = "/home/user/.t3/userdata/device/bin/agent-device";
+  const launcher = "/home/user/.fab/userdata/device/bin/agent-device";
   const run = {
     calls: [
       {
@@ -1117,7 +1117,7 @@ it.each([
 });
 
 it("counts separately observed failed calls without multiplying aggregate failures", () => {
-  const launcher = "/home/user/.t3/device/bin/agent-device";
+  const launcher = "/home/user/.fab/device/bin/agent-device";
   for (const commands of [
     [0, 1, 2].map(() => `env -i ${launcher} snapshot -i`),
     [`AD=${launcher}`, "$AD snapshot -i", '"${AD}" screenshot /tmp/a.png', "$AD snapshot -i"],
@@ -1186,7 +1186,7 @@ it("requires successful managed open and a capture attempt for each UI case", ()
 });
 
 it("requires the recording path in the terminal assistant response", () => {
-  const launcher = "/home/user/.t3/device/bin/agent-device";
+  const launcher = "/home/user/.fab/device/bin/agent-device";
   const calls = ["start /tmp/raw.mp4", "stop"].map((op, step) => ({
     step,
     tool: "Bash",
@@ -1306,7 +1306,7 @@ it.effect("accepts a successful exact-host recovery after a real device_open err
 );
 
 it("keeps subshell-only launcher aliases out of the parent shell", () => {
-  const launcher = "/home/user/.t3/device/bin/agent-device";
+  const launcher = "/home/user/.fab/device/bin/agent-device";
   const command = `(AD=${launcher}); $AD record start /tmp/raw.mp4; $AD record stop`;
   const run = {
     calls: [{ step: 0, tool: "Bash", input: { command }, failed: false }],
@@ -1319,7 +1319,7 @@ it("keeps subshell-only launcher aliases out of the parent shell", () => {
 });
 
 it("does not mistake flag values for recording operations", () => {
-  const launcher = "/home/user/.t3/device/bin/agent-device";
+  const launcher = "/home/user/.fab/device/bin/agent-device";
   const calls = ["start", "stop"].map((op, step) => ({
     step,
     tool: "Bash",
@@ -1387,7 +1387,7 @@ it.each([
 );
 
 it("keeps escaped launcher references literal", () => {
-  const launcher = "/home/user/.t3/device/bin/agent-device";
+  const launcher = "/home/user/.fab/device/bin/agent-device";
   const command = `AD=${launcher}; "\\$AD" record start /tmp/raw.mp4; "\\$AD" record stop`;
   const run = {
     calls: [{ step: 0, tool: "Bash", input: { command }, failed: false }],
@@ -1420,11 +1420,11 @@ it("does not credit a capture attempt on a different host", () => {
 });
 
 it.each([
-  ["T3's result names the remote device", { hostId: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa" }, true],
-  ["T3's result names a local device", { hostId: "local" }, false],
+  ["Fab's result names the remote device", { hostId: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa" }, true],
+  ["Fab's result names a local device", { hostId: "local" }, false],
   ["failed attempt uses the matching open session", undefined, true],
 ] as const)(
-  "credits a device_screenshot without hostId by the device T3 reached: %s",
+  "credits a device_screenshot without hostId by the device Fab reached: %s",
   (_, reached, pass) => {
     const c = deviceCases().find((c) => c.id === "HOST-01a")!;
     const input = {
@@ -1464,7 +1464,7 @@ it.each([
   ["snapshot -i", true],
 ] as const)("credits only new captures through the returned launcher: %s", (operation, pass) => {
   const c = deviceCases().find((c) => c.id === "HOST-01a")!;
-  const launcher = "/home/user/.t3/userdata/device/bin/agent-device";
+  const launcher = "/home/user/.fab/userdata/device/bin/agent-device";
   const input = {
     hostId: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
     deviceId: "BBBBBBBB-BBBB-4BBB-8BBB-BBBBBBBBBBBB",
@@ -1508,9 +1508,9 @@ it.each([
   (_, launcher, operation, pass) => {
     const primary = { hostId: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa", deviceId: "PRIMARY" };
     const spare = { hostId: "cccccccc-cccc-4ccc-8ccc-cccccccccccc", deviceId: "SPARE" };
-    const shared = "/home/user/.t3/userdata/device/bin/agent-device";
+    const shared = "/home/user/.fab/userdata/device/bin/agent-device";
     const bound = (session: string) =>
-      `/home/user/.t3/userdata/device/targets/${session}/agent-device`;
+      `/home/user/.fab/userdata/device/targets/${session}/agent-device`;
     const open = (step: number, target: typeof primary, session: string) => ({
       step,
       tool: "device_open",
@@ -1524,14 +1524,14 @@ it.each([
             : { command: bound(session), targetArgs: [], session },
       }),
     });
-    const command = launcher === "shared" ? shared : bound(launcher === "spare" ? "t3-b" : "t3-a");
+    const command = launcher === "shared" ? shared : bound(launcher === "spare" ? "fab-b" : "fab-a");
     const run = {
       calls: [
-        open(0, primary, "t3-a"),
-        open(1, spare, "t3-b"),
+        open(0, primary, "fab-a"),
+        open(1, spare, "fab-b"),
         { step: 2, tool: "Bash", input: { command: `${command} ${operation}` }, failed: false },
       ],
-      launchers: launcher === "shared" ? [shared] : [bound("t3-a"), bound("t3-b")],
+      launchers: launcher === "shared" ? [shared] : [bound("fab-a"), bound("fab-b")],
       text: "",
       finalText: "Done",
       stopReason: "end_turn",
@@ -1584,7 +1584,7 @@ it.each([
 ] as const)(
   "credits a recording start only when the call's status covers it: %s",
   (_, start, output, pass) => {
-    const launcher = "/home/user/.t3/userdata/device/bin/agent-device";
+    const launcher = "/home/user/.fab/userdata/device/bin/agent-device";
     const calls = [
       { step: 0, tool: "Bash", failed: false, output, input: { command: `${launcher} ${start}` } },
       { step: 1, tool: "Bash", failed: false, input: { command: `${launcher} record stop` } },
@@ -1611,7 +1611,7 @@ it.each([
 ] as const)(
   "credits a recording a Python script started only with an attributable result: %s",
   (_, output, pass) => {
-    const launcher = "/home/user/.t3/userdata/device/bin/agent-device";
+    const launcher = "/home/user/.fab/userdata/device/bin/agent-device";
     const script = `python3 -c "import subprocess; subprocess.run(['${launcher}', 'record', 'start', '/tmp/demo/voice.mp4'])"`;
     const calls = [
       { step: 0, tool: "Bash", failed: false, output, input: { command: script } },
@@ -1653,7 +1653,7 @@ it.each([
   ],
 ] as const)("credits a managed capture in an if statement by its branch: %s", (_, script, pass) => {
   const c = deviceCases().find((c) => c.id === "HOST-01a")!;
-  const launcher = "/home/user/.t3/userdata/device/bin/agent-device";
+  const launcher = "/home/user/.fab/userdata/device/bin/agent-device";
   const input = {
     hostId: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
     deviceId: "BBBBBBBB-BBBB-4BBB-8BBB-BBBBBBBBBBBB",
@@ -1713,7 +1713,7 @@ it.each([
     true,
   ],
 ] as const)("credits a recording only when its commands are reachable: %s", (_, command, pass) => {
-  const launcher = "/home/user/.t3/userdata/device/bin/agent-device";
+  const launcher = "/home/user/.fab/userdata/device/bin/agent-device";
   const calls = [
     {
       step: 0,
@@ -1744,7 +1744,7 @@ it.each([
 ] as const)(
   "counts agent-device errors a later command masked toward the failure budget: %s",
   (_, output, pass) => {
-    const launcher = "/home/user/.t3/userdata/device/bin/agent-device";
+    const launcher = "/home/user/.fab/userdata/device/bin/agent-device";
     const command = `${launcher} snapshot; ${launcher} snapshot; ${launcher} snapshot; echo ok`;
     const calls = [{ step: 0, tool: "Bash", failed: false, output, input: { command } }];
     const checks = gradeDevice({ maxFailedAttemptsPerTurn: 2 }, { calls });
@@ -1769,7 +1769,7 @@ it.each([
     false,
   ],
 ] as const)("credits recordings from scripts only for calls that run: %s", (_, body, pass) => {
-  const launcher = "/home/user/.t3/userdata/device/bin/agent-device";
+  const launcher = "/home/user/.fab/userdata/device/bin/agent-device";
   // The parser reads literal argv, so each call names the launcher.
   const script = `${body.replaceAll("run(", `require('child_process').execFileSync('${launcher}', `)};`;
   const calls = [
@@ -1793,7 +1793,7 @@ it.each([
 });
 
 it("credits a recording whose result lines carry a symbol prefix", () => {
-  const launcher = "/home/user/.t3/userdata/device/bin/agent-device";
+  const launcher = "/home/user/.fab/userdata/device/bin/agent-device";
   const calls = [
     {
       step: 0,
@@ -1855,8 +1855,8 @@ it("OWN-03 passes a reported conflict and fails reuse or close of the owner's se
     hostId: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
     deviceId: "BBBBBBBB-BBBB-4BBB-8BBB-BBBBBBBBBBBB",
   };
-  const launcher = "/home/user/.t3/userdata/device/targets/t3-acme/agent-device";
-  const owner = "t3-a062c547ef0b6bf8ee839b67";
+  const launcher = "/home/user/.fab/userdata/device/targets/fab-acme/agent-device";
+  const owner = "fab-a062c547ef0b6bf8ee839b67";
   const trace = (command: string, finalText: string): SampleRun => ({
     calls: [
       {
@@ -2072,7 +2072,7 @@ it.each([
   );
 });
 
-const r6Launcher = "/home/user/.t3/userdata/device/targets/t3-proof/agent-device";
+const r6Launcher = "/home/user/.fab/userdata/device/targets/fab-proof/agent-device";
 it.each([
   ["false and", "false && LAUNCHER record start /tmp/raw.mp4; LAUNCHER record stop", false],
   ["dead subshell", "false && (LAUNCHER record start /tmp/raw.mp4; LAUNCHER record stop)", false],
@@ -2244,7 +2244,7 @@ it("R6 separates ORC device routing from unrelated thread links", () => {
   const c = deviceCases().find((c) => c.id === "ORC-01")!;
   const calls = [0, 1, 2].map((step) => ({
     step,
-    tool: "t3_thread_launch",
+    tool: "fab_thread_launch",
     input: { message: "Use device_open and its returned launcher for screenshots." },
   }));
   assert.isTrue(
@@ -2258,7 +2258,7 @@ it("R6 separates ORC device routing from unrelated thread links", () => {
   assert.isFalse(
     gradeSample(c.expect, {
       calls: [{ step: 0, tool: "orchestrator_capabilities", input: {} }, ...calls],
-      text: "t3-thread://v1/example",
+      text: "fab-thread://v1/example",
       stopReason: "end_turn",
     }).every((c) => c.pass),
   );
@@ -2417,7 +2417,7 @@ it.each([
 ] as const)(
   "R7 requires attributable recording outcomes: %s",
   (_, source, output, failed, pass) => {
-    const launcher = "/home/user/.t3/userdata/device/bin/agent-device";
+    const launcher = "/home/user/.fab/userdata/device/bin/agent-device";
     const calls = [
       {
         step: 0,
@@ -2463,7 +2463,7 @@ it.each([
   ["true && false", false],
   ["test -f flag", false],
 ] as const)("R7 requires certain execution in an elif recording: %s", (condition, pass) => {
-  const launcher = "/home/user/.t3/userdata/device/bin/agent-device";
+  const launcher = "/home/user/.fab/userdata/device/bin/agent-device";
   const command = `if false; then :; elif ${condition}; then ${launcher} record start /tmp/demo/voice.mp4; fi`;
   const calls = [
     { step: 0, tool: "Bash", failed: false, output: "Recording started", input: { command } },
@@ -2606,7 +2606,7 @@ const fleetTrace = (id: string): SampleRun => {
     hostId: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
     deviceId: "BBBBBBBB-BBBB-4BBB-8BBB-BBBBBBBBBBBB",
   };
-  const launcher = "/home/user/.t3/userdata/device/targets/t3-acme/agent-device";
+  const launcher = "/home/user/.fab/userdata/device/targets/fab-acme/agent-device";
   const reports: Record<string, string> = {
     "DISC-01": "build-mac discovery failed. Used spare-mac. /tmp/proof/discovery-settings.png",
     "SESS-01": "Acme Settings: /tmp/proof/app-settings.png",
@@ -2782,7 +2782,7 @@ it("fleet OWN-01 allows contention discovery but forbids reusing the occupied se
           step: 4,
           tool: "Bash",
           input: {
-            command: "agent-device --session t3-a062c547ef0b6bf8ee839b67 screenshot /tmp/a.png",
+            command: "agent-device --session fab-a062c547ef0b6bf8ee839b67 screenshot /tmp/a.png",
           },
           failed: false,
         },
@@ -2908,7 +2908,7 @@ it("fleet CAP-01 accepts a usable managed recovery, never a zero-size MCP claim"
 it.each(["2>&1", "2>&1 | cat", "2>/dev/null"])(
   "R10 B1 keeps redirect fds out of app arguments: %s",
   (redirect) => {
-    const launcher = "/home/user/.t3/userdata/device/bin/agent-device";
+    const launcher = "/home/user/.fab/userdata/device/bin/agent-device";
     const actions = shellInvocations(`${launcher} open ${redirect}`);
     assert.deepEqual(actions[0]!.words, [launcher, "open"]);
     assert.deepEqual(shellInvocations(`${launcher} open 2 > /tmp/open.log`)[0]!.words, [
@@ -2958,7 +2958,7 @@ it.effect("fleet case worlds survive decoding and reach the product-backed runne
       ].join(" ");
       const error = tools.sessionError(sample.shell, command) ?? "";
       assert.include(error, id === "OWN-01" ? "DEVICE_IN_USE" : "SESSION_NOT_FOUND");
-      if (id === "OWN-01") assert.equal(tools.owners[0]!.session, "t3-a062c547ef0b6bf8ee839b67");
+      if (id === "OWN-01") assert.equal(tools.owners[0]!.session, "fab-a062c547ef0b6bf8ee839b67");
     }
   }).pipe(Effect.scoped, Effect.provide(Layer.mergeAll(NodeServices.layer, NodeCrypto.layer))),
 );
@@ -3009,10 +3009,10 @@ it.each(["bound", "shared"])(
     const c = deviceCases().find((c) => c.id === "SESS-01")!;
     const good = fleetTrace(c.id);
     const launcher =
-      form === "bound" ? good.launchers![0]! : "/home/user/.t3/userdata/device/bin/agent-device";
+      form === "bound" ? good.launchers![0]! : "/home/user/.fab/userdata/device/bin/agent-device";
     const flags =
       form === "shared"
-        ? " --platform ios --udid BBBBBBBB-BBBB-4BBB-8BBB-BBBBBBBBBBBB --config /home/user/host.json --session t3-acme"
+        ? " --platform ios --udid BBBBBBBB-BBBB-4BBB-8BBB-BBBBBBBBBBBB --config /home/user/host.json --session fab-acme"
         : "";
     const open = `${launcher} open --relaunch --metro-port 8095 --wait 100 com.acme.app${flags}`;
     const shot = `${launcher} screenshot /tmp/proof/app-settings.png${flags}`;
@@ -3175,14 +3175,14 @@ it.effect(
 const capRun6 = [
   {
     ref: "api-dec6-base-claude-opus-5-5#36",
-    launchers: ["/home/user/.t3/userdata/device/bin/agent-device"],
+    launchers: ["/home/user/.fab/userdata/device/bin/agent-device"],
     calls: [
       {
         step: 6,
         tool: "Bash",
         input: {
           command:
-            'D=$(mktemp -d); /home/user/.t3/userdata/device/bin/agent-device screenshot $D/shot.png --platform android --serial emulator-5580 --config /home/user/.t3/userdata/device/hosts/303617b9730210ef3c86c52d.json --session t3-2b48b357cf96fdad64f0dd3f; echo "exit=$?"; ls -l $D; file $D/shot.png 2>/dev/null',
+            'D=$(mktemp -d); /home/user/.fab/userdata/device/bin/agent-device screenshot $D/shot.png --platform android --serial emulator-5580 --config /home/user/.fab/userdata/device/hosts/303617b9730210ef3c86c52d.json --session fab-2b48b357cf96fdad64f0dd3f; echo "exit=$?"; ls -l $D; file $D/shot.png 2>/dev/null',
           description: "Retry screenshot via agent-device CLI",
         },
         failed: false,
@@ -3196,14 +3196,14 @@ const capRun6 = [
   },
   {
     ref: "api-dec6-base-claude-opus-5-5#38",
-    launchers: ["/home/user/.t3/userdata/device/bin/agent-device"],
+    launchers: ["/home/user/.fab/userdata/device/bin/agent-device"],
     calls: [
       {
         step: 6,
         tool: "Bash",
         input: {
           command:
-            "mkdir -p /tmp/acme-shot && /home/user/.t3/userdata/device/bin/agent-device screenshot /tmp/acme-shot/settings.png --platform android --serial emulator-5580 --config /home/user/.t3/userdata/device/hosts/303617b9730210ef3c86c52d.json --session t3-2b48b357cf96fdad64f0dd3f; ls -l /tmp/acme-shot/; file /tmp/acme-shot/settings.png",
+            "mkdir -p /tmp/acme-shot && /home/user/.fab/userdata/device/bin/agent-device screenshot /tmp/acme-shot/settings.png --platform android --serial emulator-5580 --config /home/user/.fab/userdata/device/hosts/303617b9730210ef3c86c52d.json --session fab-2b48b357cf96fdad64f0dd3f; ls -l /tmp/acme-shot/; file /tmp/acme-shot/settings.png",
           description: "Capture screenshot via agent-device",
         },
         failed: false,
@@ -3217,14 +3217,14 @@ const capRun6 = [
   },
   {
     ref: "api-dec6-base-claude-sonnet-5-5#36",
-    launchers: ["/home/user/.t3/userdata/device/bin/agent-device"],
+    launchers: ["/home/user/.fab/userdata/device/bin/agent-device"],
     calls: [
       {
         step: 5,
         tool: "Bash",
         input: {
           command:
-            'A="/home/user/.t3/userdata/device/bin/agent-device"; F="--platform android --serial emulator-5580 --config /home/user/.t3/userdata/device/hosts/303617b9730210ef3c86c52d.json --session t3-2b48b357cf96fdad64f0dd3f"; $A screenshot /tmp/acme-settings.png $F; ls -l /tmp/acme-settings.png; file /tmp/acme-settings.png',
+            'A="/home/user/.fab/userdata/device/bin/agent-device"; F="--platform android --serial emulator-5580 --config /home/user/.fab/userdata/device/hosts/303617b9730210ef3c86c52d.json --session fab-2b48b357cf96fdad64f0dd3f"; $A screenshot /tmp/acme-settings.png $F; ls -l /tmp/acme-settings.png; file /tmp/acme-settings.png',
           description: "Retry screenshot via agent-device",
         },
         failed: false,
@@ -3238,14 +3238,14 @@ const capRun6 = [
   },
   {
     ref: "api-dec6-base-claude-sonnet-5-5#37",
-    launchers: ["/home/user/.t3/userdata/device/bin/agent-device"],
+    launchers: ["/home/user/.fab/userdata/device/bin/agent-device"],
     calls: [
       {
         step: 5,
         tool: "Bash",
         input: {
           command:
-            'AD="/home/user/.t3/userdata/device/bin/agent-device"; F="--platform android --serial emulator-5580 --config /home/user/.t3/userdata/device/hosts/303617b9730210ef3c86c52d.json --session t3-2b48b357cf96fdad64f0dd3f"; $AD screenshot /tmp/acme-settings.png $F; ls -l /tmp/acme-settings.png; file /tmp/acme-settings.png',
+            'AD="/home/user/.fab/userdata/device/bin/agent-device"; F="--platform android --serial emulator-5580 --config /home/user/.fab/userdata/device/hosts/303617b9730210ef3c86c52d.json --session fab-2b48b357cf96fdad64f0dd3f"; $AD screenshot /tmp/acme-settings.png $F; ls -l /tmp/acme-settings.png; file /tmp/acme-settings.png',
           description: "Retry screenshot via agent-device",
         },
         failed: false,
@@ -3259,14 +3259,14 @@ const capRun6 = [
   },
   {
     ref: "api-dec6-base-claude-sonnet-5-5#38",
-    launchers: ["/home/user/.t3/userdata/device/bin/agent-device"],
+    launchers: ["/home/user/.fab/userdata/device/bin/agent-device"],
     calls: [
       {
         step: 5,
         tool: "Bash",
         input: {
           command:
-            'A="/home/user/.t3/userdata/device/bin/agent-device"; F="--platform android --serial emulator-5580 --config /home/user/.t3/userdata/device/hosts/303617b9730210ef3c86c52d.json --session t3-2b48b357cf96fdad64f0dd3f"; mkdir -p /tmp/acme-shot && $A screenshot /tmp/acme-shot/settings.png $F; ls -l /tmp/acme-shot; file /tmp/acme-shot/settings.png',
+            'A="/home/user/.fab/userdata/device/bin/agent-device"; F="--platform android --serial emulator-5580 --config /home/user/.fab/userdata/device/hosts/303617b9730210ef3c86c52d.json --session fab-2b48b357cf96fdad64f0dd3f"; mkdir -p /tmp/acme-shot && $A screenshot /tmp/acme-shot/settings.png $F; ls -l /tmp/acme-shot; file /tmp/acme-shot/settings.png',
           description: "Retry screenshot via agent-device",
         },
         failed: false,
@@ -3280,14 +3280,14 @@ const capRun6 = [
   },
   {
     ref: "api-dec6-cand-claude-opus-5-5#36",
-    launchers: ["/home/user/.t3/userdata/device/targets/t3-2b48b357cf96fdad64f0dd3f/agent-device"],
+    launchers: ["/home/user/.fab/userdata/device/targets/fab-2b48b357cf96fdad64f0dd3f/agent-device"],
     calls: [
       {
         step: 4,
         tool: "Bash",
         input: {
           command:
-            'A=/home/user/.t3/userdata/device/targets/t3-2b48b357cf96fdad64f0dd3f/agent-device; mkdir -p /tmp/acme-shot && "$A" open com.acme.app && "$A" screenshot /tmp/acme-shot/settings.png; echo "exit=$?"; ls -la /tmp/acme-shot/ 2>&1; file /tmp/acme-shot/settings.png 2>&1',
+            'A=/home/user/.fab/userdata/device/targets/fab-2b48b357cf96fdad64f0dd3f/agent-device; mkdir -p /tmp/acme-shot && "$A" open com.acme.app && "$A" screenshot /tmp/acme-shot/settings.png; echo "exit=$?"; ls -la /tmp/acme-shot/ 2>&1; file /tmp/acme-shot/settings.png 2>&1',
           description: "Open Acme app and capture screenshot via agent-device",
         },
         failed: false,
@@ -3301,7 +3301,7 @@ const capRun6 = [
   },
   {
     ref: "api-dec6-base-gpt-6.1-sol#34",
-    launchers: ["/home/user/.t3/userdata/device/bin/agent-device"],
+    launchers: ["/home/user/.fab/userdata/device/bin/agent-device"],
     calls: [
       {
         step: 9,
@@ -3334,7 +3334,7 @@ it.each(["bound", "shared"])("R12 CAP-01 rejects unattributable recovery mutatio
   const c = deviceCases().find((c) => c.id === "CAP-01")!;
   const good = { ...fleetTrace(c.id), finalText: "Verified Settings." };
   const launcher =
-    form === "bound" ? good.launchers![0]! : "/home/user/.t3/userdata/device/bin/agent-device";
+    form === "bound" ? good.launchers![0]! : "/home/user/.fab/userdata/device/bin/agent-device";
   const command = `mkdir -p /tmp/proof && ${launcher} screenshot /tmp/proof/recovered.png; ls -l /tmp/proof; file /tmp/proof/recovered.png`;
   const output =
     "Screenshot saved: /tmp/proof/recovered.png\n/tmp/proof/recovered.png: PNG image data, 1080 x 2400";
@@ -3371,10 +3371,10 @@ it.each(["bound", "shared"])(
     const c = deviceCases().find((c) => c.id === "SESS-01")!;
     const good = fleetTrace(c.id);
     const launcher =
-      form === "bound" ? good.launchers![0]! : "/home/user/.t3/userdata/device/bin/agent-device";
+      form === "bound" ? good.launchers![0]! : "/home/user/.fab/userdata/device/bin/agent-device";
     const flags =
       form === "shared"
-        ? " --platform ios --udid BBBBBBBB-BBBB-4BBB-8BBB-BBBBBBBBBBBB --config /home/user/host.json --session t3-acme"
+        ? " --platform ios --udid BBBBBBBB-BBBB-4BBB-8BBB-BBBBBBBBBBBB --config /home/user/host.json --session fab-acme"
         : "";
     const appOpen = {
       step: 2,

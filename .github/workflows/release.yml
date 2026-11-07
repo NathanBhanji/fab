@@ -50,7 +50,7 @@ jobs:
   # have already run. Scheduled runs also decide here whether a nightly is due.
   resolve_commit:
     name: Resolve release commit
-    if: github.repository == 'pingdotgg/t3code'
+    if: github.repository == 'NathanBhanji/fab'
     runs-on: blacksmith-8vcpu-ubuntu-2404
     timeout-minutes: 5
     outputs:
@@ -132,7 +132,7 @@ jobs:
       - name: Setup dependencies
         uses: ./.github/actions/setup-ci-deps
         with:
-          task-cache-read-token: ${{ secrets.T3_TASK_CACHE_READ_TOKEN }}
+          task-cache-read-token: ${{ secrets.FAB_TASK_CACHE_READ_TOKEN }}
         env:
           pnpm_config_cache_dir: ${{ runner.temp }}/pnpm-metadata
 
@@ -202,7 +202,7 @@ jobs:
             echo "release_channel=stable" >> "$GITHUB_OUTPUT"
             echo "version=$version" >> "$GITHUB_OUTPUT"
             echo "tag=v$version" >> "$GITHUB_OUTPUT"
-            echo "name=T3 Code v$version" >> "$GITHUB_OUTPUT"
+            echo "name=Fab v$version" >> "$GITHUB_OUTPUT"
             echo "cli_dist_tag=latest" >> "$GITHUB_OUTPUT"
             if [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
               echo "is_prerelease=false" >> "$GITHUB_OUTPUT"
@@ -248,10 +248,10 @@ jobs:
       - name: Setup dependencies
         uses: ./.github/actions/setup-ci-deps
         with:
-          task-cache-read-token: ${{ secrets.T3_TASK_CACHE_READ_TOKEN }}
+          task-cache-read-token: ${{ secrets.FAB_TASK_CACHE_READ_TOKEN }}
 
       - name: Ensure Electron runtime is installed
-        run: vp run --filter @t3tools/desktop ensure:electron
+        run: vp run --filter @fab/desktop ensure:electron
 
       - name: Check
         run: vp check
@@ -280,10 +280,10 @@ jobs:
       - name: Setup dependencies
         uses: ./.github/actions/setup-ci-deps
         with:
-          task-cache-read-token: ${{ secrets.T3_TASK_CACHE_READ_TOKEN }}
+          task-cache-read-token: ${{ secrets.FAB_TASK_CACHE_READ_TOKEN }}
 
       - name: Ensure Electron runtime is installed
-        run: vp run --filter @t3tools/desktop ensure:electron
+        run: vp run --filter @fab/desktop ensure:electron
 
       - uses: ./.github/actions/setup-apt-mirrors
 
@@ -293,7 +293,7 @@ jobs:
           sudo apt-get update && sudo apt-get install -y libsecret-1-dev pkg-config build-essential
 
       - name: Test
-        run: vp run --parallel --concurrency-limit 4 --filter '!t3' --filter '!@t3tools/monorepo' --filter '!@t3tools/web' test
+        run: vp run --parallel --concurrency-limit 4 --filter '!fab' --filter '!@fab/monorepo' --filter '!@fab/web' test
 
   # Web browser tests time out when they share a runner with the other package
   # suites: Chromium gets too little CPU and diff workers miss their 10s start budget.
@@ -316,7 +316,7 @@ jobs:
       - name: Setup dependencies
         uses: ./.github/actions/setup-ci-deps
         with:
-          task-cache-read-token: ${{ secrets.T3_TASK_CACHE_READ_TOKEN }}
+          task-cache-read-token: ${{ secrets.FAB_TASK_CACHE_READ_TOKEN }}
 
       - name: Resolve Playwright version
         id: playwright_version
@@ -342,12 +342,12 @@ jobs:
           fi
 
       - name: Test
-        run: vp run --filter @t3tools/web test
+        run: vp run --filter @fab/web test
 
       # Browser tests run source modules; this boots the production chunk graph.
       - name: Boot the built web client
         run: |
-          vp run --filter @t3tools/web build
+          vp run --filter @fab/web build
           node apps/web/scripts/verify-built-boot.ts
 
   # Server test files run one at a time, so more small runners beat fewer big ones.
@@ -374,19 +374,19 @@ jobs:
       - name: Setup dependencies
         uses: ./.github/actions/setup-ci-deps
         with:
-          task-cache-read-token: ${{ secrets.T3_TASK_CACHE_READ_TOKEN }}
+          task-cache-read-token: ${{ secrets.FAB_TASK_CACHE_READ_TOKEN }}
 
-      # No Electron setup here: `t3` (apps/server) has no Electron dependency
+      # No Electron setup here: `fab` (apps/server) has no Electron dependency
       # and none of its tests touch the runtime. Only the non-server `test`
-      # job, which covers @t3tools/desktop, needs the download.
+      # job, which covers @fab/desktop, needs the download.
       - name: Install Chromium for server browser integration tests
         run: node apps/server/node_modules/playwright-core/cli.js install --with-deps --only-shell chromium
 
       - name: Test
-        run: vp run --filter t3 test --shard ${{ matrix.shard }}/${{ strategy.job-total }}
+        run: vp run --filter fab test --shard ${{ matrix.shard }}/${{ strategy.job-total }}
 
   relay_public_config:
-    name: Resolve T3 Connect public config
+    name: Resolve Fab Connect public config
     # Consumes only the release commit, not preflight's resolved version, so it
     # runs alongside preflight instead of after it. The condition mirrors preflight's.
     needs: [resolve_commit]
@@ -427,7 +427,7 @@ jobs:
       - name: Setup dependencies
         uses: ./.github/actions/setup-ci-deps
         with:
-          install-args: --filter=t3code-relay...
+          install-args: --filter=fab-relay...
 
       # The deployed stack's outputs, read from Alchemy's state store without
       # planning or applying. Select the backend explicitly to avoid loading
@@ -440,7 +440,7 @@ jobs:
         working-directory: infra/relay
         run: |
           set -euo pipefail
-          output="$(npx alchemy state read T3CodeRelay/prod/output --backend cloudflare --log-level error --no-input | sed -n '/^{/,$p')"
+          output="$(npx alchemy state read FabRelay/prod/output --backend cloudflare --log-level error --no-input | sed -n '/^{/,$p')"
           field() {
             jq -er --arg key "$1" '.[$key] | if type == "object" then .__redacted__ else . end | select(. != null and . != "")' <<<"$output" \
               || { echo "Relay stack output is missing $1" >&2; exit 1; }
@@ -450,9 +450,9 @@ jobs:
           token="$(field clientTracingToken)"
           echo "::add-mask::$token"
           {
-            echo "T3CODE_RELAY_CLIENT_OTLP_TRACES_URL=$url"
-            echo "T3CODE_RELAY_CLIENT_OTLP_TRACES_DATASET=$dataset"
-            echo "T3CODE_RELAY_CLIENT_OTLP_TRACES_TOKEN=$token"
+            echo "FAB_RELAY_CLIENT_OTLP_TRACES_URL=$url"
+            echo "FAB_RELAY_CLIENT_OTLP_TRACES_DATASET=$dataset"
+            echo "FAB_RELAY_CLIENT_OTLP_TRACES_TOKEN=$token"
           } > "$RUNNER_TEMP/relay-client-tracing.env"
 
       - name: Upload relay client tracing config
@@ -472,11 +472,11 @@ jobs:
           set -euo pipefail
 
           if [[ "$PREVIEW" == "true" ]]; then
-            env_example() { sed -n "s|^T3CODE_$1=||p" .env.example; }
+            env_example() { sed -n "s|^FAB_$1=||p" .env.example; }
             CLERK_PUBLISHABLE_KEY="$(env_example CLERK_PUBLISHABLE_KEY)"
             CLERK_JWT_TEMPLATE="$(env_example CLERK_JWT_TEMPLATE)"
             CLERK_CLI_OAUTH_CLIENT_ID="$(env_example CLERK_CLI_OAUTH_CLIENT_ID)"
-            RELAY_DOMAIN="$(sed -n 's|^T3CODE_RELAY_URL=https://||p' .env.example)"
+            RELAY_DOMAIN="$(sed -n 's|^FAB_RELAY_URL=https://||p' .env.example)"
           fi
 
           relay_domain="${RELAY_DOMAIN:-}"
@@ -518,10 +518,10 @@ jobs:
     runs-on: blacksmith-32vcpu-ubuntu-2404
     timeout-minutes: 30
     env:
-      T3CODE_CLERK_PUBLISHABLE_KEY: ${{ needs.relay_public_config.outputs.clerk_publishable_key }}
-      T3CODE_CLERK_JWT_TEMPLATE: ${{ needs.relay_public_config.outputs.clerk_jwt_template }}
-      T3CODE_CLERK_CLI_OAUTH_CLIENT_ID: ${{ needs.relay_public_config.outputs.clerk_cli_oauth_client_id }}
-      T3CODE_RELAY_URL: ${{ needs.relay_public_config.outputs.relay_url }}
+      FAB_CLERK_PUBLISHABLE_KEY: ${{ needs.relay_public_config.outputs.clerk_publishable_key }}
+      FAB_CLERK_JWT_TEMPLATE: ${{ needs.relay_public_config.outputs.clerk_jwt_template }}
+      FAB_CLERK_CLI_OAUTH_CLIENT_ID: ${{ needs.relay_public_config.outputs.clerk_cli_oauth_client_id }}
+      FAB_RELAY_URL: ${{ needs.relay_public_config.outputs.relay_url }}
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -544,7 +544,7 @@ jobs:
       - name: Setup dependencies
         uses: ./.github/actions/setup-ci-deps
         with:
-          install-args: --filter=t3... --filter=@t3tools/web... --filter=@t3tools/desktop... --filter=@t3tools/scripts...
+          install-args: --filter=fab... --filter=@fab/web... --filter=@fab/desktop... --filter=@fab/scripts...
         env:
           pnpm_config_cache_dir: ${{ runner.temp }}/pnpm-metadata
 
@@ -558,7 +558,7 @@ jobs:
         shell: bash
         run: |
           config_path="$RUNNER_TEMP/relay-client-tracing/relay-client-tracing.env"
-          tracing_token="$(sed -n 's/^T3CODE_RELAY_CLIENT_OTLP_TRACES_TOKEN=//p' "$config_path")"
+          tracing_token="$(sed -n 's/^FAB_RELAY_CLIENT_OTLP_TRACES_TOKEN=//p' "$config_path")"
           echo "::add-mask::$tracing_token"
           cat "$config_path" >> "$GITHUB_ENV"
 
@@ -567,19 +567,19 @@ jobs:
 
       - uses: ./.github/actions/setup-apt-mirrors
 
-      # @t3tools/desktop#build compiles the Linux browser secret helper on a
+      # @fab/desktop#build compiles the Linux browser secret helper on a
       # Linux host before packing, and that needs libsecret headers.
       - name: Install browser secret helper build libraries
         run: sudo apt-get update && sudo apt-get install -y libsecret-1-dev pkg-config
 
-      # Runs t3#build (which depends on @t3tools/web#build) and
-      # @t3tools/desktop#build, so apps/server/dist holds the server bundle
+      # Runs fab#build (which depends on @fab/web#build) and
+      # @fab/desktop#build, so apps/server/dist holds the server bundle
       # plus the web client and apps/desktop/dist-electron the Electron main.
       # The release channel is already stable, nightly, or preview. Builds in
       # other repositories report "dev" telemetry.
       - name: Build JS bundle
         env:
-          T3CODE_TELEMETRY_CHANNEL: ${{ github.repository == 'pingdotgg/t3code' && needs.preflight.outputs.release_channel || 'dev' }}
+          FAB_TELEMETRY_CHANNEL: ${{ github.repository == 'NathanBhanji/fab' && needs.preflight.outputs.release_channel || 'dev' }}
         run: vp run build:desktop
 
       # Two paths under apps/ so the artifact root is apps/; consumers download
@@ -794,7 +794,7 @@ jobs:
       - name: Setup dependencies
         uses: ./.github/actions/setup-ci-deps
         with:
-          install-args: --filter=@t3tools/scripts...
+          install-args: --filter=@fab/scripts...
 
       - name: Download all desktop artifacts
         uses: actions/download-artifact@v8
@@ -815,7 +815,7 @@ jobs:
         continue-on-error: true
         env:
           GOOGLE_PLAY_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON }}
-          PACKAGE_NAME: com.t3tools.t3code
+          PACKAGE_NAME: dev.bhanji.fab
           APK_OUTPUT_DIR: release-assets
         run: |
           if [ -n "$GOOGLE_PLAY_SERVICE_ACCOUNT_JSON" ]; then
@@ -830,7 +830,7 @@ jobs:
           set -euo pipefail
           cd release-assets
           shopt -s nullglob
-          archives=(t3-*.tar.gz t3-*.zip)
+          archives=(fab-*.tar.gz fab-*.zip)
           if [[ ${#archives[@]} -eq 0 ]]; then
             echo "No CLI archives were produced." >&2
             exit 1
@@ -945,7 +945,7 @@ jobs:
           > [!WARNING]
           > **This is a preview build. Do not install it unless you know exactly why you are here.**
           >
-          > Preview builds are cut by maintainers from unreleased branches to exercise the release pipeline. They can be broken, receive no fixes, are never offered as updates, and are not supported. If you want T3 Code, install the [latest release](https://github.com/pingdotgg/t3code/releases/latest) or a nightly instead.
+          > Preview builds are cut by maintainers from unreleased branches to exercise the release pipeline. They can be broken, receive no fixes, are never offered as updates, and are not supported. If you want Fab, install the [latest release](https://github.com/NathanBhanji/fab/releases/latest) or a nightly instead.
 
           Built from `${{ needs.preflight.outputs.ref }}`.
           EOF
@@ -994,7 +994,7 @@ jobs:
           RELEASE_TAG: ${{ needs.preflight.outputs.tag }}
         run: gh release edit "$RELEASE_TAG" --draft=false
 
-  # The `t3` npm package is a launcher that downloads this version's CLI
+  # The `fab` npm package is a launcher that downloads this version's CLI
   # archive from the GitHub Release, so it publishes only once that release
   # exists. Preview publishes too, under the `preview` dist-tag, which
   # nothing resolves unless asked for by name.
@@ -1020,7 +1020,7 @@ jobs:
       - name: Setup dependencies
         uses: ./.github/actions/setup-ci-deps
         with:
-          install-args: --filter=t3... --filter=@t3tools/scripts...
+          install-args: --filter=fab... --filter=@fab/scripts...
 
       - name: Build the npm launcher
         run: node scripts/build-npm-launcher.ts --version "${{ needs.preflight.outputs.version }}" --output-dir npm-packages
@@ -1028,7 +1028,7 @@ jobs:
       - name: Publish the npm launcher
         run: |
           if ! node apps/server/scripts/cli.ts publish --packages-dir npm-packages --tag "${{ needs.preflight.outputs.cli_dist_tag }}" --provenance --verbose; then
-            echo "::error::npm publish failed. Make sure package t3 has a trusted publisher registered for .github/workflows/release.yml (see docs/operations/release.md)." >&2
+            echo "::error::npm publish failed. Make sure package fab has a trusted publisher registered for .github/workflows/release.yml (see docs/operations/release.md)." >&2
             exit 1
           fi
 
@@ -1057,14 +1057,14 @@ jobs:
     outputs:
       deployment_url: ${{ steps.deploy.outputs.deployment_url }}
     env:
-      T3CODE_CLERK_PUBLISHABLE_KEY: ${{ needs.relay_public_config.outputs.clerk_publishable_key }}
-      T3CODE_CLERK_JWT_TEMPLATE: ${{ needs.relay_public_config.outputs.clerk_jwt_template }}
-      T3CODE_CLERK_CLI_OAUTH_CLIENT_ID: ${{ needs.relay_public_config.outputs.clerk_cli_oauth_client_id }}
-      T3CODE_RELAY_URL: ${{ needs.relay_public_config.outputs.relay_url }}
+      FAB_CLERK_PUBLISHABLE_KEY: ${{ needs.relay_public_config.outputs.clerk_publishable_key }}
+      FAB_CLERK_JWT_TEMPLATE: ${{ needs.relay_public_config.outputs.clerk_jwt_template }}
+      FAB_CLERK_CLI_OAUTH_CLIENT_ID: ${{ needs.relay_public_config.outputs.clerk_cli_oauth_client_id }}
+      FAB_RELAY_URL: ${{ needs.relay_public_config.outputs.relay_url }}
       VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
       VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
       VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
-      T3CODE_WEB_ROUTER_URL: ${{ vars.T3CODE_WEB_ROUTER_URL }}
+      FAB_WEB_ROUTER_URL: ${{ vars.FAB_WEB_ROUTER_URL }}
       VERCEL_TEAM_SLUG: ${{ vars.VERCEL_TEAM_SLUG }}
     steps:
       - name: Checkout
@@ -1079,7 +1079,7 @@ jobs:
       - name: Setup dependencies
         uses: ./.github/actions/setup-ci-deps
         with:
-          install-args: --filter=@t3tools/scripts... --filter=@t3tools/web...
+          install-args: --filter=@fab/scripts... --filter=@fab/web...
 
       - name: Download relay client tracing config
         uses: actions/download-artifact@v8
@@ -1091,7 +1091,7 @@ jobs:
         shell: bash
         run: |
           config_path="$RUNNER_TEMP/relay-client-tracing/relay-client-tracing.env"
-          tracing_token="$(sed -n 's/^T3CODE_RELAY_CLIENT_OTLP_TRACES_TOKEN=//p' "$config_path")"
+          tracing_token="$(sed -n 's/^FAB_RELAY_CLIENT_OTLP_TRACES_TOKEN=//p' "$config_path")"
           echo "::add-mask::$tracing_token"
           cat "$config_path" >> "$GITHUB_ENV"
 
@@ -1112,7 +1112,7 @@ jobs:
             exit 1
           fi
 
-          router_url="${T3CODE_WEB_ROUTER_URL:-https://app.t3.codes}"
+          router_url="${FAB_WEB_ROUTER_URL:-https://app.fab.invalid}"
           if [[ "${{ needs.preflight.outputs.release_channel }}" == "stable" ]]; then
             channel_name="latest"
           else
@@ -1129,13 +1129,13 @@ jobs:
               --token "$VERCEL_TOKEN" \
               --scope "${VERCEL_TEAM_SLUG:-$VERCEL_ORG_ID}" \
               --build-env "APP_VERSION=${{ needs.preflight.outputs.version }}" \
-              --build-env "T3CODE_CLERK_PUBLISHABLE_KEY=${T3CODE_CLERK_PUBLISHABLE_KEY:-}" \
-              --build-env "T3CODE_CLERK_JWT_TEMPLATE=${T3CODE_CLERK_JWT_TEMPLATE:-}" \
-              --build-env "T3CODE_CLERK_CLI_OAUTH_CLIENT_ID=${T3CODE_CLERK_CLI_OAUTH_CLIENT_ID:-}" \
-              --build-env "T3CODE_RELAY_URL=${T3CODE_RELAY_URL:-}" \
-              --build-env "T3CODE_RELAY_CLIENT_OTLP_TRACES_URL=${T3CODE_RELAY_CLIENT_OTLP_TRACES_URL:-}" \
-              --build-env "T3CODE_RELAY_CLIENT_OTLP_TRACES_DATASET=${T3CODE_RELAY_CLIENT_OTLP_TRACES_DATASET:-}" \
-              --build-env "T3CODE_RELAY_CLIENT_OTLP_TRACES_TOKEN=${T3CODE_RELAY_CLIENT_OTLP_TRACES_TOKEN:-}" \
+              --build-env "FAB_CLERK_PUBLISHABLE_KEY=${FAB_CLERK_PUBLISHABLE_KEY:-}" \
+              --build-env "FAB_CLERK_JWT_TEMPLATE=${FAB_CLERK_JWT_TEMPLATE:-}" \
+              --build-env "FAB_CLERK_CLI_OAUTH_CLIENT_ID=${FAB_CLERK_CLI_OAUTH_CLIENT_ID:-}" \
+              --build-env "FAB_RELAY_URL=${FAB_RELAY_URL:-}" \
+              --build-env "FAB_RELAY_CLIENT_OTLP_TRACES_URL=${FAB_RELAY_CLIENT_OTLP_TRACES_URL:-}" \
+              --build-env "FAB_RELAY_CLIENT_OTLP_TRACES_DATASET=${FAB_RELAY_CLIENT_OTLP_TRACES_DATASET:-}" \
+              --build-env "FAB_RELAY_CLIENT_OTLP_TRACES_TOKEN=${FAB_RELAY_CLIENT_OTLP_TRACES_TOKEN:-}" \
               --build-env "VITE_HOSTED_APP_URL=$router_url" \
               --build-env "VITE_HOSTED_APP_CHANNEL=$channel_name"
           )"
@@ -1160,9 +1160,9 @@ jobs:
       VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
       VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
       VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
-      T3CODE_WEB_ROUTER_URL: ${{ vars.T3CODE_WEB_ROUTER_URL }}
-      T3CODE_WEB_LATEST_DOMAIN: ${{ vars.T3CODE_WEB_LATEST_DOMAIN }}
-      T3CODE_WEB_NIGHTLY_DOMAIN: ${{ vars.T3CODE_WEB_NIGHTLY_DOMAIN }}
+      FAB_WEB_ROUTER_URL: ${{ vars.FAB_WEB_ROUTER_URL }}
+      FAB_WEB_LATEST_DOMAIN: ${{ vars.FAB_WEB_LATEST_DOMAIN }}
+      FAB_WEB_NIGHTLY_DOMAIN: ${{ vars.FAB_WEB_NIGHTLY_DOMAIN }}
       VERCEL_TEAM_SLUG: ${{ vars.VERCEL_TEAM_SLUG }}
     steps:
       - name: Checkout
@@ -1189,9 +1189,9 @@ jobs:
             exit 1
           fi
 
-          router_url="${T3CODE_WEB_ROUTER_URL:-https://app.t3.codes}"
-          latest_domain="${T3CODE_WEB_LATEST_DOMAIN:-latest.app.t3.codes}"
-          nightly_domain="${T3CODE_WEB_NIGHTLY_DOMAIN:-nightly.app.t3.codes}"
+          router_url="${FAB_WEB_ROUTER_URL:-https://app.fab.invalid}"
+          latest_domain="${FAB_WEB_LATEST_DOMAIN:-latest.app.fab.invalid}"
+          nightly_domain="${FAB_WEB_NIGHTLY_DOMAIN:-nightly.app.fab.invalid}"
           router_domain="${router_url#http://}"
           router_domain="${router_domain#https://}"
           router_domain="${router_domain%%/*}"
@@ -1219,7 +1219,7 @@ jobs:
           fi
 
   # Same split as the web app: build a production deployment early, then
-  # promote it to t3.codes once the release it links to exists. As above, the
+  # promote it to fab.invalid once the release it links to exists. As above, the
   # project's own *.vercel.app hostname moves at build time.
   build_marketing:
     name: Build marketing site
@@ -1247,7 +1247,7 @@ jobs:
       - name: Setup dependencies
         uses: ./.github/actions/setup-ci-deps
         with:
-          install-args: --filter=@t3tools/marketing...
+          install-args: --filter=@fab/marketing...
 
       - id: deploy
         name: Build staged deployment
@@ -1263,7 +1263,7 @@ jobs:
           VERCEL_PROJECT_ID="$(
             curl --fail --silent --show-error \
               --header "Authorization: Bearer $VERCEL_TOKEN" \
-              "https://api.vercel.com/v9/projects/t3code-marketing?teamId=$VERCEL_ORG_ID" \
+              "https://api.vercel.com/v9/projects/fab-marketing?teamId=$VERCEL_ORG_ID" \
               | jq --exit-status --raw-output '.id'
           )"
           export VERCEL_PROJECT_ID
@@ -1371,7 +1371,7 @@ jobs:
       - name: Setup dependencies
         uses: ./.github/actions/setup-ci-deps
         with:
-          install-args: --filter=@t3tools/scripts... --filter=@t3tools/oxlint-plugin-t3code...
+          install-args: --filter=@fab/scripts... --filter=@fab/oxlint-plugin-fab...
 
       - id: update_versions
         name: Update version strings
@@ -1431,7 +1431,7 @@ jobs:
       - name: Setup dependencies
         uses: ./.github/actions/setup-ci-deps
         with:
-          install-args: --filter=@t3tools/scripts...
+          install-args: --filter=@fab/scripts...
 
       - name: Read published release notes
         if: needs.preflight.outputs.is_prerelease == 'true'

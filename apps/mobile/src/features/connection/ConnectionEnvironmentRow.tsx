@@ -1,9 +1,9 @@
 import * as Dialog from "../../components/ui/Dialog";
 import { ConnectionTraceId } from "./ConnectionTraceId";
 import { SymbolView } from "../../components/ui/AppSymbol";
-import { hasSavedBearerRoute, hostFreezeNotice } from "@t3tools/client-runtime/connection";
-import type { AtomCommandResult } from "@t3tools/client-runtime/state/runtime";
-import { type EnvironmentId, resolveEnvironmentMachineKind } from "@t3tools/contracts";
+import { hasSavedBearerRoute, hostFreezeNotice } from "@fab/client-runtime/connection";
+import type { AtomCommandResult } from "@fab/client-runtime/state/runtime";
+import { type EnvironmentId, resolveEnvironmentMachineKind } from "@fab/contracts";
 import { useAtomValue } from "@effect/atom-react";
 import * as Cause from "effect/Cause";
 import { AsyncResult } from "effect/reactivity";
@@ -115,7 +115,7 @@ export function ConnectionEnvironmentRow(props: {
               tintColorClassName="accent-foreground-muted"
             />
             <Text
-              className="min-w-0 flex-shrink text-base font-t3-bold leading-snug text-foreground"
+              className="min-w-0 flex-shrink text-base font-fab-bold leading-snug text-foreground"
               numberOfLines={1}
             >
               {props.environment.environmentLabel}
@@ -210,7 +210,7 @@ export function ConnectionEnvironmentRow(props: {
           ) : null}
           {props.environment.isRelayManaged ? (
             <Text className="text-sm text-foreground-muted">
-              Managed by T3 Connect. Tunnel details update automatically.
+              Managed by Fab Connect. Tunnel details update automatically.
             </Text>
           ) : (
             <>
@@ -276,7 +276,7 @@ export function ConnectionEnvironmentRow(props: {
                     tintColorClassName="accent-primary-foreground"
                     type="monochrome"
                   />
-                  <Text className="text-xs font-t3-bold tracking-[0.8px] uppercase text-primary-foreground">
+                  <Text className="text-xs font-fab-bold tracking-[0.8px] uppercase text-primary-foreground">
                     Save
                   </Text>
                 </Pressable>

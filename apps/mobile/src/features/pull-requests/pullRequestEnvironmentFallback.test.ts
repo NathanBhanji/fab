@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vite-plus/test";
-import type { EnvironmentProject } from "@t3tools/client-runtime/state/models";
-import type { EnvironmentConnectionPhase } from "@t3tools/client-runtime/connection";
-import { EnvironmentId } from "@t3tools/contracts";
+import type { EnvironmentProject } from "@fab/client-runtime/state/models";
+import type { EnvironmentConnectionPhase } from "@fab/client-runtime/connection";
+import { EnvironmentId } from "@fab/contracts";
 import { pullRequestFallbackEnvironment } from "./pullRequestEnvironmentFallback";
 
 const project = (environmentId: string, id: string, canonicalKey: string) =>
@@ -12,14 +12,14 @@ const project = (environmentId: string, id: string, canonicalKey: string) =>
   }) as unknown as EnvironmentProject;
 
 const projects = [
-  project("laptop", "t3", "github.com/pingdotgg/t3code"),
+  project("laptop", "fab", "github.com/nathanbhanji/fab"),
   project("desktop", "other", "github.com/pingdotgg/other"),
-  project("server", "t3-copy", "github.com/pingdotgg/t3code"),
+  project("server", "fab-copy", "github.com/nathanbhanji/fab"),
 ];
 const target = {
   environmentId: "laptop",
-  projectId: "t3",
-  repository: "pingdotgg/t3code",
+  projectId: "fab",
+  repository: "nathanbhanji/fab",
   host: "github.com",
 };
 const environment = (
@@ -35,7 +35,7 @@ describe("pullRequestFallbackEnvironment", () => {
         environment("desktop"),
         environment("server"),
       ]),
-    ).toEqual({ environmentId: "server", projectId: "t3-copy" });
+    ).toEqual({ environmentId: "server", projectId: "fab-copy" });
   });
 
   it("stays put while the original is connected or nothing else holds the repository", () => {
@@ -52,7 +52,7 @@ describe("pullRequestFallbackEnvironment", () => {
     const { host: _host, ...hostless } = target;
     expect(pullRequestFallbackEnvironment(hostless, projects, [environment("server")])).toEqual({
       environmentId: "server",
-      projectId: "t3-copy",
+      projectId: "fab-copy",
     });
   });
 });

@@ -1,18 +1,18 @@
 import { assert, describe, it } from "@effect/vitest";
-import { EnvironmentId, ProviderInstanceId, ThreadId } from "@t3tools/contracts";
+import { EnvironmentId, ProviderInstanceId, ThreadId } from "@fab/contracts";
 
 import {
-  T3_MCP_BEARER_ENV,
-  T3_MCP_URL_ENV,
-  T3_PI_RUNTIME_MODE_ENV,
-  T3_PI_MCP_EXTENSION_PATH_ENV,
+  FAB_MCP_BEARER_ENV,
+  FAB_MCP_URL_ENV,
+  FAB_PI_RUNTIME_MODE_ENV,
+  FAB_PI_MCP_EXTENSION_PATH_ENV,
 } from "./mcpExtensionSource.ts";
 import { buildPiRpcLaunch, resolvePiLaunchArgs } from "./mcpInjection.ts";
 
-const threadId = ThreadId.make("thread-pi-t3-mcp");
+const threadId = ThreadId.make("thread-pi-fab-mcp");
 
 const mcpSession = {
-  environmentId: EnvironmentId.make("environment-pi-t3-mcp"),
+  environmentId: EnvironmentId.make("environment-pi-fab-mcp"),
   threadId,
   providerSessionId: "mcp-session-pi",
   providerInstanceId: ProviderInstanceId.make("pi"),
@@ -21,7 +21,7 @@ const mcpSession = {
   browserToolsAvailable: true,
 };
 
-describe("pi T3 MCP injection", () => {
+describe("pi Fab MCP injection", () => {
   it("always adds the permission bridge and configures MCP when available", () => {
     const resolvedArgs = resolvePiLaunchArgs(
       "--extension=/home/user/.pi/agent/extensions/demo.ts --session-dir=/tmp/pi-sessions --provider=anthropic --model=claude-sonnet --tools='' --name=-review --extension-flag=kept",
@@ -32,7 +32,7 @@ describe("pi T3 MCP injection", () => {
       launchArgs: resolvedArgs.args,
       environment: { PATH: "/usr/bin" },
       mcpSession,
-      extensionPath: "/tmp/cache/pi-t3-mcp-extension.ts",
+      extensionPath: "/tmp/cache/pi-fab-mcp-extension.ts",
       runtimeMode: "approval-required",
     });
     assert.deepEqual(launch.args, [
@@ -52,37 +52,37 @@ describe("pi T3 MCP injection", () => {
       "-review",
       "--extension-flag=kept",
       "--extension",
-      "/tmp/cache/pi-t3-mcp-extension.ts",
+      "/tmp/cache/pi-fab-mcp-extension.ts",
     ]);
     assert.notInclude(launch.args, "--no-extensions");
-    assert.equal(launch.env[T3_MCP_URL_ENV], "http://127.0.0.1:43123/mcp");
-    assert.equal(launch.env[T3_MCP_BEARER_ENV], "secret-pi-token");
-    assert.equal(launch.env[T3_PI_RUNTIME_MODE_ENV], "approval-required");
-    assert.equal(launch.env[T3_PI_MCP_EXTENSION_PATH_ENV], "/tmp/cache/pi-t3-mcp-extension.ts");
+    assert.equal(launch.env[FAB_MCP_URL_ENV], "http://127.0.0.1:43123/mcp");
+    assert.equal(launch.env[FAB_MCP_BEARER_ENV], "secret-pi-token");
+    assert.equal(launch.env[FAB_PI_RUNTIME_MODE_ENV], "approval-required");
+    assert.equal(launch.env[FAB_PI_MCP_EXTENSION_PATH_ENV], "/tmp/cache/pi-fab-mcp-extension.ts");
 
     const permissionOnly = buildPiRpcLaunch({
       launchArgs: [],
       environment: {
-        [T3_MCP_URL_ENV]: "http://127.0.0.1:9999/stale",
-        [T3_MCP_BEARER_ENV]: "stale-token",
-        [T3_PI_MCP_EXTENSION_PATH_ENV]: "/stale/extension.ts",
+        [FAB_MCP_URL_ENV]: "http://127.0.0.1:9999/stale",
+        [FAB_MCP_BEARER_ENV]: "stale-token",
+        [FAB_PI_MCP_EXTENSION_PATH_ENV]: "/stale/extension.ts",
       },
       mcpSession: undefined,
-      extensionPath: "/tmp/cache/pi-t3-mcp-extension.ts",
+      extensionPath: "/tmp/cache/pi-fab-mcp-extension.ts",
       runtimeMode: "auto-accept-edits",
     });
     assert.deepEqual(permissionOnly.args, [
       "--mode",
       "rpc",
       "--extension",
-      "/tmp/cache/pi-t3-mcp-extension.ts",
+      "/tmp/cache/pi-fab-mcp-extension.ts",
     ]);
-    assert.isUndefined(permissionOnly.env[T3_MCP_URL_ENV]);
-    assert.isUndefined(permissionOnly.env[T3_MCP_BEARER_ENV]);
-    assert.equal(permissionOnly.env[T3_PI_RUNTIME_MODE_ENV], "auto-accept-edits");
+    assert.isUndefined(permissionOnly.env[FAB_MCP_URL_ENV]);
+    assert.isUndefined(permissionOnly.env[FAB_MCP_BEARER_ENV]);
+    assert.equal(permissionOnly.env[FAB_PI_RUNTIME_MODE_ENV], "auto-accept-edits");
     assert.equal(
-      permissionOnly.env[T3_PI_MCP_EXTENSION_PATH_ENV],
-      "/tmp/cache/pi-t3-mcp-extension.ts",
+      permissionOnly.env[FAB_PI_MCP_EXTENSION_PATH_ENV],
+      "/tmp/cache/pi-fab-mcp-extension.ts",
     );
   });
 
@@ -99,7 +99,7 @@ describe("pi T3 MCP injection", () => {
       ],
       environment: {},
       mcpSession,
-      extensionPath: "/tmp/cache/pi-t3-mcp-extension.ts",
+      extensionPath: "/tmp/cache/pi-fab-mcp-extension.ts",
       sessionPath: "/fake/persisted.jsonl",
       ephemeral: true,
       shortLived: true,
@@ -127,7 +127,7 @@ describe("pi T3 MCP injection", () => {
     assert.deepEqual(alreadyOffline.args, ["--mode", "rpc", "--no-session", "--offline"]);
     assert.deepInclude(resolvePiLaunchArgs("--mode text"), {
       ok: false,
-      message: "Pi launch argument '--mode' is controlled by T3 Code and cannot be overridden.",
+      message: "Pi launch argument '--mode' is controlled by Fab and cannot be overridden.",
     });
     assert.deepInclude(resolvePiLaunchArgs("--session old.jsonl"), { ok: false });
     assert.deepInclude(resolvePiLaunchArgs("prompt pi immediately"), { ok: false });

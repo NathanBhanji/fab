@@ -22,7 +22,7 @@ export const WriterSecrets = ConfigProvider.layerAdd(
       ? {}
       : {
           READER_KEYS: yield* fs.readFileString(
-            `${yield* Config.String("HOME")}/.config/t3-task-cache/readers.json`,
+            `${yield* Config.String("HOME")}/.config/fab-task-cache/readers.json`,
           ),
         };
     if (Option.isSome(configured)) return ConfigProvider.fromUnknown(readerKeys);

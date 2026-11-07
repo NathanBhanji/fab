@@ -6,7 +6,7 @@ import {
   ProjectId,
   ProviderInstanceId,
   ThreadId,
-} from "@t3tools/contracts";
+} from "@fab/contracts";
 import * as Cause from "effect/Cause";
 import { AsyncResult, type Atom } from "effect/reactivity";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test";
@@ -46,8 +46,8 @@ const state = vi.hoisted(() => ({
   },
 }));
 vi.mock("react-native", () => ({ Alert: { alert: vi.fn() } }));
-vi.mock("@t3tools/client-runtime/state/runtime", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("@t3tools/client-runtime/state/runtime")>()),
+vi.mock("@fab/client-runtime/state/runtime", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@fab/client-runtime/state/runtime")>()),
   runAtomCommand: (_registry: unknown, command: (input: unknown) => unknown, input: unknown) =>
     command(input),
 }));
@@ -249,7 +249,7 @@ describe("queued PR checkout", () => {
     });
   const preparedCheckout = {
     branch: "pr-123",
-    worktreePath: "/repo/.t3/worktrees/pr-123",
+    worktreePath: "/repo/.fab/worktrees/pr-123",
     isOnPullRequestHead: true,
   };
 

@@ -21,9 +21,9 @@ import {
   ProjectId,
   type RepositoryIdentity,
   type ThreadPullRequestKey,
-} from "@t3tools/contracts";
-import type { ReviewGuideStackLayer } from "@t3tools/provider-core/server/textGeneration";
-import { resolveProjectSettings } from "@t3tools/shared/projectSettings";
+} from "@fab/contracts";
+import type { ReviewGuideStackLayer } from "@fab/provider-core/server/textGeneration";
+import { resolveProjectSettings } from "@fab/shared/projectSettings";
 import { sourceControlDefinitions } from "../sourceControl/sourceControlDefinitions.ts";
 
 import * as ServerConfig from "../config.ts";
@@ -54,7 +54,7 @@ export class PullRequestReviewGuideService extends Context.Service<
       PullRequestService.PullRequestError
     >;
   }
->()("t3/pullRequest/PullRequestReviewGuideService") {}
+>()("fab/pullRequest/PullRequestReviewGuideService") {}
 
 const keyString = (key: ThreadPullRequestKey) => `${key.host}/${key.repository}#${key.number}`;
 
@@ -212,7 +212,7 @@ const make = Effect.gen(function* () {
         ),
       );
     // FETCH_HEAD is workspace-global; isolate this run's base from concurrent fetches.
-    const baseRef = `refs/t3/review-guide/${runId}/base`;
+    const baseRef = `refs/fab/review-guide/${runId}/base`;
     yield* fetch([`+refs/heads/${detail.baseBranch}:${baseRef}`]);
     yield* Effect.addFinalizer(() =>
       git

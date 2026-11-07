@@ -8,11 +8,11 @@ import {
   type ProjectId,
   type ProviderInteractionMode,
   type RuntimeMode,
-} from "@t3tools/contracts";
+} from "@fab/contracts";
 import {
   deriveThreadTitleSeed,
   threadTitleTextFromPrompt,
-} from "@t3tools/client-runtime/operations";
+} from "@fab/client-runtime/operations";
 
 import type { UploadedMobileAttachment } from "./attachmentUpload";
 

@@ -1,4 +1,4 @@
-import type { ProjectEntry } from "@t3tools/contracts";
+import type { ProjectEntry } from "@fab/contracts";
 
 export interface FileTreeNode {
   readonly path: string;

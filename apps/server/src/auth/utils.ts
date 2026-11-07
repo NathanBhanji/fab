@@ -2,16 +2,16 @@ import type {
   AuthClientMetadata,
   AuthClientMetadataDeviceType,
   AuthClientPresentationMetadata,
-} from "@t3tools/contracts";
+} from "@fab/contracts";
 import type * as HttpServerRequest from "effect/http/HttpServerRequest";
 // @effect-diagnostics-next-line nodeBuiltinImport:off -- Effect's Crypto has no createHmac or timingSafeEqual.
 import * as NodeCrypto from "node:crypto";
 import * as NodeNet from "node:net";
-import { normalizeHostname } from "@t3tools/shared/hostClassification";
+import { normalizeHostname } from "@fab/shared/hostClassification";
 import * as Base64Url from "effect/encoding/Base64Url";
 import * as Result from "effect/Result";
 
-const SESSION_COOKIE_NAME = "t3_session";
+const SESSION_COOKIE_NAME = "fab_session";
 
 /** Cookies span ports; use separate names for servers sharing a hostname. */
 export function resolveSessionCookieName(input: {

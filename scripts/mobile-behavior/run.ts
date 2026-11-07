@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // @effect-diagnostics nodeBuiltinImport:off preferSchemaOverJson:off - owns Metro and writes result files.
 /**
- * Drives the T3 Code iOS dev client on one simulator against an isolated server with scripted
+ * Drives the Fab iOS dev client on one simulator against an isolated server with scripted
  * replies, and grades app behavior from the dev-only probe and server state. See README.md.
  */
 import * as NodeChildProcess from "node:child_process";
@@ -57,7 +57,7 @@ const startMetro = Effect.fn("run.startMetro")(function* (host: string, out: str
             CI: "1",
             // Lazily fetched chunks sometimes arrive broken on pool emulators and throw SyntaxErrors.
             EXPO_NO_METRO_LAZY: "1",
-            EXPO_PUBLIC_T3_BEHAVIOR_PROBE: "1",
+            EXPO_PUBLIC_FAB_BEHAVIOR_PROBE: "1",
             REACT_NATIVE_PACKAGER_HOSTNAME: host,
           },
         },
@@ -202,7 +202,7 @@ const command = Command.make(
       .pipe(Effect.retry({ times: 2 }));
     for (let attempt = 0; ; attempt++) {
       const loaded = yield* device
-        .evaluate("typeof __t3Behavior")
+        .evaluate("typeof __fabBehavior")
         .pipe(Effect.orElseSucceed(() => ""));
       if (loaded === "object") break;
       // iOS asks before a URL opens another app; busy hosts can miss the first accept.
@@ -218,7 +218,7 @@ const command = Command.make(
       yield* device.fold(flags.pose === "duo-closed" ? "closed" : "open");
     const forget = (ids: ReadonlyArray<string>) =>
       device
-        .evaluate(`__t3Behavior.forgetEnvironments(${JSON.stringify(ids)})`)
+        .evaluate(`__fabBehavior.forgetEnvironments(${JSON.stringify(ids)})`)
         .pipe(Effect.andThen(Effect.sleep("3 seconds")));
     const pairing = yield* env.pairingUrl();
     yield* device.openUrl(

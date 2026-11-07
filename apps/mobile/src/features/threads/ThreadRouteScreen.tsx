@@ -4,7 +4,7 @@ import { useOpenPullRequest } from "../../native/useOpenPullRequest";
 import { makeTurnCommandMetadata } from "../../lib/commandMetadata";
 import { buildProjectThreadStartTurnInput } from "../../lib/projectThreadStartTurn";
 import { useWorktreeSetup } from "./use-worktree-setup";
-import { worktreeSetupAgentStarted } from "@t3tools/client-runtime/worktree-setup";
+import { worktreeSetupAgentStarted } from "@fab/client-runtime/worktree-setup";
 import { AppBar } from "../../components/ui/AppBar";
 import {
   StackActions,
@@ -23,13 +23,13 @@ import {
   MessageId,
   ThreadId,
   type ProjectScript,
-} from "@t3tools/contracts";
+} from "@fab/contracts";
 import {
   projectScriptCwd,
   projectScriptRuntimeEnv,
   projectScriptTerminalInput,
   resolveProjectScripts,
-} from "@t3tools/shared/projectScripts";
+} from "@fab/shared/projectScripts";
 import { Platform } from "react-native";
 import { ScreenScrollView as ScrollView } from "../../components/ui/ScreenScrollView";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -44,7 +44,7 @@ import { vcsEnvironment } from "../../state/vcs";
 import { EmptyState } from "../../components/ui/EmptyState";
 import { LoadingScreen } from "../../components/LoadingScreen";
 import { scopedThreadKey } from "../../lib/scopedEntities";
-import { scopeThreadRef } from "@t3tools/client-runtime/environment";
+import { scopeThreadRef } from "@fab/client-runtime/environment";
 import { useThreadShell } from "../../state/entities";
 import { NATIVE_LIQUID_GLASS_SUPPORTED } from "../../native/native-glass";
 import { connectionTone } from "../connection/connectionTone";
@@ -58,7 +58,7 @@ import { uuidv4 } from "../../lib/uuid";
 import {
   isAtomCommandInterrupted,
   squashAtomCommandFailure,
-} from "@t3tools/client-runtime/state/runtime";
+} from "@fab/client-runtime/state/runtime";
 import { readEnvironmentScope, useEnvironmentScope } from "../../state/session";
 import { useSelectedThreadDetailState } from "../../state/use-thread-detail";
 import { useThreadSelection } from "../../state/use-thread-selection";
@@ -83,10 +83,10 @@ import { useSelectedThreadGitState } from "../../state/use-selected-thread-git-s
 import { useSelectedThreadRequests } from "../../state/use-selected-thread-requests";
 import { useSelectedThreadWorktree } from "../../state/use-selected-thread-worktree";
 import { useThreadComposerState } from "../../state/use-thread-composer-state";
-import { resolveMergeBackTargetThreadId } from "@t3tools/client-runtime/state/thread-relationships";
-import { resolveLatestMergeBackRun } from "@t3tools/client-runtime/state/thread-workflows";
+import { resolveMergeBackTargetThreadId } from "@fab/client-runtime/state/thread-relationships";
+import { resolveLatestMergeBackRun } from "@fab/client-runtime/state/thread-workflows";
 import { threadEnvironment } from "../../state/threads";
-import { EMPTY_ENVIRONMENT_THREAD_STATE } from "@t3tools/client-runtime/state/threads";
+import { EMPTY_ENVIRONMENT_THREAD_STATE } from "@fab/client-runtime/state/threads";
 import { useProjects } from "../../state/entities";
 import { projectThreadContentPresentation } from "./threadContentPresentation";
 import { useAppearancePreferences } from "../settings/appearance/AppearancePreferencesProvider";
@@ -222,7 +222,7 @@ function UnavailableThreadDraftRedirect(props: { readonly environmentId: Environ
       }),
     );
   });
-  // oxlint-disable-next-line t3code/no-unreasoned-state-sync -- replaces this route with a new draft thread route for the environment's project on mount
+  // oxlint-disable-next-line fab/no-unreasoned-state-sync -- replaces this route with a new draft thread route for the environment's project on mount
   useEffect(() => {
     openDraft();
   }, []);
@@ -487,7 +487,7 @@ function ThreadRouteContent(
           : chosenInspectorMode;
     return mode === "files" && selectedThreadCwd === null ? null : mode;
   })();
-  // oxlint-disable-next-line t3code/no-unreasoned-state-sync -- closes the workspace navigator's auxiliary pane when the thread has no cwd for the file inspector
+  // oxlint-disable-next-line fab/no-unreasoned-state-sync -- closes the workspace navigator's auxiliary pane when the thread has no cwd for the file inspector
   useEffect(() => {
     if (
       props.inspectorPresentation === undefined &&
@@ -508,7 +508,7 @@ function ThreadRouteContent(
   ]);
 
   const revealPreview = useEffectEvent(() => showAuxiliaryPane("inspector"));
-  // oxlint-disable-next-line t3code/no-unreasoned-state-sync -- opens the workspace navigator's inspector pane when route params bring a preview target
+  // oxlint-disable-next-line fab/no-unreasoned-state-sync -- opens the workspace navigator's inspector pane when route params bring a preview target
   useEffect(() => {
     if (previewTarget) revealPreview();
   }, [previewTarget]);

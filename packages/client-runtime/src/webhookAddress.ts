@@ -1,5 +1,5 @@
-import type { ScheduledTaskWebhookEndpoint } from "@t3tools/contracts";
-import { isLocalLoopbackHost } from "@t3tools/shared/hostClassification";
+import type { ScheduledTaskWebhookEndpoint } from "@fab/contracts";
+import { isLocalLoopbackHost } from "@fab/shared/hostClassification";
 
 export interface WebhookAddress {
   readonly address: string;
@@ -18,7 +18,7 @@ export function webhookAddress(
     return {
       address: endpoint.path,
       copyable: false,
-      note: "Link this environment to T3 Connect for a public URL.",
+      note: "Link this environment to Fab Connect for a public URL.",
     };
   }
   const url = new URL(endpoint.path, httpBaseUrl);
@@ -26,7 +26,7 @@ export function webhookAddress(
     address: url.href,
     copyable: true,
     note: isLocalLoopbackHost(url.hostname)
-      ? "Only this computer can call this address. Link T3 Connect for a public URL."
-      : "Works wherever this environment's address is reachable, for example over Tailscale or your own proxy. Link T3 Connect for a public URL.",
+      ? "Only this computer can call this address. Link Fab Connect for a public URL."
+      : "Works wherever this environment's address is reachable, for example over Tailscale or your own proxy. Link Fab Connect for a public URL.",
   };
 }

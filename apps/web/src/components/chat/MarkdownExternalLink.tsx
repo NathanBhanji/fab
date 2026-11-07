@@ -1,8 +1,8 @@
-import { faviconUrlForOrigin } from "@t3tools/shared/favicon";
+import { faviconUrlForOrigin } from "@fab/shared/favicon";
 import { GlobeIcon } from "lucide-react";
 import { Children, memo, useState, type ReactNode } from "react";
 
-import { sourceControlClients } from "@t3tools/client-runtime/source-control-clients";
+import { sourceControlClients } from "@fab/client-runtime/source-control-clients";
 
 import { cn } from "../../lib/utils";
 import { sourceControlIcon } from "../../sourceControlPresentation";

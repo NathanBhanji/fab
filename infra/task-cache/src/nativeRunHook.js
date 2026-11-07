@@ -55,8 +55,8 @@ export async function startRunHook(command, cwd = process.cwd(), resolveWorkspac
     }
     // Vite forwards our CLI mode to tasks, including agents working in other projects.
     if (
-      process.env.VP_T3_TASK_CACHE_MODE &&
-      process.env.VP_REMOTE_CACHE === process.env.VP_T3_TASK_CACHE_MODE
+      process.env.VP_FAB_TASK_CACHE_MODE &&
+      process.env.VP_REMOTE_CACHE === process.env.VP_FAB_TASK_CACHE_MODE
     )
       delete process.env.VP_REMOTE_CACHE;
   } catch {

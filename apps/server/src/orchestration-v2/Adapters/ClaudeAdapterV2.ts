@@ -5,7 +5,7 @@ import {
   dynamicToolTitle,
   formatReadToolLabel,
   formatSearchToolLabel,
-} from "@t3tools/shared/toolActivity";
+} from "@fab/shared/toolActivity";
 import { field, text } from "../unknownField.ts";
 import { mergeWorkflowAgentMetadata, type WorkflowAgentMetadata } from "../workflowAgentAnswers.ts";
 import {
@@ -20,7 +20,7 @@ import {
   parseClaudeWorkflowRunHandles,
 } from "./claudeWorkflowProgress.ts";
 
-import { isWorkspaceImagePreviewPath } from "@t3tools/shared/filePreview";
+import { isWorkspaceImagePreviewPath } from "@fab/shared/filePreview";
 import {
   addClaudeLedgerUsage,
   claudeLedgerDelta,
@@ -66,16 +66,16 @@ import type {
 // @effect-diagnostics-next-line nodeBuiltinImport:off -- the SDK takes a Node ChildProcess for the CLI.
 import * as NodeChildProcess from "node:child_process";
 import * as NodeUtil from "node:util";
-import { parseCliArgs } from "@t3tools/shared/cliArgs";
-import { fromLenientJson } from "@t3tools/shared/schemaJson";
-import { AgentScope } from "@t3tools/shared/AgentScope";
-import * as HostProcess from "@t3tools/shared/HostProcess";
-import { applyClaudePromptEffortPrefix } from "@t3tools/shared/model";
+import { parseCliArgs } from "@fab/shared/cliArgs";
+import { fromLenientJson } from "@fab/shared/schemaJson";
+import { AgentScope } from "@fab/shared/AgentScope";
+import * as HostProcess from "@fab/shared/HostProcess";
+import { applyClaudePromptEffortPrefix } from "@fab/shared/model";
 import {
   CLAUDE_RESUME_COMPACTION_COMPACT_ANSWER,
   CLAUDE_RESUME_COMPACTION_NEVER_ANSWER,
   formatClaudeResumeCompactionQuestion,
-} from "@t3tools/shared/claudeCompaction";
+} from "@fab/shared/claudeCompaction";
 import {
   type ChatAttachment,
   PROVIDER_SEND_TURN_MAX_FILE_BYTES,
@@ -115,7 +115,7 @@ import {
   type RunId,
   type ThreadId,
   resolveIdleCompaction,
-} from "@t3tools/contracts";
+} from "@fab/contracts";
 
 import { FILE_HEADERS_ONLY, formatPatch, structuredPatch } from "diff";
 import * as Cause from "effect/Cause";
@@ -158,9 +158,9 @@ import {
 import * as ServerConfig from "../../config.ts";
 import * as PortScanner from "../../preview/PortScanner.ts";
 import * as ServerSettings from "../../serverSettings.ts";
-import { expandHomePath } from "@t3tools/provider-core/server/pathExpansion";
-import { spawnAndCollect } from "@t3tools/provider-core/server/snapshotProbe";
-import { signalProcessGroup } from "@t3tools/provider-core/server/processGroup";
+import { expandHomePath } from "@fab/provider-core/server/pathExpansion";
+import { spawnAndCollect } from "@fab/provider-core/server/snapshotProbe";
+import { signalProcessGroup } from "@fab/provider-core/server/processGroup";
 import {
   claudeSignedOutMessage,
   makeClaudeEnvironment,
@@ -179,45 +179,45 @@ import {
   boundProviderEventForLogging,
   shouldPersistProviderEvent,
 } from "../../provider/EventNdjsonLogger.ts";
-import * as ProviderEventLoggers from "@t3tools/provider-core/server/ProviderEventLoggers";
+import * as ProviderEventLoggers from "@fab/provider-core/server/ProviderEventLoggers";
 import {
   claudeRateLimitEventToUpdate,
   type ClaudeScopedLimitNames,
 } from "../../provider/claudeUsageLimits.ts";
-import type { ManagedServerProvider } from "@t3tools/provider-core/server/snapshot";
+import type { ManagedServerProvider } from "@fab/provider-core/server/snapshot";
 import {
-  T3_CODE_DEVICE_TOOL_INSTRUCTIONS_WITH_TOOL_SEARCH,
-  T3_CODE_ORCHESTRATION_INSTRUCTIONS,
-} from "@t3tools/provider-core/server/orchestrationInstructions";
-import { buildRuntimeInstructions } from "@t3tools/provider-core/server/runtimeInstructions";
+  FAB_DEVICE_TOOL_INSTRUCTIONS_WITH_TOOL_SEARCH,
+  FAB_ORCHESTRATION_INSTRUCTIONS,
+} from "@fab/provider-core/server/orchestrationInstructions";
+import { buildRuntimeInstructions } from "@fab/provider-core/server/runtimeInstructions";
 import {
   mcpToolPresentation,
   normalizeMcpText,
-} from "@t3tools/provider-core/server/mcpToolPresentation";
-import * as McpProviderSession from "@t3tools/provider-core/server/mcpSession";
-import * as McpProviderSessions from "@t3tools/provider-core/server/McpProviderSessions";
-import * as IdAllocator from "@t3tools/provider-core/server/IdAllocator";
+} from "@fab/provider-core/server/mcpToolPresentation";
+import * as McpProviderSession from "@fab/provider-core/server/mcpSession";
+import * as McpProviderSessions from "@fab/provider-core/server/McpProviderSessions";
+import * as IdAllocator from "@fab/provider-core/server/IdAllocator";
 import {
   makeProviderFailure,
   makeProviderRetryTurnItem,
-} from "@t3tools/provider-core/server/failure";
-import { turnScopedSelectionTransition } from "@t3tools/provider-core/server/selectionTransition";
-import { providerMessageTextWithAttachmentPaths } from "@t3tools/provider-core/server/attachmentPrompt";
-import * as ProviderAdapter from "@t3tools/provider-core/server/ProviderAdapter";
+} from "@fab/provider-core/server/failure";
+import { turnScopedSelectionTransition } from "@fab/provider-core/server/selectionTransition";
+import { providerMessageTextWithAttachmentPaths } from "@fab/provider-core/server/attachmentPrompt";
+import * as ProviderAdapter from "@fab/provider-core/server/ProviderAdapter";
 import {
   ProviderAdapterDriverCreateError,
   type ProviderAdapterDriverCreateInput,
-} from "@t3tools/provider-core/server/adapterDriver";
+} from "@fab/provider-core/server/adapterDriver";
 import {
   type BackgroundWorkReport,
   backgroundWorkNotification,
-} from "@t3tools/provider-core/server/notification";
-import * as ProviderContinuationRequests from "@t3tools/provider-core/server/ProviderContinuationRequests";
+} from "@fab/provider-core/server/notification";
+import * as ProviderContinuationRequests from "@fab/provider-core/server/ProviderContinuationRequests";
 import {
   makeSubagentChildThread,
   makeSubagentConversationArtifacts,
   subagentThreadTitle,
-} from "@t3tools/provider-core/server/subagentProjection";
+} from "@fab/provider-core/server/subagentProjection";
 
 export const CLAUDE_PROVIDER = ProviderDriverKind.make("claudeAgent");
 const CLAUDE_AGENT_SDK_QUERY_PROTOCOL = "claude-agent-sdk.query" as const;
@@ -359,7 +359,7 @@ export function spawnClaudeProcessGroup(
 ): ClaudeSpawnedProcess {
   const child = NodeChildProcess.spawn(
     "/bin/sh",
-    ["-c", CLAUDE_GROUP_WATCH_SCRIPT, "t3-claude", options.command, ...options.args],
+    ["-c", CLAUDE_GROUP_WATCH_SCRIPT, "fab-claude", options.command, ...options.args],
     {
       cwd: options.cwd,
       env: options.env,
@@ -646,7 +646,7 @@ export interface ClaudeAgentSdkQueryRunnerShape {
 export class ClaudeAgentSdkQueryRunner extends Context.Service<
   ClaudeAgentSdkQueryRunner,
   ClaudeAgentSdkQueryRunnerShape
->()("t3/orchestration-v2/Adapters/ClaudeAdapterV2/ClaudeAgentSdkQueryRunner") {}
+>()("fab/orchestration-v2/Adapters/ClaudeAdapterV2/ClaudeAgentSdkQueryRunner") {}
 
 export interface ClaudeAgentSdkSessionForkInput {
   readonly sessionId: string;
@@ -1471,7 +1471,7 @@ export function claudeQueryEnvironment(
 }
 
 // Claude Code's auto tool search sends every MCP schema in full while they fit under a share of the
-// context window, which T3's tools do on 1M models. auto:0 already means on and auto:100 off.
+// context window, which Fab's tools do on 1M models. auto:0 already means on and auto:100 off.
 export function claudeToolSearchOverride(value: string | undefined): "true" | undefined {
   if (value === undefined) return undefined;
   if (value === "auto") return "true";
@@ -1500,12 +1500,12 @@ function parseClaudeInteger(text: string): number {
 }
 
 // Claude Code defers MCP tools behind ToolSearch, so the agent only finds
-// t3_background_wait when the system prompt says when to reach for it.
+// fab_background_wait when the system prompt says when to reach for it.
 const CLAUDE_BACKGROUND_WAIT_INSTRUCTIONS = `
 
 ### Background work you wait on
 
-To wait for a background command or Monitor you started (tests, a build), call \`t3_background_wait\` with its task ID before you end your turn. Do not mark work you leave running, or PRs. T3 MCP tools are deferred: load one with ToolSearch before you call it.
+To wait for a background command or Monitor you started (tests, a build), call \`fab_background_wait\` with its task ID before you end your turn. Do not mark work you leave running, or PRs. Fab MCP tools are deferred: load one with ToolSearch before you call it.
 `;
 
 // Native subagents start from their task, not this session's system prompt.
@@ -1513,7 +1513,7 @@ const subagentDeviceInstructions: HookCallback = () =>
   Promise.resolve({
     hookSpecificOutput: {
       hookEventName: "SubagentStart",
-      additionalContext: T3_CODE_DEVICE_TOOL_INSTRUCTIONS_WITH_TOOL_SEARCH,
+      additionalContext: FAB_DEVICE_TOOL_INSTRUCTIONS_WITH_TOOL_SEARCH,
     },
   });
 
@@ -1529,7 +1529,7 @@ export function makeClaudeQueryOptions(input: {
   readonly sdkSettings?: string | ClaudeSdkSettings;
   readonly environment?: NodeJS.ProcessEnv;
   readonly mcpServers?: ClaudeQueryOptions["mcpServers"];
-  /** The thread's T3 MCP session holds the `device` capability. */
+  /** The thread's Fab MCP session holds the `device` capability. */
   readonly deviceToolsAvailable?: boolean;
   readonly tools?: ClaudeAgentSdkQueryTools;
   readonly allowedTools?: ReadonlyArray<string>;
@@ -1601,7 +1601,7 @@ export function makeClaudeQueryOptions(input: {
   const deviceInstructions = input.mcpServers !== undefined && input.deviceToolsAvailable === true;
   const options: ClaudeAgentSdkQueryOptions = {
     model: compiledSelection.apiModelId,
-    // T3 names threads; a supplied title skips Claude's redundant naming request.
+    // Fab names threads; a supplied title skips Claude's redundant naming request.
     ...(input.title === undefined ? {} : { title: input.title }),
     tools: claudeAgentSdkQueryToolsForSdk(selectedTools),
     permissionMode:
@@ -1654,10 +1654,10 @@ export function makeClaudeQueryOptions(input: {
         buildRuntimeInstructions({ harness: "Claude Code" }) +
           (input.mcpServers === undefined
             ? ""
-            : T3_CODE_ORCHESTRATION_INSTRUCTIONS +
+            : FAB_ORCHESTRATION_INSTRUCTIONS +
               CLAUDE_BACKGROUND_WAIT_INSTRUCTIONS +
               (deviceInstructions
-                ? `\n${T3_CODE_DEVICE_TOOL_INSTRUCTIONS_WITH_TOOL_SEARCH}\n`
+                ? `\n${FAB_DEVICE_TOOL_INSTRUCTIONS_WITH_TOOL_SEARCH}\n`
                 : "")),
         ...launchAppendSystemPrompt,
       ].join("\n\n"),
@@ -1721,7 +1721,7 @@ const decodeClaudeLaunchArgSettings = Schema.decodeUnknownEffect(
 /**
  * Reads the --settings launch argument: a value starting with a brace is inline
  * JSON, anything else is a file path relative to the cwd. makeClaudeQueryOptions
- * merges the result beneath T3's own settings.
+ * merges the result beneath Fab's own settings.
  */
 const readClaudeLaunchArgSettings = Effect.fn("ClaudeAdapterV2.readLaunchArgSettings")(
   function* (input: {
@@ -1750,30 +1750,30 @@ const readClaudeLaunchArgSettings = Effect.fn("ClaudeAdapterV2.readLaunchArgSett
   },
 );
 
-export const CLAUDE_T3_MCP_TOOL_WILDCARD = "mcp__t3-code__*";
+export const CLAUDE_FAB_MCP_TOOL_WILDCARD = "mcp__fab__*";
 
 // Keep in sync with OrchestratorToolkit Tool.Readonly annotations; ClaudeAdapterV2.test.ts checks this.
-export const CLAUDE_READ_ONLY_T3_MCP_ALLOWED_TOOLS: ReadonlyArray<string> = [
-  "mcp__t3-code__orchestrator_capabilities",
-  "mcp__t3-code__list_scheduled_tasks",
-  "mcp__t3-code__t3_thread_list",
-  "mcp__t3-code__t3_thread_wait",
-  "mcp__t3-code__t3_worktree_status",
-  "mcp__t3-code__t3_worktree_list",
-  "mcp__t3-code__t3_project_list",
-  "mcp__t3-code__t3_project_read",
-  "mcp__t3-code__t3_thread_search",
-  "mcp__t3-code__t3_preview_list",
-  "mcp__t3-code__t3_environment_read",
-  "mcp__t3-code__t3_environment_links",
-  "mcp__t3-code__html_preview",
-  "mcp__t3-code__html_render",
+export const CLAUDE_READ_ONLY_FAB_MCP_ALLOWED_TOOLS: ReadonlyArray<string> = [
+  "mcp__fab__orchestrator_capabilities",
+  "mcp__fab__list_scheduled_tasks",
+  "mcp__fab__fab_thread_list",
+  "mcp__fab__fab_thread_wait",
+  "mcp__fab__fab_worktree_status",
+  "mcp__fab__fab_worktree_list",
+  "mcp__fab__fab_project_list",
+  "mcp__fab__fab_project_read",
+  "mcp__fab__fab_thread_search",
+  "mcp__fab__fab_preview_list",
+  "mcp__fab__fab_environment_read",
+  "mcp__fab__fab_environment_links",
+  "mcp__fab__html_preview",
+  "mcp__fab__html_render",
 ];
 
-// T3 waits can block for an hour; exceed Claude's default 60 s timeout.
-export const CLAUDE_T3_MCP_TOOL_TIMEOUT_MS = 65 * 60 * 1_000;
+// Fab waits can block for an hour; exceed Claude's default 60 s timeout.
+export const CLAUDE_FAB_MCP_TOOL_TIMEOUT_MS = 65 * 60 * 1_000;
 
-// allowedTools pre-approves calls; tools controls availability. Pre-approve T3 tools for headless modes,
+// allowedTools pre-approves calls; tools controls availability. Pre-approve Fab tools for headless modes,
 // limited to annotated read-only tools in read-only sandboxes.
 
 export function claudeMcpQueryOverrides(input: {
@@ -1789,18 +1789,18 @@ export function claudeMcpQueryOverrides(input: {
     return input.allowedTools === undefined ? {} : { allowedTools: input.allowedTools };
   }
   const mcpAllowedTools = input.readOnlySandbox
-    ? CLAUDE_READ_ONLY_T3_MCP_ALLOWED_TOOLS
-    : [CLAUDE_T3_MCP_TOOL_WILDCARD];
+    ? CLAUDE_READ_ONLY_FAB_MCP_ALLOWED_TOOLS
+    : [CLAUDE_FAB_MCP_TOOL_WILDCARD];
   return {
     allowedTools: Array.from(new Set([...(input.allowedTools ?? []), ...mcpAllowedTools])),
     mcpServers: {
-      "t3-code": {
+      "fab": {
         type: "http",
         url: session.endpoint,
         headers: {
           Authorization: session.authorizationHeader,
         },
-        timeout: CLAUDE_T3_MCP_TOOL_TIMEOUT_MS,
+        timeout: CLAUDE_FAB_MCP_TOOL_TIMEOUT_MS,
       },
     },
   };
@@ -3501,7 +3501,7 @@ export function permissionResultFromDecision(input: {
   readonly toolUseID: string;
   readonly suggestions?: Parameters<CanUseTool>[2]["suggestions"];
   readonly feedback?: string;
-  /** Under an administrator's ceiling, T3 Code's mode is the only one; Claude cannot switch it. */
+  /** Under an administrator's ceiling, Fab's mode is the only one; Claude cannot switch it. */
   readonly managedCeiling?: boolean;
 }): PermissionResult {
   if (input.decision === "accept" || input.decision === "acceptForSession") {
@@ -4438,7 +4438,7 @@ function claudeTaskString(value: unknown, key: string): string | undefined {
 }
 
 // A Claude Code mod can hold a tool call until the user acts in its terminal
-// pane. T3 cannot provide the requested pane interaction.
+// pane. Fab cannot provide the requested pane interaction.
 // Passive panes never request focus and keep working.
 function claudeFocusRequestedPanePlugin(message: SDKMessage): string | null {
   if (message.type !== "system" || claudeTaskField(message, "subtype") !== "ui_panes") return null;
@@ -8582,7 +8582,7 @@ export const makeClaudeAdapterV2 = Effect.fn("makeClaudeAdapterV2")(function* (
               failure: makeProviderFailure({
                 class: "provider_error",
                 code: "claude_mod_ui_unsupported",
-                message: `The Claude Code mod "${focusedPlugin}" is waiting for input in its terminal pane, which T3 Code cannot show. Disable the mod for sessions run from T3 Code, or run the task in the Claude Code terminal.`,
+                message: `The Claude Code mod "${focusedPlugin}" is waiting for input in its terminal pane, which Fab cannot show. Disable the mod for sessions run from Fab, or run the task in the Claude Code terminal.`,
               }),
             });
             // Closing ends the CLI process and abandons the held tool call
@@ -10153,7 +10153,7 @@ export const makeClaudeAdapterV2 = Effect.fn("makeClaudeAdapterV2")(function* (
             yield* releaseHeldRootFrames(context);
           }
 
-          // The SDK's requestId names this control request; T3 allocates its own
+          // The SDK's requestId names this control request; Fab allocates its own
           // runtime request id from it.
           const nativeRequestId = `mcp-elicitation:${callbackOptions.requestId}`;
           const artifacts = yield* buildApprovalRequestArtifacts({
@@ -10822,7 +10822,7 @@ export const makeClaudeAdapterV2 = Effect.fn("makeClaudeAdapterV2")(function* (
                 }
                 const nativeItemId = `bypass-policy-downgrade:${context.providerTurnId}`;
                 const notice =
-                  "T3 could not confirm Claude bypass permissions here, so Full access is running with approval checks.";
+                  "Fab could not confirm Claude bypass permissions here, so Full access is running with approval checks.";
                 yield* emitProviderEvent({
                   type: "turn_item.updated",
                   driver: CLAUDE_PROVIDER,
@@ -11444,7 +11444,7 @@ export const makeClaudeAdapterV2 = Effect.fn("makeClaudeAdapterV2")(function* (
                     detail: `Claude session ${nativeThreadId} has no conversation to resume.`,
                   });
                 }
-                // A session imported from the terminal has history but no T3
+                // A session imported from the terminal has history but no Fab
                 // provider turns; opening it with sessionId fails "already in use".
                 if (transcript === "conversation") {
                   yield* Ref.update(openedNativeThreads, (current) =>

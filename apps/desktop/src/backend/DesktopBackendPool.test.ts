@@ -108,7 +108,7 @@ describe("DesktopBackendPool", () => {
               mode: "desktop",
               noBrowser: true,
               port: 3774,
-              t3Home: "/tmp/t3",
+              fabHome: "/tmp/fab",
               host: "127.0.0.1",
               desktopBootstrapToken: "token",
               tailscaleServeEnabled: false,

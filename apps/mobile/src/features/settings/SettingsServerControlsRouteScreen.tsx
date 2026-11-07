@@ -1,6 +1,6 @@
 import { useNavigation } from "@react-navigation/native";
 import { SettingsRow } from "./components/SettingsRow";
-import { AuthSettingsWriteScope } from "@t3tools/contracts";
+import { AuthSettingsWriteScope } from "@fab/contracts";
 import { readEnvironmentScope, useEnvironmentsWithScope } from "../../state/session";
 import { ScreenScrollView as ScrollView } from "../../components/ui/ScreenScrollView";
 import { AppText as Text } from "../../components/ui/AppText";
@@ -12,7 +12,7 @@ import {
   type WorktreeSubmodules,
   PROJECT_SCOPED_SERVER_SETTING_KEYS,
   type ProjectScopedServerSettingKey,
-} from "@t3tools/contracts";
+} from "@fab/contracts";
 import { useRef, useState } from "react";
 import { View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -45,7 +45,7 @@ import {
 } from "./settings-scoped-server";
 import { PullRequestGlyph } from "../pull-requests/pullRequestGlyphs";
 import { AutoSettleSettingsRows } from "./ThreadSettingsSections";
-import { supportsSharedSettingsSync } from "@t3tools/client-runtime/state/shared-settings";
+import { supportsSharedSettingsSync } from "@fab/client-runtime/state/shared-settings";
 
 type SettingsPage = "threads" | "source-control" | "worktrees" | "maintenance";
 
@@ -84,7 +84,7 @@ const SUBMODULE_CHOICES: ReadonlyArray<{
   {
     mode: null,
     label: "Inherit",
-    description: "Use the repository's t3.json, or initialize recursively.",
+    description: "Use the repository's fab.json, or initialize recursively.",
   },
   { mode: "recursive", label: "Recursive", description: "Initialize nested submodules too." },
   {
@@ -103,7 +103,7 @@ const WORKSPACE_CHOICES: ReadonlyArray<{
   {
     mode: null,
     label: "Inherit",
-    description: "Use the repository's t3.json, or the current checkout.",
+    description: "Use the repository's fab.json, or the current checkout.",
   },
   {
     mode: "local",

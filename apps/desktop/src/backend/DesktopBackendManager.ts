@@ -24,8 +24,8 @@ import {
   PRIMARY_LOCAL_ENVIRONMENT_ID,
   DesktopTelemetryControlMessage,
   type DesktopTelemetryControlMessage as DesktopTelemetryControlMessageValue,
-} from "@t3tools/contracts";
-import { waitForHttpReady as waitForHttpReadyShared } from "@t3tools/shared/httpReadiness";
+} from "@fab/contracts";
+import { waitForHttpReady as waitForHttpReadyShared } from "@fab/shared/httpReadiness";
 
 import * as DesktopObservability from "../app/DesktopObservability.ts";
 import * as DesktopTelemetryPublisher from "../telemetry/DesktopTelemetryPublisher.ts";
@@ -42,7 +42,7 @@ const DEFAULT_BACKEND_READINESS_REQUEST_TIMEOUT = Duration.seconds(1);
 // Match the service launcher's grace period so backends can stop provider sessions.
 const DEFAULT_BACKEND_TERMINATE_GRACE = Duration.seconds(5);
 const DEFAULT_BACKEND_OUTPUT_DRAIN_TIMEOUT = Duration.seconds(5);
-const BACKEND_READINESS_PATH = "/.well-known/t3/environment";
+const BACKEND_READINESS_PATH = "/.well-known/fab/environment";
 // Three restarts without readiness is about 2 s of backoff: past a blip, early enough to help.
 const STARTUP_FAILURE_RESTART_ATTEMPTS = 3;
 const STARTUP_FAILURE_OUTPUT_CHARS = 4_000;
@@ -67,7 +67,7 @@ export type DesktopBackendBootstrapDelivery = "fd3" | "stdin";
 export interface DesktopBackendStartConfig extends BackendProcessContext {
   readonly args: ReadonlyArray<string>;
   readonly env: Record<string, string | undefined>;
-  /** False passes env verbatim, preventing the Windows T3CODE_HOME from leaking into WSL. */
+  /** False passes env verbatim, preventing the Windows FAB_HOME from leaking into WSL. */
   readonly extendEnv: boolean;
   readonly bootstrap: DesktopBackendBootstrapValue;
   readonly bootstrapDelivery: DesktopBackendBootstrapDelivery;

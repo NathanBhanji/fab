@@ -1,4 +1,4 @@
-import { DEFAULT_HOSTED_APP_URL } from "@t3tools/shared/connectAuth";
+import { DEFAULT_HOSTED_APP_URL } from "@fab/shared/connectAuth";
 import { afterEach, expect, it, vi } from "vite-plus/test";
 
 import appleAppSiteAssociation from "../web/public/.well-known/apple-app-site-association.json";
@@ -26,15 +26,15 @@ it.each(["prod", ""])("rejects APP_VARIANT=%j before selecting production IDs", 
 });
 
 it.each([
-  [undefined, "com.t3tools.t3code"],
-  ["development", "com.t3tools.t3code.dev"],
-  ["preview", "com.t3tools.t3code.preview"],
-  ["production", "com.t3tools.t3code"],
+  [undefined, "dev.bhanji.fab"],
+  ["development", "dev.bhanji.fab.dev"],
+  ["preview", "dev.bhanji.fab.preview"],
+  ["production", "dev.bhanji.fab"],
 ])("keeps the iOS and Android identifiers for APP_VARIANT=%j", async (value, identifier) => {
   const config = await loadConfig(value);
   expect(config.ios?.bundleIdentifier).toBe(identifier);
   expect(config.android?.package).toBe(identifier);
-  // Copied thread links open this app only while app.t3.codes lists it.
+  // Copied thread links open this app only while app.fab.invalid lists it.
   const host = new URL(DEFAULT_HOSTED_APP_URL).host;
   expect(config.ios?.associatedDomains).toContain(`applinks:${host}`);
   expect(appleAppSiteAssociation.applinks.details[0]?.appIDs).toContain(

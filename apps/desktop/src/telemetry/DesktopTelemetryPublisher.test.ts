@@ -35,7 +35,7 @@ function layerElectronApp(
 ) {
   return Layer.succeed(ElectronApp.ElectronApp, {
     metadata: Effect.die("unexpected metadata read"),
-    name: Effect.succeed("T3 Code"),
+    name: Effect.succeed("Fab"),
     systemLocale: Effect.succeed("en-US"),
     whenReady: Effect.void,
     requestSingleInstanceLock: Effect.succeed(true),
@@ -131,7 +131,7 @@ describe("DesktopRendererHistory", () => {
       Effect.gen(function* () {
         const fileSystem = yield* FileSystem.FileSystem;
         const directory = yield* fileSystem.makeTempDirectoryScoped({
-          prefix: "t3-renderer-history-",
+          prefix: "fab-renderer-history-",
         });
         let previewPid = 7_002;
         let previewDestroyed = false;
@@ -348,7 +348,7 @@ describe("DesktopRendererHistory", () => {
     Effect.gen(function* () {
       const fileSystem = yield* FileSystem.FileSystem;
       const directory = yield* fileSystem.makeTempDirectoryScoped({
-        prefix: "t3-renderer-rotation-",
+        prefix: "fab-renderer-rotation-",
       });
       const filePath = `${directory}/renderer-history.ndjson`;
       const maxBytes = 256 * 1_024;

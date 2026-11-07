@@ -9,7 +9,7 @@ import { makeComponentLogger } from "./DesktopObservability.ts";
 // AppImage mounts change each run; the launcher must mount the image itself.
 const { logInfo, logWarning } = makeComponentLogger("desktop-cli-shim");
 
-export const MARKER = "Written by T3 Code: runs the desktop app's bundled t3 CLI.";
+export const MARKER = "Written by Fab: runs the desktop app's bundled fab CLI.";
 
 const SERVER_ENTRY = "apps/server/dist/bin.mjs";
 
@@ -18,7 +18,7 @@ const shellWord = (value: string) => `'${value.replaceAll("'", `'"'"'`)}'`;
 const cmdText = (value: string) => value.replaceAll("%", "%%");
 const cmdWord = (value: string) => `"${cmdText(value)}"`;
 
-const MOVED = "T3 Code has moved or been removed. Open the app once to update this command.";
+const MOVED = "Fab has moved or been removed. Open the app once to update this command.";
 
 export type CliShimTarget =
   | { readonly kind: "appimage"; readonly appImage: string; readonly executableName: string }
@@ -29,14 +29,14 @@ export type CliShimTarget =
 export const renderCliShim = (input: {
   readonly target: CliShimTarget;
   readonly shimPath: string;
-  readonly t3Home: string;
+  readonly fabHome: string;
 }) => {
   const { target } = input;
   if (target.kind === "windows") {
-    const utf8 = [target.executable, target.entry, input.shimPath, input.t3Home].some((value) =>
+    const utf8 = [target.executable, target.entry, input.shimPath, input.fabHome].some((value) =>
       [...value].some((character) => character.codePointAt(0)! > 0x7f),
     );
-    const restore = utf8 ? ["chcp %t3_codepage% >nul"] : [];
+    const restore = utf8 ? ["chcp %fab_codepage% >nul"] : [];
     return [
       "@echo off",
       `rem ${MARKER}`,
@@ -45,15 +45,15 @@ export const renderCliShim = (input: {
       // Ctrl-C skips codepage restoration, so switch to UTF-8 only for non-ASCII install paths.
       ...(utf8
         ? [
-            `for /f "tokens=2 delims=:." %%c in ('chcp') do set "t3_codepage=%%c"`,
+            `for /f "tokens=2 delims=:." %%c in ('chcp') do set "fab_codepage=%%c"`,
             "chcp 65001 >nul",
           ]
         : []),
-      `set "T3CODE_CLI_PATH=${cmdText(input.shimPath)}"`,
-      `if not defined T3CODE_HOME set "T3CODE_HOME=${cmdText(input.t3Home)}"`,
+      `set "FAB_CLI_PATH=${cmdText(input.shimPath)}"`,
+      `if not defined FAB_HOME set "FAB_HOME=${cmdText(input.fabHome)}"`,
       'set "ELECTRON_RUN_AS_NODE=1"',
       // Electron's Windows executable starts without stdin; this tells the CLI to reopen the console.
-      'set "T3CODE_DESKTOP_CLI_LAUNCHER=1"',
+      'set "FAB_DESKTOP_CLI_LAUNCHER=1"',
       // A goto, not a parenthesized block: "Program Files (x86)" would close the block early.
       `if exist ${cmdWord(target.executable)} goto run`,
       ...restore,
@@ -61,18 +61,18 @@ export const renderCliShim = (input: {
       "exit /b 127",
       ":run",
       `${cmdWord(target.executable)} ${cmdWord(target.entry)} %*`,
-      'set "t3_exit=%ERRORLEVEL%"',
+      'set "fab_exit=%ERRORLEVEL%"',
       ...restore,
-      "exit /b %t3_exit%",
+      "exit /b %fab_exit%",
       "",
     ].join("\r\n");
   }
   const header = [
     "#!/bin/sh",
     `# ${MARKER}`,
-    `export T3CODE_CLI_PATH=${shellWord(input.shimPath)}`,
-    `home=${shellWord(input.t3Home)}`,
-    'export T3CODE_HOME="${T3CODE_HOME:-$home}"',
+    `export FAB_CLI_PATH=${shellWord(input.shimPath)}`,
+    `home=${shellWord(input.fabHome)}`,
+    'export FAB_HOME="${FAB_HOME:-$home}"',
     "export ELECTRON_RUN_AS_NODE=1",
     `app=${shellWord(target.kind === "appimage" ? target.appImage : target.executable)}`,
     'if [ ! -x "$app" ]; then',
@@ -116,7 +116,7 @@ export const launcherPath = (environment: DesktopEnvironment.DesktopEnvironment[
   environment.path.join(
     environment.baseDir,
     "bin",
-    environment.platform === "win32" ? "t3.cmd" : "t3",
+    environment.platform === "win32" ? "fab.cmd" : "fab",
   );
 
 export const install = Effect.gen(function* () {
@@ -137,12 +137,12 @@ export const install = Effect.gen(function* () {
         }),
         onNone: () => ({ kind: "direct" as const, executable: process.execPath, entry }),
       });
-  const content = renderCliShim({ target, shimPath, t3Home: environment.baseDir });
+  const content = renderCliShim({ target, shimPath, fabHome: environment.baseDir });
 
   return yield* Effect.gen(function* () {
     const existing = yield* fs.readFileString(shimPath).pipe(Effect.option);
     if (Option.isSome(existing) && !existing.value.includes(MARKER)) {
-      yield* logWarning("leaving a t3 launcher the app did not write", { shimPath });
+      yield* logWarning("leaving a fab launcher the app did not write", { shimPath });
       return Option.none<string>();
     }
     if (Option.getOrUndefined(existing) !== content) {
@@ -150,12 +150,12 @@ export const install = Effect.gen(function* () {
       const staging = `${shimPath}.${process.pid}.tmp`;
       yield* fs.writeFileString(staging, content, { mode: 0o755 });
       yield* fs.rename(staging, shimPath);
-      yield* logInfo("installed t3 launcher", { shimPath });
+      yield* logInfo("installed fab launcher", { shimPath });
     }
     return Option.some(shimPath);
   }).pipe(
     Effect.catchCause((cause) =>
-      logWarning("could not install t3 launcher", { shimPath, cause: Cause.pretty(cause) }).pipe(
+      logWarning("could not install fab launcher", { shimPath, cause: Cause.pretty(cause) }).pipe(
         Effect.as(Option.none<string>()),
       ),
     ),

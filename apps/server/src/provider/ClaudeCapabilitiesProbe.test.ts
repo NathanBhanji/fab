@@ -1,6 +1,6 @@
 // @effect-diagnostics nodeBuiltinImport:off - cleanup uses Node's retrying rm, which the FileSystem service does not expose.
 import * as NodeServices from "@effect/platform-node/NodeServices";
-import { ClaudeSettings, type ServerProvider } from "@t3tools/contracts";
+import { ClaudeSettings, type ServerProvider } from "@fab/contracts";
 import { vi } from "vite-plus/test";
 import { assert, it } from "@effect/vitest";
 import * as Effect from "effect/Effect";
@@ -35,8 +35,8 @@ it.effect("reports a deleted worktree's scan as finished, not pending", () =>
     const snapshot = yield* probeClaudeWorkspaceSnapshot(
       yield* decodeClaudeSettings({}),
       { skills: [], slashCommands: [] } as unknown as ServerProvider,
-      "/nonexistent/t3-deleted-worktree",
-      { HOME: "/nonexistent/t3-home" },
+      "/nonexistent/fab-deleted-worktree",
+      { HOME: "/nonexistent/fab-home" },
     );
     assert.strictEqual(snapshot.slashCommandsPending, false);
   }).pipe(Effect.provide(NodeServices.layer)),

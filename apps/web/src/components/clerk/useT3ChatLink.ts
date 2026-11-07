@@ -1,8 +1,8 @@
-import { findErrorTraceId } from "@t3tools/client-runtime/errors";
+import { findErrorTraceId } from "@fab/client-runtime/errors";
 import {
   isAtomCommandInterrupted,
   squashAtomCommandFailure,
-} from "@t3tools/client-runtime/state/runtime";
+} from "@fab/client-runtime/state/runtime";
 import { useState } from "react";
 
 import {
@@ -31,7 +31,7 @@ function reportFailure(title: string, cause: unknown) {
   });
 }
 
-/** Starts and removes the T3 Chat link that raises the T3 Connect tunnel cap. */
+/** Starts and removes the T3 Chat link that raises the Fab Connect tunnel cap. */
 export function useT3ChatLink() {
   const linkState = useManagedRelayT3ChatLink();
   const createLinkRequest = useAtomCommand(createManagedRelayT3ChatLinkRequestCommand, {

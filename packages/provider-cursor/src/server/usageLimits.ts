@@ -1,7 +1,7 @@
-import type { ServerProviderUsageWindow } from "@t3tools/contracts";
+import type { ServerProviderUsageWindow } from "@fab/contracts";
 import type { CursorSettings } from "../settings.ts";
-import * as HostProcess from "@t3tools/shared/HostProcess";
-import { CURSOR_USAGE_WINDOWS } from "@t3tools/shared/usageLimits";
+import * as HostProcess from "@fab/shared/HostProcess";
+import { CURSOR_USAGE_WINDOWS } from "@fab/shared/usageLimits";
 import * as DateTime from "effect/DateTime";
 import * as Effect from "effect/Effect";
 import * as FileSystem from "effect/FileSystem";
@@ -15,7 +15,7 @@ import {
   clampPercent,
   makeUnavailableUsageLimits,
   makeUsageLimits,
-} from "@t3tools/provider-core/server/usageLimits";
+} from "@fab/provider-core/server/usageLimits";
 import { DEFAULT_CURSOR_API_ENDPOINT, exchangeCursorApiKey } from "./apiKey.ts";
 import * as CursorKeychain from "./CursorKeychain.ts";
 
@@ -100,7 +100,7 @@ export const readCursorUsageLimits = Effect.fn("readCursorUsageLimits")(function
         return makeUnavailableUsageLimits({
           checkedAt,
           reason: "unsupported",
-          message: "Enable Cursor account usage in T3 Code to read its Keychain login.",
+          message: "Enable Cursor account usage in Fab to read its Keychain login.",
         });
       }
       if (endpoint !== DEFAULT_CURSOR_API_ENDPOINT) {

@@ -1,4 +1,4 @@
-import type { EnvironmentConnectionPhase } from "@t3tools/client-runtime/connection";
+import type { EnvironmentConnectionPhase } from "@fab/client-runtime/connection";
 
 export interface FloatingStatusAction {
   readonly label: string;

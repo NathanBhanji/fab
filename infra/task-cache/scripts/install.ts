@@ -1,4 +1,4 @@
-/* oxlint-disable t3code/no-global-process-runtime -- Standalone setup must run before workspace dependencies are installed. */
+/* oxlint-disable fab/no-global-process-runtime -- Standalone setup must run before workspace dependencies are installed. */
 // @effect-diagnostics nodeBuiltinImport:off - standalone bootstrap also runs before dependencies are installed.
 // @effect-diagnostics globalConsole:off globalFetch:off globalDate:off - interactive setup and endpoint verification.
 import * as NodeCrypto from "node:crypto";
@@ -11,13 +11,13 @@ import { patchNativeCli } from "../src/nativeHook.js";
 
 const home = NodeOS.homedir();
 const root = NodePath.resolve(import.meta.dirname, "../../..");
-const state = NodePath.join(home, ".config/t3-task-cache");
+const state = NodePath.join(home, ".config/fab-task-cache");
 const nonInteractive = process.argv.includes("--non-interactive");
-const installed = NodePath.join(home, ".local/share/t3-task-cache");
+const installed = NodePath.join(home, ".local/share/fab-task-cache");
 const hookConfig = NodePath.join(home, ".config/vite-plus/run-hook.json");
-const legacySourceLine = '. "$HOME/.config/t3-task-cache/env"';
+const legacySourceLine = '. "$HOME/.config/fab-task-cache/env"';
 const sourceLine =
-  '[ ! -r "$HOME/.config/t3-task-cache/env" ] || . "$HOME/.config/t3-task-cache/env"';
+  '[ ! -r "$HOME/.config/fab-task-cache/env" ] || . "$HOME/.config/fab-task-cache/env"';
 const profiles = [".profile", ".bashrc", ".bash_profile", ".bash_login", ".zshenv", ".zshrc"];
 if (process.argv.includes("--uninstall")) {
   for (const file of profiles) {
@@ -45,7 +45,7 @@ if (process.argv.includes("--uninstall")) {
   }
   await NodeFSP.rm(NodePath.join(state, "credentials.json"), { force: true });
   await NodeFSP.rm(NodePath.join(state, "env"), { force: true });
-  await NodeFSP.rm(NodePath.join(home, ".cache/t3-task-cache/telemetry"), {
+  await NodeFSP.rm(NodePath.join(home, ".cache/fab-task-cache/telemetry"), {
     recursive: true,
     force: true,
   });
@@ -84,9 +84,9 @@ const prompt = NodeReadlinePromises.createInterface({
   input: process.stdin,
   output: process.stdout,
 });
-let endpoint = process.env.T3_CACHE_SETUP_URL || defaultEndpoint;
-let name = process.env.T3_CACHE_SETUP_NAME || credentials[endpoint]?.name;
-let token = process.env.T3_CACHE_SETUP_TOKEN || credentials[endpoint]?.token;
+let endpoint = process.env.FAB_CACHE_SETUP_URL || defaultEndpoint;
+let name = process.env.FAB_CACHE_SETUP_NAME || credentials[endpoint]?.name;
+let token = process.env.FAB_CACHE_SETUP_TOKEN || credentials[endpoint]?.token;
 const initialEndpoint = endpoint;
 const initialName = name;
 try {
@@ -97,7 +97,7 @@ try {
     if (process.stdin.isTTY || !token || endpoint !== initialEndpoint || name !== initialName) {
       const savedToken = endpoint === initialEndpoint && name === initialName ? token : undefined;
       if (!process.stdin.isTTY)
-        throw new Error("Use T3_CACHE_SETUP_TOKEN for non-interactive setup.");
+        throw new Error("Use FAB_CACHE_SETUP_TOKEN for non-interactive setup.");
       process.stdout.write(
         `Credential token (hidden)${savedToken ? " [Enter keeps saved token]" : ""}: `,
       );

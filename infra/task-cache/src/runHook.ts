@@ -11,7 +11,7 @@ export default function start({ root }: { readonly root: string }) {
   endpoint.username = "";
   endpoint.password = "";
   const stop =
-    process.env.T3_TASK_CACHE_TELEMETRY === "off"
+    process.env.FAB_TASK_CACHE_TELEMETRY === "off"
       ? undefined
       : observeSummaries(root, endpoint.href.replace(/\/$/, ""), process.env);
   const finish = async () => {
@@ -36,6 +36,6 @@ export default function start({ root }: { readonly root: string }) {
     child.unref();
   };
   return Object.assign(finish, {
-    remoteCache: process.env.VP_REMOTE_CACHE || process.env.VP_T3_TASK_CACHE_MODE || "read-write",
+    remoteCache: process.env.VP_REMOTE_CACHE || process.env.VP_FAB_TASK_CACHE_MODE || "read-write",
   });
 }

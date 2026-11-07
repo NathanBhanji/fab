@@ -4,7 +4,7 @@ import {
   type OrchestrationV2ThreadShell,
   type ScopedThreadRef,
   type ThreadId,
-} from "@t3tools/contracts";
+} from "@fab/contracts";
 
 import { threadKey } from "./entities.ts";
 

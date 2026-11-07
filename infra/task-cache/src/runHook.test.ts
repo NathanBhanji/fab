@@ -37,14 +37,14 @@ it("sends telemetry from a detached flusher that the task runner does not wait f
     if (!address || typeof address === "string") throw new Error("Missing HTTP address");
     const endpoint = `http://127.0.0.1:${address.port}/projects/test`;
     await NodeFSP.writeFile(NodePath.join(root, ".task-cache.json"), JSON.stringify({ endpoint }));
-    await NodeFSP.mkdir(NodePath.join(root, ".config/t3-task-cache"), { recursive: true });
+    await NodeFSP.mkdir(NodePath.join(root, ".config/fab-task-cache"), { recursive: true });
     await NodeFSP.writeFile(
-      NodePath.join(root, ".config/t3-task-cache/credentials.json"),
+      NodePath.join(root, ".config/fab-task-cache/credentials.json"),
       JSON.stringify({ [endpoint]: { name: "maria", token: "secret" } }),
     );
     vi.stubEnv("HOME", root);
     vi.stubEnv("GITHUB_ACTIONS", undefined);
-    vi.stubEnv("T3_TASK_CACHE_TELEMETRY", undefined);
+    vi.stubEnv("FAB_TASK_CACHE_TELEMETRY", undefined);
     vi.stubEnv("VITE_CACHE_PATH", undefined);
     const finish = startRunHook({ root });
     const summary = NodePath.join(root, "node_modules/.vite/task-cache/run/last-summary.json");
@@ -91,9 +91,9 @@ it("rejects invalid setup credentials before installing anything and never print
           env: {
             ...process.env,
             HOME: home,
-            T3_CACHE_SETUP_URL: `http://127.0.0.1:${address.port}/projects/test`,
-            T3_CACHE_SETUP_NAME: "maria",
-            T3_CACHE_SETUP_TOKEN: token,
+            FAB_CACHE_SETUP_URL: `http://127.0.0.1:${address.port}/projects/test`,
+            FAB_CACHE_SETUP_NAME: "maria",
+            FAB_CACHE_SETUP_TOKEN: token,
           },
           stdio: ["ignore", "pipe", "pipe"],
         },
@@ -185,9 +185,9 @@ it("installs without masking .profile and configures CI through bash", async () 
     const address = server.address();
     if (!address || typeof address === "string") throw new Error("Missing HTTP address");
     await NodeFSP.writeFile(NodePath.join(home, ".profile"), "export EXISTING_PROFILE=preserved\n");
-    await NodeFSP.mkdir(NodePath.join(home, ".config/t3-task-cache"), { recursive: true });
+    await NodeFSP.mkdir(NodePath.join(home, ".config/fab-task-cache"), { recursive: true });
     await NodeFSP.writeFile(
-      NodePath.join(home, ".config/t3-task-cache/credentials.json"),
+      NodePath.join(home, ".config/fab-task-cache/credentials.json"),
       "{partial",
     );
     await run(
@@ -197,9 +197,9 @@ it("installs without masking .profile and configures CI through bash", async () 
         "--non-interactive",
       ],
       {
-        T3_CACHE_SETUP_URL: `http://127.0.0.1:${address.port}/projects/test`,
-        T3_CACHE_SETUP_NAME: "maria",
-        T3_CACHE_SETUP_TOKEN: "test-credential-for-isolated-http-server",
+        FAB_CACHE_SETUP_URL: `http://127.0.0.1:${address.port}/projects/test`,
+        FAB_CACHE_SETUP_NAME: "maria",
+        FAB_CACHE_SETUP_TOKEN: "test-credential-for-isolated-http-server",
       },
     );
     expect(await NodeFSP.readdir(home)).not.toContain(".bash_profile");
@@ -208,8 +208,8 @@ it("installs without masking .profile and configures CI through bash", async () 
     );
     const githubEnv = NodePath.join(home, "github-env");
     await run([process.execPath, NodePath.join(import.meta.dirname, "../scripts/install-ci.ts")], {
-      T3_TASK_CACHE_READ_TOKEN: "read-only-fixture-token-01234567890123456789",
-      GITHUB_REPOSITORY: "pingdotgg/t3code",
+      FAB_TASK_CACHE_READ_TOKEN: "read-only-fixture-token-01234567890123456789",
+      GITHUB_REPOSITORY: "nathanbhanji/fab",
       GITHUB_ACTIONS: "true",
       GITHUB_ENV: githubEnv,
       RUNNER_TEMP: home,
@@ -223,15 +223,15 @@ it("installs without masking .profile and configures CI through bash", async () 
     const output = await run(["bash", "-c", 'printf "%s" "$NODE_OPTIONS"'], { BASH_ENV: bashEnv });
     expect(output).toContain("--import=file:");
     expect(output).toContain("/infra/task-cache/src/preload.mjs");
-    await NodeFSP.rm(NodePath.join(home, ".local/share/t3-task-cache/preload.mjs"));
+    await NodeFSP.rm(NodePath.join(home, ".local/share/fab-task-cache/preload.mjs"));
     const missing = await run(["bash", "-c", `node -e 'console.log("missing preload is safe")'`], {
-      BASH_ENV: NodePath.join(home, ".config/t3-task-cache/env"),
+      BASH_ENV: NodePath.join(home, ".config/fab-task-cache/env"),
     });
     expect(missing).toContain("missing preload is safe");
 
     await NodeFSP.writeFile(
       NodePath.join(home, ".bash_profile"),
-      '. "$HOME/.config/t3-task-cache/env"\n',
+      '. "$HOME/.config/fab-task-cache/env"\n',
     );
     await run(
       [
@@ -242,20 +242,20 @@ it("installs without masking .profile and configures CI through bash", async () 
       {},
     );
     expect(await NodeFSP.readdir(home)).not.toContain(".bash_profile");
-    expect(await NodeFSP.readdir(NodePath.join(home, ".local/share/t3-task-cache"))).toEqual([
+    expect(await NodeFSP.readdir(NodePath.join(home, ".local/share/fab-task-cache"))).toEqual([
       "preload.mjs",
     ]);
     expect(await NodeFSP.readFile(NodePath.join(home, ".profile"), "utf8")).not.toContain(
-      "t3-task-cache/env",
+      "fab-task-cache/env",
     );
-    expect(await NodeFSP.readdir(NodePath.join(home, ".config/t3-task-cache"))).not.toContain(
+    expect(await NodeFSP.readdir(NodePath.join(home, ".config/fab-task-cache"))).not.toContain(
       "credentials.json",
     );
     const remaining = await run(
       [
         process.execPath,
         "--import",
-        NodePath.join(home, ".local/share/t3-task-cache/preload.mjs"),
+        NodePath.join(home, ".local/share/fab-task-cache/preload.mjs"),
         "-e",
         'console.log("node survives uninstall")',
       ],
@@ -302,9 +302,9 @@ it("does not send an old endpoint's token after changing the URL interactively",
       NodePath.join(import.meta.dirname, "nativeHook.js"),
       NodePath.join(root, "infra/task-cache/src/nativeHook.js"),
     );
-    await NodeFSP.mkdir(NodePath.join(root, ".config/t3-task-cache"), { recursive: true });
+    await NodeFSP.mkdir(NodePath.join(root, ".config/fab-task-cache"), { recursive: true });
     await NodeFSP.writeFile(
-      NodePath.join(root, ".config/t3-task-cache/credentials.json"),
+      NodePath.join(root, ".config/fab-task-cache/credentials.json"),
       JSON.stringify({
         [endpoint]: { name: "maria", token: "different-saved-endpoint-credential" },
       }),
@@ -318,9 +318,9 @@ it("does not send an old endpoint's token after changing the URL interactively",
             ...process.env,
             HOME: root,
             NODE_OPTIONS: "",
-            T3_CACHE_SETUP_URL: "https://old.example",
-            T3_CACHE_SETUP_NAME: "maria",
-            T3_CACHE_SETUP_TOKEN: "old-endpoint-token-must-not-be-forwarded",
+            FAB_CACHE_SETUP_URL: "https://old.example",
+            FAB_CACHE_SETUP_NAME: "maria",
+            FAB_CACHE_SETUP_TOKEN: "old-endpoint-token-must-not-be-forwarded",
           },
           stdio: ["pipe", "pipe", "pipe"],
         },
@@ -346,7 +346,7 @@ it("does not send an old endpoint's token after changing the URL interactively",
       child.once("close", (code) => resolve({ code, output }));
     });
     expect(result.code).not.toBe(0);
-    expect(result.output).toContain("Use T3_CACHE_SETUP_TOKEN");
+    expect(result.output).toContain("Use FAB_CACHE_SETUP_TOKEN");
     expect(requests).toEqual([]);
   } finally {
     await new Promise<void>((resolve, reject) =>
@@ -368,9 +368,9 @@ it("rejects non-loopback HTTP before transmitting a setup credential", async () 
             ...process.env,
             HOME: home,
             NODE_OPTIONS: "",
-            T3_CACHE_SETUP_URL: "http://cache.invalid/projects/test",
-            T3_CACHE_SETUP_NAME: "maria",
-            T3_CACHE_SETUP_TOKEN: "test-credential-that-must-not-be-transmitted",
+            FAB_CACHE_SETUP_URL: "http://cache.invalid/projects/test",
+            FAB_CACHE_SETUP_NAME: "maria",
+            FAB_CACHE_SETUP_TOKEN: "test-credential-that-must-not-be-transmitted",
           },
         },
         (_error, stdout, stderr) => resolve(stdout + stderr),

@@ -1,13 +1,13 @@
 import {
   sourceControlClients,
   type ChangeRequestTerminology,
-} from "@t3tools/client-runtime/source-control-clients";
+} from "@fab/client-runtime/source-control-clients";
 import type {
   PullRequestAction,
   PullRequestDetail,
   PullRequestMergeMethod,
   SourceControlProviderKind,
-} from "@t3tools/contracts";
+} from "@fab/contracts";
 import type { AppSymbolName } from "../../components/ui/AppSymbol";
 import { PullRequestGlyph } from "./pullRequestGlyphs";
 

@@ -2,7 +2,7 @@ import {
   capitalizeTerm,
   sourceControlClients,
   type ChangeRequestTerminology,
-} from "@t3tools/client-runtime/source-control-clients";
+} from "@fab/client-runtime/source-control-clients";
 import * as Schema from "effect/Schema";
 import {
   GitCommandError,
@@ -29,13 +29,13 @@ import {
   type ThreadLinkedPullRequest,
   type ThreadPullRequestLink,
   type VcsRef,
-} from "@t3tools/contracts";
+} from "@fab/contracts";
 import {
   legacyThreadPullRequestKey,
   resolveThreadCurrentPullRequestLink,
   threadPullRequestKeysEqual,
   visibleThreadPullRequests,
-} from "@t3tools/client-runtime/thread-pull-requests";
+} from "@fab/client-runtime/thread-pull-requests";
 
 import { inferReviewCommentFenceLanguage, type ReviewCommentContext } from "~/reviewCommentContext";
 import { reviewCommentContextId } from "~/lib/composerContextRecords";
@@ -1322,8 +1322,8 @@ const pullRequestDetailSnapshotKey = (
   reference: PullRequestDetailSnapshotRef,
 ) =>
   reference.host
-    ? `t3.pullRequests.detail:${JSON.stringify([environmentId, reference.projectId, reference.host.toLowerCase(), reference.repository.toLowerCase(), reference.number])}`
-    : `t3.pullRequests.detail:${environmentId}:${reference.projectId}:${reference.repository}#${reference.number}`;
+    ? `fab.pullRequests.detail:${JSON.stringify([environmentId, reference.projectId, reference.host.toLowerCase(), reference.repository.toLowerCase(), reference.number])}`
+    : `fab.pullRequests.detail:${environmentId}:${reference.projectId}:${reference.repository}#${reference.number}`;
 
 const decodeDetailSnapshot = Schema.decodeUnknownOption(PullRequestDetail);
 
@@ -1350,7 +1350,7 @@ export function readPullRequestDetailSnapshot(
   }
 }
 
-const PULL_REQUEST_DETAIL_SNAPSHOT_INDEX_KEY = "t3.pullRequests.recentDetails";
+const PULL_REQUEST_DETAIL_SNAPSHOT_INDEX_KEY = "fab.pullRequests.recentDetails";
 const PULL_REQUEST_DETAIL_SNAPSHOT_LIMIT = 20;
 
 function readPullRequestDetailSnapshotIndex(storage: SnapshotStorage): string[] {

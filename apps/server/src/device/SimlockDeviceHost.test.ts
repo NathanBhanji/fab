@@ -1,7 +1,7 @@
 import { describe, expect, it } from "@effect/vitest";
 import * as NodeServices from "@effect/platform-node/NodeServices";
-import type { SimlockDeviceHostConfig } from "@t3tools/contracts";
-import * as HostProcess from "@t3tools/shared/HostProcess";
+import type { SimlockDeviceHostConfig } from "@fab/contracts";
+import * as HostProcess from "@fab/shared/HostProcess";
 import * as Effect from "effect/Effect";
 import * as Fiber from "effect/Fiber";
 import * as Deferred from "effect/Deferred";
@@ -46,7 +46,7 @@ const CATALOG = {
   ],
 };
 
-/** The gateway's HTTP API and T3's agent-device CLI, recording what was asked of them. */
+/** The gateway's HTTP API and Fab's agent-device CLI, recording what was asked of them. */
 const fakePool = (
   options: {
     readonly failOpen?: boolean;
@@ -144,7 +144,7 @@ const fakePool = (
   });
 
 const layer = Layer.mergeAll(
-  ServerConfig.layerTest(process.cwd(), { prefix: "t3-simlock-host-" }),
+  ServerConfig.layerTest(process.cwd(), { prefix: "fab-simlock-host-" }),
 ).pipe(Layer.provideMerge(NodeServices.layer));
 
 const makeHost = (

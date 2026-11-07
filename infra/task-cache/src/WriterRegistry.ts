@@ -13,7 +13,7 @@ const decodeWriters = Schema.decodeEffect(Writers);
 const encodeWriters = Schema.encodeEffect(Writers);
 
 const stateDirectory = Config.String("HOME").pipe(
-  Effect.map((home) => `${home}/.config/t3-task-cache`),
+  Effect.map((home) => `${home}/.config/fab-task-cache`),
 );
 
 const Credential = Schema.fromJsonString(
@@ -44,7 +44,7 @@ export class WriterRegistry extends Context.Service<
       PlatformError.PlatformError | Schema.SchemaError | ManagementError
     >;
   }
->()("@t3tools/task-cache/WriterRegistry") {}
+>()("@fab/task-cache/WriterRegistry") {}
 
 const make = Effect.gen(function* () {
   const fs = yield* FileSystem.FileSystem;

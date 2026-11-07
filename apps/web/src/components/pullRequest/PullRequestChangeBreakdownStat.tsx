@@ -1,5 +1,5 @@
-import { formatDiffCount } from "@t3tools/client-runtime/diff-count";
-import type { EnvironmentId, PullRequestChangeBreakdown, PullRequestRef } from "@t3tools/contracts";
+import { formatDiffCount } from "@fab/client-runtime/diff-count";
+import type { EnvironmentId, PullRequestChangeBreakdown, PullRequestRef } from "@fab/contracts";
 import { useState } from "react";
 
 import { pullRequestEnvironment } from "~/state/pullRequests";

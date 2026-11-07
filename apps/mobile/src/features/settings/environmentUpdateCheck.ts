@@ -1,4 +1,4 @@
-import type { EnvironmentId } from "@t3tools/contracts";
+import type { EnvironmentId } from "@fab/contracts";
 import * as Effect from "effect/Effect";
 import * as Option from "effect/Option";
 import { AsyncResult, Atom } from "effect/reactivity";
@@ -14,7 +14,7 @@ const asError = (cause: unknown) =>
   cause instanceof Error ? cause : new Error("Could not check for updates.");
 
 /**
- * Looks up the newest T3 Code release for one environment. The atom is not
+ * Looks up the newest Fab release for one environment. The atom is not
  * kept alive, so leaving the screen interrupts the lookup and aborts its fetch.
  * The argument reads the server version, which an outdated server only
  * reports through a separate description request.

@@ -1,4 +1,4 @@
-import type { ProviderDriverKind, ServerProvider } from "@t3tools/contracts";
+import type { ProviderDriverKind, ServerProvider } from "@fab/contracts";
 import { BotIcon, type LucideIcon } from "lucide-react";
 import { cn } from "../../lib/utils";
 import { shouldShowInstanceBadge, type ProviderInstanceEntry } from "../../providerInstances";

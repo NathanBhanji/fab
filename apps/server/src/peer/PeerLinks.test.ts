@@ -1,5 +1,5 @@
 import { NodeHttpServer } from "@effect/platform-node";
-import { type ExecutionEnvironmentDescriptor, OrchestratorMcpFailure } from "@t3tools/contracts";
+import { type ExecutionEnvironmentDescriptor, OrchestratorMcpFailure } from "@fab/contracts";
 import { expect, it } from "@effect/vitest";
 import * as Context from "effect/Context";
 import * as Deferred from "effect/Deferred";
@@ -184,7 +184,7 @@ it.effect("links with a pairing code, and the peer holds its agents to the limit
       });
       // B lists the link under A's name, where it can be revoked.
       expect((yield* linkedSessions(b)).map((session) => session.client.label)).toEqual([
-        "T3 Code · Laptop",
+        "Fab · Laptop",
       ]);
       expect(
         (yield* a.links.list).map(({ environmentId, status }) => [environmentId, status]),
@@ -193,8 +193,8 @@ it.effect("links with a pairing code, and the peer holds its agents to the limit
       // The caller's limits narrow the link's access; they never widen it.
       expect(
         yield* probe(a, { runtimeMode: "approval-required", interactionMode: "plan" }),
-      ).toEqual({ caller: "T3 Code · Laptop", modes: "approval-required/plan" });
-      expect(yield* probe(a)).toEqual({ caller: "T3 Code · Laptop", modes: "auto/default" });
+      ).toEqual({ caller: "Fab · Laptop", modes: "approval-required/plan" });
+      expect(yield* probe(a)).toEqual({ caller: "Fab · Laptop", modes: "auto/default" });
 
       // A refusal keeps the peer's reason.
       const notFound = yield* probe(a, undefined, "refuse").pipe(Effect.flip);
@@ -235,7 +235,7 @@ it.effect(
         expect(waiting.code).toBe("orchestration_error");
         expect(waiting.message).toContain("has Linked environments turned off");
         yield* b.settings.updateSettings({ linkedEnvironmentsEnabled: true });
-        expect(yield* probe(a)).toEqual({ caller: "T3 Code · Laptop", modes: "auto/default" });
+        expect(yield* probe(a)).toEqual({ caller: "Fab · Laptop", modes: "auto/default" });
       }),
     ).pipe(Effect.provide(NodeHttpServer.layerTest)),
 );
@@ -337,7 +337,7 @@ it.effect("never follows a peer's redirect with the pairing code", () =>
       );
       // Answers as B, then sends every linking request on to another address.
       const front = yield* serveRaw((request) =>
-        request.url.startsWith("/.well-known/t3/environment")
+        request.url.startsWith("/.well-known/fab/environment")
           ? HttpClient.get(`${b.url}${request.url}`).pipe(
               Effect.flatMap((response) => response.text),
               Effect.map((body) =>
@@ -396,7 +396,7 @@ it.effect("cancelling a descriptor probe aborts its request and leaves later res
         (httpEffect) =>
           Effect.gen(function* () {
             const request = yield* HttpServerRequest.HttpServerRequest;
-            if (request.url.startsWith("/.well-known/t3/environment")) {
+            if (request.url.startsWith("/.well-known/fab/environment")) {
               yield* Ref.update(requests, (count) => count + 1);
               if (yield* Ref.get(hold)) {
                 return yield* Deferred.succeed(entered, undefined).pipe(

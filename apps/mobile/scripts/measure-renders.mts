@@ -16,7 +16,7 @@ import {
   ThreadId,
   WsRpcGroup,
   type OrchestrationV2ThreadProjection,
-} from "@t3tools/contracts";
+} from "@fab/contracts";
 import * as Console from "effect/Console";
 import * as SecureRandom from "effect/crypto/SecureRandom";
 import * as Effect from "effect/Effect";
@@ -85,9 +85,9 @@ const connectInspector = Effect.fn("measure.connectInspector")(function* (metro:
   const targets = yield* http
     .get(`${metro}/json/list`)
     .pipe(Effect.flatMap(HttpClientResponse.schemaBodyJson(InspectorTargets)));
-  const target = targets.find((entry) => entry.appId.startsWith("com.t3tools.t3code"));
+  const target = targets.find((entry) => entry.appId.startsWith("dev.bhanji.fab"));
   if (!target)
-    return yield* new MeasureError({ message: `No T3 Code app is attached to Metro at ${metro}.` });
+    return yield* new MeasureError({ message: `No Fab app is attached to Metro at ${metro}.` });
   // Expo closes inspector sockets unless Origin matches Metro's advertised URL; pass that URL as --metro.
   const socket = yield* Socket.makeWebSocket(target.webSocketDebuggerUrl, {
     headers: { origin: new URL(metro).origin },
@@ -130,7 +130,7 @@ const connectServer = Effect.fn("measure.connectServer")(function* (options: Opt
     HttpClient.filterStatusOk,
   );
   const descriptor = yield* http
-    .get(`${options.server}/.well-known/t3/environment`)
+    .get(`${options.server}/.well-known/fab/environment`)
     .pipe(Effect.flatMap(HttpClientResponse.schemaBodyJson(ExecutionEnvironmentDescriptor)));
   const shell = yield* http
     .get(`${options.server}/api/orchestration/shell`)
@@ -222,7 +222,7 @@ const measureStreamReply = Effect.fn("measure.streamReply")(function* (
   );
   if (Option.isNone(route))
     yield* evaluate(
-      `__t3RenderCounterOpen(${encodeJson(`${options.scheme}://threads/${environmentId}/${threadId}`)})`,
+      `__fabRenderCounterOpen(${encodeJson(`${options.scheme}://threads/${environmentId}/${threadId}`)})`,
     );
   const projectionOf = (item: { kind: string; projection?: OrchestrationV2ThreadProjection }) =>
     item.kind === "snapshot" && item.projection
@@ -236,9 +236,9 @@ const measureStreamReply = Effect.fn("measure.streamReply")(function* (
   );
   if (Option.isNone(streaming))
     return yield* new MeasureError({ message: `Run ${run}: the reply never started streaming.` });
-  yield* evaluate("__t3RenderCounterStart()");
+  yield* evaluate("__fabRenderCounterStart()");
   yield* Effect.sleep(`${options.windowSeconds} seconds`);
-  const report = yield* decodeReport(yield* evaluate("JSON.stringify(__t3RenderCounterStop())"));
+  const report = yield* decodeReport(yield* evaluate("JSON.stringify(__fabRenderCounterStop())"));
   // An in-view streaming thread must commit; out-of-view streaming may commit nothing.
   if (report.commits === 0 && Option.isNone(route))
     return yield* new MeasureError({
@@ -249,7 +249,7 @@ const measureStreamReply = Effect.fn("measure.streamReply")(function* (
 }, Effect.scoped);
 
 const appLink = (options: Options, route: string) =>
-  `__t3RenderCounterOpen(${encodeJson(`${options.scheme}://${route.replace(/^\//, "")}`)})`;
+  `__fabRenderCounterOpen(${encodeJson(`${options.scheme}://${route.replace(/^\//, "")}`)})`;
 
 const reloadAndOpen = Effect.fn("measure.reloadAndOpen")(function* (
   options: Options,
@@ -258,7 +258,7 @@ const reloadAndOpen = Effect.fn("measure.reloadAndOpen")(function* (
   // A link to an already-open screen only refocuses it, so each run starts from a reload.
   yield* Effect.scoped(
     Effect.flatMap(connectInspector(options.metro), (evaluate) =>
-      evaluate("__t3RenderCounterReload()"),
+      evaluate("__fabRenderCounterReload()"),
     ),
   );
   yield* Effect.sleep("15 seconds");
@@ -278,15 +278,15 @@ const measureRouteOpen = Effect.fn("measure.routeOpen")(function* (
 ) {
   yield* Effect.scoped(
     Effect.flatMap(connectInspector(options.metro), (evaluate) =>
-      evaluate("__t3RenderCounterReload()"),
+      evaluate("__fabRenderCounterReload()"),
     ),
   );
   yield* Effect.sleep("15 seconds");
   const evaluate = yield* connectInspector(options.metro);
-  yield* evaluate("__t3RenderCounterStart()");
+  yield* evaluate("__fabRenderCounterStart()");
   yield* evaluate(appLink(options, route));
   yield* Effect.sleep(`${options.windowSeconds} seconds`);
-  const report = yield* decodeReport(yield* evaluate("JSON.stringify(__t3RenderCounterStop())"));
+  const report = yield* decodeReport(yield* evaluate("JSON.stringify(__fabRenderCounterStop())"));
   if (report.commits === 0)
     return yield* new MeasureError({
       message: `Run ${run}: no React commits in the window. Check that ${route} is a valid app path.`,
@@ -338,11 +338,11 @@ const command = Command.make(
   "measure-renders",
   {
     server: Flag.String("server").pipe(
-      Flag.withDescription("T3 server origin the app is paired with."),
+      Flag.withDescription("Fab server origin the app is paired with."),
       Flag.withDefault(""),
     ),
     token: Flag.String("token").pipe(
-      Flag.withDescription("Bearer token from `t3 auth session issue --token-only`."),
+      Flag.withDescription("Bearer token from `fab auth session issue --token-only`."),
       Flag.withDefault(""),
     ),
     route: Flag.String("route").pipe(
@@ -352,7 +352,7 @@ const command = Command.make(
       Flag.optional,
     ),
     metro: Flag.String("metro").pipe(Flag.withDefault("http://127.0.0.1:8081")),
-    scheme: Flag.String("scheme").pipe(Flag.withDefault("t3code-dev")),
+    scheme: Flag.String("scheme").pipe(Flag.withDefault("fab-dev")),
     runs: Flag.Int("runs").pipe(Flag.withDefault(3)),
     window: Flag.Int("window").pipe(
       Flag.withDescription("Seconds to record; defaults to 12 for a reply and 6 for --route."),

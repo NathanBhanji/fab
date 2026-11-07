@@ -4,8 +4,8 @@ import * as NodeCrypto from "node:crypto";
 import {
   RelayAgentActivityAggregateState,
   RelayAgentAwarenessPhase,
-} from "@t3tools/contracts/relay";
-import { stableStringify } from "@t3tools/shared/relaySigning";
+} from "@fab/contracts/relay";
+import { stableStringify } from "@fab/shared/relaySigning";
 import * as DateTime from "effect/DateTime";
 import * as Option from "effect/Option";
 import * as Redacted from "effect/Redacted";

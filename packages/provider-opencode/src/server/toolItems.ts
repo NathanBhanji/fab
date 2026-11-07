@@ -1,6 +1,6 @@
-import type { OrchestrationV2TurnItem } from "@t3tools/contracts";
-import { resolveT3McpToolId } from "@t3tools/shared/t3McpToolPresentation";
-import { formatReadToolLabel, formatSearchToolLabel } from "@t3tools/shared/toolActivity";
+import type { OrchestrationV2TurnItem } from "@fab/contracts";
+import { resolveFabMcpToolId } from "@fab/shared/fabMcpToolPresentation";
+import { formatReadToolLabel, formatSearchToolLabel } from "@fab/shared/toolActivity";
 
 // Search results stay on the timeline wire, so keep their text a preview.
 const SEARCH_PREVIEW_MAX_CHARS = 8_000;
@@ -13,7 +13,7 @@ type ToolItemBase = Omit<
 function openCodeToolProjectionKind(
   toolName: string,
 ): "command_execution" | "file_change" | "file_search" | "web_search" | "dynamic_tool" {
-  if (resolveT3McpToolId(toolName) !== null) return "dynamic_tool";
+  if (resolveFabMcpToolId(toolName) !== null) return "dynamic_tool";
   const normalized = toolName.toLowerCase();
   if (normalized === "todowrite") {
     return "dynamic_tool";

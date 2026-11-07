@@ -1,6 +1,6 @@
 # Shared Vite Task cache
 
-[Alchemy](https://alchemy.run) manages the `T3TaskCache` stack: the `t3-task-cache` Worker, its D1 index, private R2 bucket, rate limits, and cleanup schedule. The production stack adopts the existing resources and preserves their data and repository authorization policy. D1 and R2 have a retain removal policy.
+[Alchemy](https://alchemy.run) manages the `FabTaskCache` stack: the `fab-task-cache` Worker, its D1 index, private R2 bucket, rate limits, and cleanup schedule. The production stack adopts the existing resources and preserves their data and repository authorization policy. D1 and R2 have a retain removal policy.
 
 The Worker uses Effect services for request handling, developer authentication, bounded concurrency, deadlines, and cleanup. The pinned [upstream protocol package](https://github.com/voidzero-dev/vite-plus-remote-cache-cloudflare/tree/5b06c2c10d84ea441735ba07c46f6d1b7cb2ff3b) supplies the experimental wire format, streaming upload, GitHub OIDC validation, and atomic D1 publication. Keeping that adapter preserves compatibility with existing cache entries.
 
@@ -15,11 +15,11 @@ cd infra/task-cache
 alchemy deploy --stage prod
 ```
 
-The stack reads read-only credential digests from `~/.config/t3-task-cache/readers.json` (or `READER_KEYS`) and writer digests from `~/.config/t3-task-cache/writers.json` and supplies them as a redacted Worker secret. Preserve that file to administer existing writers. Deployment uses the `prod` stage and the existing endpoint in `.task-cache.json`. The upstream protocol is loaded only inside the Worker runtime and bundled by Alchemy, so deployment runs on Node without an extra TypeScript loader. An explicit `DEVELOPER_KEYS` environment variable overrides the local registry, including on deployment hosts without that file. Deployment fails when neither source exists, so a missing local file cannot silently revoke existing writers.
+The stack reads read-only credential digests from `~/.config/fab-task-cache/readers.json` (or `READER_KEYS`) and writer digests from `~/.config/fab-task-cache/writers.json` and supplies them as a redacted Worker secret. Preserve that file to administer existing writers. Deployment uses the `prod` stage and the existing endpoint in `.task-cache.json`. The upstream protocol is loaded only inside the Worker runtime and bundled by Alchemy, so deployment runs on Node without an extra TypeScript loader. An explicit `DEVELOPER_KEYS` environment variable overrides the local registry, including on deployment hosts without that file. Deployment fails when neither source exists, so a missing local file cannot silently revoke existing writers.
 
 The production database’s `scopes` and `deployment` records control repository identity, push branch, quotas, and retention. `pull_requests` explicitly enables same-repository PR uploads targeting the configured `branch`; `writes_enabled` disables all artifact uploads, including those from maintainers. Telemetry accepts reports from other PR bases without granting artifact writes. Provisioning a separate cache requires its own repository policy; a new empty database does not grant uploads.
 
-The CI read identity is named `ci-reader`. Its raw token belongs in the GitHub repository secret `T3_TASK_CACHE_READ_TOKEN`; `readers.json` maps that name to the token’s SHA-256 hex digest. To rotate it, replace that digest, deploy, then replace the GitHub secret. Keep the optional private `ci-reader.json` file as `{ "name": "ci-reader", "token": "…" }` for the smoke test to verify read-only restoration; without it, smoke uses the operator’s saved credential. Never commit these files. The read credential cannot upload artifacts or telemetry. Release jobs lack OIDC and their telemetry is not recorded.
+The CI read identity is named `ci-reader`. Its raw token belongs in the GitHub repository secret `FAB_TASK_CACHE_READ_TOKEN`; `readers.json` maps that name to the token’s SHA-256 hex digest. To rotate it, replace that digest, deploy, then replace the GitHub secret. Keep the optional private `ci-reader.json` file as `{ "name": "ci-reader", "token": "…" }` for the smoke test to verify read-only restoration; without it, smoke uses the operator’s saved credential. Never commit these files. The read credential cannot upload artifacts or telemetry. Release jobs lack OIDC and their telemetry is not recorded.
 
 ## Add a contributor or machine
 
@@ -27,7 +27,7 @@ The CI read identity is named `ci-reader`. Its raw token belongs in the GitHub r
 node infra/task-cache/scripts/manage.ts add-writer maria
 ```
 
-This updates the local writer registry and writes `~/.config/t3-task-cache/maria.json`. Run `alchemy deploy --stage prod` from `infra/task-cache` to apply the registry, then transfer that file through a private channel. The recipient runs:
+This updates the local writer registry and writes `~/.config/fab-task-cache/maria.json`. Run `alchemy deploy --stage prod` from `infra/task-cache` to apply the registry, then transfer that file through a private channel. The recipient runs:
 
 ```sh
 bash infra/task-cache/install.sh
@@ -45,15 +45,15 @@ Our repository’s CI explicitly installs the Vite+ hook. Same-repository PRs ta
 
 ```sh
 node infra/task-cache/scripts/smoke.ts
-vp run --filter @t3tools/task-cache test
-vp run --filter @t3tools/task-cache typecheck
+vp run --filter @fab/task-cache test
+vp run --filter @fab/task-cache typecheck
 ```
 
 The smoke check uploads a unique fixture, restores its output into a cold second directory, changes its input, and confirms recomputation. It also checks that anonymous reads and uploads are rejected. Cacheable commands must run through `vp run`; direct `vp test` or `vp check` invocations do not use this cache.
 
 ## Native clients
 
-`/projects/t3code/native-clients/<platform>/<variant>/<expo-fingerprint>` stores simulator and emulator development clients for `scripts/mobile-native-client.ts` in a separate `-native-clients` R2 bucket with 30-day retention. Unlike Vite Task entries, the Expo fingerprint is portable, so a client built on any Mac or Linux machine serves every other one. Readers download; writers upload through R2 multipart in 64 MB parts, because Workers cap request bodies. The uploader's bundle digest is stored as object metadata and checked by the client before it installs anything.
+`/projects/fab/native-clients/<platform>/<variant>/<expo-fingerprint>` stores simulator and emulator development clients for `scripts/mobile-native-client.ts` in a separate `-native-clients` R2 bucket with 30-day retention. Unlike Vite Task entries, the Expo fingerprint is portable, so a client built on any Mac or Linux machine serves every other one. Readers download; writers upload through R2 multipart in 64 MB parts, because Workers cap request bodies. The uploader's bundle digest is stored as object metadata and checked by the client before it installs anything.
 
 ## Current limits
 
@@ -64,7 +64,7 @@ The smoke check uploads a unique fixture, restores its output into a cold second
 
 ## Savings and tracing
 
-Alchemy also owns the `t3-task-cache-traces` Axiom dataset, its ingest-only Worker token, a savings dashboard, and a separate retained D1 database for lifetime counters. Deployment needs an Axiom Alchemy profile or `AXIOM_TOKEN`/`AXIOM_ORG_ID` as well as Cloudflare credentials. Contributor machines never receive the Axiom token.
+Alchemy also owns the `fab-task-cache-traces` Axiom dataset, its ingest-only Worker token, a savings dashboard, and a separate retained D1 database for lifetime counters. Deployment needs an Axiom Alchemy profile or `AXIOM_TOKEN`/`AXIOM_ORG_ID` as well as Cloudflare credentials. Contributor machines never receive the Axiom token.
 
 Both `vp run` and its `vpr` shortcut invoke the hook. The hook observes Vite+'s atomic `last-summary.json` files, including nested runs. It reports package/task names, confirmed local and remote hits, avoided task runtime, developer identity, host, OS/architecture, and CI run ID. It does not send commands, arguments, source paths, environment variables, or task output. Developer identity comes from the authenticated cache writer; CI uses GitHub's verified OIDC actor. Same-repository PRs may upload artifacts as well as telemetry. Fork jobs do not install the hook or report telemetry.
 
@@ -72,7 +72,7 @@ Reports spool locally and retry on subsequent commands. The completion hook queu
 
 **Saved time means historical task execution time avoided.** It is useful as a compute proxy, but it is not measured CPU time, money saved, or elapsed developer waiting time. Parallel tasks can overlap, and cache lookup/restore overhead is not subtracted. Failed restores contribute no savings. Older Vite+ versions omit the hit source; their confirmed savings are counted under an explicit unspecified tier. Native summary collection is best-effort: interrupted runs or summaries overwritten before observation can be missing. The experimental Vite+ summary schema is tested here and must be checked when upgrading Vite+.
 
-Host labels use `~/.agents/MACHINE` when present, otherwise the hostname. GitHub-hosted runners use their runner OS/architecture class to avoid a new lifetime series for every ephemeral VM. Set `T3_TASK_CACHE_HOST` to override the label, or `T3_TASK_CACHE_TELEMETRY=off` to opt out while retaining remote caching. Re-run the installer to update an existing machine's hook.
+Host labels use `~/.agents/MACHINE` when present, otherwise the hostname. GitHub-hosted runners use their runner OS/architecture class to avoid a new lifetime series for every ephemeral VM. Set `FAB_TASK_CACHE_HOST` to override the label, or `FAB_TASK_CACHE_TELEMETRY=off` to opt out while retaining remote caching. Re-run the installer to update an existing machine's hook.
 
 Writer administration requires the complete private registry on the administering machine. Copy that registry securely from its administrator before adding a writer on another machine. `add-writer --new-registry` explicitly initializes a new cache; never use it to recover an existing registry.
 

@@ -5,23 +5,23 @@ import { Toolbar } from "../../components/ui/Toolbar";
 import * as Dialog from "../../components/ui/Dialog";
 import { AppActivityIndicator } from "../../components/ui/AppActivityIndicator";
 import { SelectionRow } from "../../components/ui/SelectionRow";
-import type { EnvironmentProject } from "@t3tools/client-runtime/state/shell";
+import type { EnvironmentProject } from "@fab/client-runtime/state/shell";
 import { shouldCheckoutNewTaskBranch } from "./new-task-context-presentation";
-import type { VcsRef } from "@t3tools/client-runtime/state/vcs";
+import type { VcsRef } from "@fab/client-runtime/state/vcs";
 import {
   AuthSourceControlWriteScope,
   resolveEnvironmentMachineKind,
   type EnvironmentId,
-} from "@t3tools/contracts";
+} from "@fab/contracts";
 import { LegendList } from "@legendapp/list/react-native";
 import {
   isAtomCommandInterrupted,
   squashAtomCommandFailure,
-} from "@t3tools/client-runtime/state/runtime";
+} from "@fab/client-runtime/state/runtime";
 import * as Haptics from "expo-haptics";
 import { useNavigation } from "@react-navigation/native";
 import { useRef, useState, type ReactNode } from "react";
-import { sanitizeNewRefName } from "@t3tools/shared/git";
+import { sanitizeNewRefName } from "@fab/shared/git";
 import { Platform, Pressable, ScrollView, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -91,7 +91,7 @@ function EnvironmentPickerRow(props: {
             tintColorClassName="accent-icon-muted"
           />
           <View className="min-w-0 flex-1 gap-1">
-            <Text className="text-base font-t3-medium text-foreground" numberOfLines={1}>
+            <Text className="text-base font-fab-medium text-foreground" numberOfLines={1}>
               {props.title}
             </Text>
             <View className="flex-row items-center gap-1.5">
@@ -153,7 +153,7 @@ function ToggleRow(props: {
       <Text
         className={cn(
           "min-w-0 flex-1 text-base text-foreground",
-          Platform.OS !== "android" && "font-t3-medium",
+          Platform.OS !== "android" && "font-fab-medium",
         )}
         numberOfLines={1}
       >

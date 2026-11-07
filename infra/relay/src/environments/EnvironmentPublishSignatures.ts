@@ -2,14 +2,14 @@ import {
   RelayAgentActivityPublishProofPayload,
   RelayAgentActivityPublishProofInvalidReason,
   type RelayAgentActivityPublishRequest,
-} from "@t3tools/contracts/relay";
+} from "@fab/contracts/relay";
 import {
   decodeRelayJwt,
   normalizeRelayIssuer,
   RELAY_ACTIVITY_PUBLISH_TYP,
   verifyRelayJwt,
-} from "@t3tools/shared/relayJwt";
-import { stableStringify } from "@t3tools/shared/relaySigning";
+} from "@fab/shared/relayJwt";
+import { stableStringify } from "@fab/shared/relaySigning";
 import * as Context from "effect/Context";
 import * as Digest from "effect/crypto/Digest";
 import * as DateTime from "effect/DateTime";
@@ -71,7 +71,7 @@ export class EnvironmentPublishSignatures extends Context.Service<
       readonly request: RelayAgentActivityPublishRequest;
     }) => Effect.Effect<void, EnvironmentPublishSignatureError>;
   }
->()("t3code-relay/environments/EnvironmentPublishSignatures") {}
+>()("fab-relay/environments/EnvironmentPublishSignatures") {}
 
 const decodeProof = Schema.decodeUnknownEffect(RelayAgentActivityPublishProofPayload);
 
@@ -127,7 +127,7 @@ const make = Effect.gen(function* () {
         publicKey: input.environmentPublicKey,
         token: input.request.proof,
         typ: RELAY_ACTIVITY_PUBLISH_TYP,
-        issuer: `t3-env:${input.environmentId}`,
+        issuer: `fab-env:${input.environmentId}`,
         audience: normalizeRelayIssuer(config.relayIssuer),
         nowEpochSeconds: Math.floor(now.epochMilliseconds / 1_000),
       }).pipe(

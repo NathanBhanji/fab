@@ -1,4 +1,4 @@
-import type { UsageModelPriceOverride } from "@t3tools/contracts";
+import type { UsageModelPriceOverride } from "@fab/contracts";
 
 export const USAGE_PRICE_FIELDS = [
   { key: "inputCostPerMillionTokens", label: "Input", optional: false },

@@ -1,13 +1,13 @@
 import type {
   DesktopSshEnvironmentBootstrap,
   DesktopSshEnvironmentTarget,
-} from "@t3tools/contracts";
-import { waitForHttpReady as waitForHttpReadyShared } from "@t3tools/shared/httpReadiness";
-import { cliReleaseDownloadBaseUrl } from "@t3tools/shared/cliRelease";
-import * as KeyedLock from "@t3tools/shared/KeyedLock";
-import * as NetService from "@t3tools/shared/Net";
-import { extractJsonObject, fromLenientJson } from "@t3tools/shared/schemaJson";
-import { satisfiesSemverRange } from "@t3tools/shared/semver";
+} from "@fab/contracts";
+import { waitForHttpReady as waitForHttpReadyShared } from "@fab/shared/httpReadiness";
+import { cliReleaseDownloadBaseUrl } from "@fab/shared/cliRelease";
+import * as KeyedLock from "@fab/shared/KeyedLock";
+import * as NetService from "@fab/shared/Net";
+import { extractJsonObject, fromLenientJson } from "@fab/shared/schemaJson";
+import { satisfiesSemverRange } from "@fab/shared/semver";
 import * as Context from "effect/Context";
 import * as Digest from "effect/crypto/Digest";
 import * as Effect from "effect/Effect";
@@ -61,7 +61,7 @@ const REMOTE_ARCHIVE_LOCK_WAIT_SECONDS = 360;
 const REMOTE_ARCHIVE_LAUNCH_TIMEOUT_MS = 900_000;
 const REMOTE_REUSE_READY_TIMEOUT_MS = 2_000;
 
-export interface RemoteT3RunnerOptions {
+export interface RemoteFabRunnerOptions {
   readonly nodeScriptPath?: string | null;
   readonly nodeEngineRange?: string | null;
   readonly archiveVersion?: string | null;
@@ -69,7 +69,7 @@ export interface RemoteT3RunnerOptions {
 }
 
 export interface SshEnvironmentManagerOptions {
-  readonly resolveCliRunner?: Effect.Effect<RemoteT3RunnerOptions>;
+  readonly resolveCliRunner?: Effect.Effect<RemoteFabRunnerOptions>;
 }
 
 interface SshTunnelEntry {
@@ -102,11 +102,11 @@ type SshEnvironmentEffectError =
   | SshPasswordPromptError
   | NetService.NetError;
 
-function isNodeScriptRunner(runner: RemoteT3RunnerOptions | undefined): boolean {
+function isNodeScriptRunner(runner: RemoteFabRunnerOptions | undefined): boolean {
   return Boolean(runner?.nodeScriptPath?.trim());
 }
 
-function sshRunnerLogFields(runner: RemoteT3RunnerOptions | undefined) {
+function sshRunnerLogFields(runner: RemoteFabRunnerOptions | undefined) {
   if (runner?.nodeScriptPath?.trim()) {
     return { runner: "node-script", nodeScriptPath: runner.nodeScriptPath.trim() };
   }
@@ -333,12 +333,12 @@ const REMOTE_NODE_ENV_SCRIPT = `prepend_path_if_dir() {
 }
 
 remote_node_satisfies_engine() {
-  T3_NODE_ENGINE_RANGE=@@T3_NODE_ENGINE_RANGE@@
-  if [ -z "$T3_NODE_ENGINE_RANGE" ]; then
+  FAB_NODE_ENGINE_RANGE=@@FAB_NODE_ENGINE_RANGE@@
+  if [ -z "$FAB_NODE_ENGINE_RANGE" ]; then
     return 0
   fi
-  node - "$T3_NODE_ENGINE_RANGE" <<'NODE'
-@@T3_NODE_ENGINE_CHECK_SCRIPT@@
+  node - "$FAB_NODE_ENGINE_RANGE" <<'NODE'
+@@FAB_NODE_ENGINE_CHECK_SCRIPT@@
 NODE
 }
 
@@ -405,9 +405,9 @@ ensure_remote_node_path() {
   fi
 
   if ! command -v node >/dev/null 2>&1 && [ -d "$NVM_DIR/versions/node" ]; then
-    for T3_NODE_BIN in "$NVM_DIR"/versions/node/*/bin; do
-      if [ -x "$T3_NODE_BIN/node" ]; then
-        PATH="$T3_NODE_BIN:$PATH"
+    for FAB_NODE_BIN in "$NVM_DIR"/versions/node/*/bin; do
+      if [ -x "$FAB_NODE_BIN/node" ]; then
+        PATH="$FAB_NODE_BIN:$PATH"
         export PATH
       fi
     done
@@ -419,9 +419,9 @@ ensure_remote_node_path() {
 
 const REMOTE_RUNNER_SCRIPT = `#!/bin/sh
 set -eu
-@@T3_NODE_ENV_SCRIPT@@
-T3_NODE_SCRIPT_PATH=@@T3_NODE_SCRIPT_PATH@@
-if [ -n "$T3_NODE_SCRIPT_PATH" ]; then
+@@FAB_NODE_ENV_SCRIPT@@
+FAB_NODE_SCRIPT_PATH=@@FAB_NODE_SCRIPT_PATH@@
+if [ -n "$FAB_NODE_SCRIPT_PATH" ]; then
   # Dev mode: a source checkout on the remote. This is the only path that
   # needs Node, so Node discovery runs here and nowhere else.
   ensure_remote_node_path || true
@@ -429,119 +429,119 @@ if [ -n "$T3_NODE_SCRIPT_PATH" ]; then
     printf 'Remote host is missing node on PATH. Install Node or configure a supported version manager for non-interactive shells.\\n' >&2
     exit 1
   fi
-  exec node "$T3_NODE_SCRIPT_PATH" "$@"
+  exec node "$FAB_NODE_SCRIPT_PATH" "$@"
 fi
-T3_ARCHIVE_VERSION=@@T3_ARCHIVE_VERSION@@
-if [ -z "$T3_ARCHIVE_VERSION" ]; then
-  printf 'No t3 release version was provided for the remote runtime.\\n' >&2
+FAB_ARCHIVE_VERSION=@@FAB_ARCHIVE_VERSION@@
+if [ -z "$FAB_ARCHIVE_VERSION" ]; then
+  printf 'No fab release version was provided for the remote runtime.\\n' >&2
   exit 1
 fi
 # Self-contained release archive: no Node, npm, or compiler on the remote.
-# Unpacked into the pinned-runtime layout so \`t3 service install\` reuses it.
-T3_RELEASE_BASE_URL=@@T3_RELEASE_BASE_URL@@
-T3_RUNTIME_DIR="$HOME/.t3/runtime/versions/$T3_ARCHIVE_VERSION"
-t3_runtime_ready() {
-  [ -x "$T3_RUNTIME_DIR/t3" ] && [ "$(cat "$T3_RUNTIME_DIR/.install-complete" 2>/dev/null)" = "$T3_ARCHIVE_VERSION" ]
+# Unpacked into the pinned-runtime layout so \`fab service install\` reuses it.
+FAB_RELEASE_BASE_URL=@@FAB_RELEASE_BASE_URL@@
+FAB_RUNTIME_DIR="$HOME/.fab/runtime/versions/$FAB_ARCHIVE_VERSION"
+fab_runtime_ready() {
+  [ -x "$FAB_RUNTIME_DIR/fab" ] && [ "$(cat "$FAB_RUNTIME_DIR/.install-complete" 2>/dev/null)" = "$FAB_ARCHIVE_VERSION" ]
 }
-if ! t3_runtime_ready; then
-  mkdir -p "$HOME/.t3/runtime/versions"
-  T3_LOCK="$HOME/.t3/runtime/versions/.$T3_ARCHIVE_VERSION.install.lock"
+if ! fab_runtime_ready; then
+  mkdir -p "$HOME/.fab/runtime/versions"
+  FAB_LOCK="$HOME/.fab/runtime/versions/.$FAB_ARCHIVE_VERSION.install.lock"
   # uutils mkdir can report success on EEXIST, so use shell noclobber.
   # An empty lock gets a short grace period for its owner to publish a PID.
-  T3_LOCK_WAITED=0
-  T3_LOCK_UNOWNED=0
-  while ! (set -C; printf '%s\\n' "$$" > "$T3_LOCK") 2>/dev/null; do
-    T3_LOCK_OWNER="$(cat "$T3_LOCK" 2>/dev/null || true)"
-    if [ -n "$T3_LOCK_OWNER" ]; then
-      T3_LOCK_UNOWNED=0
-      if ! kill -0 "$T3_LOCK_OWNER" 2>/dev/null; then
-        rm -rf "$T3_LOCK"
+  FAB_LOCK_WAITED=0
+  FAB_LOCK_UNOWNED=0
+  while ! (set -C; printf '%s\\n' "$$" > "$FAB_LOCK") 2>/dev/null; do
+    FAB_LOCK_OWNER="$(cat "$FAB_LOCK" 2>/dev/null || true)"
+    if [ -n "$FAB_LOCK_OWNER" ]; then
+      FAB_LOCK_UNOWNED=0
+      if ! kill -0 "$FAB_LOCK_OWNER" 2>/dev/null; then
+        rm -rf "$FAB_LOCK"
         continue
       fi
     else
-      T3_LOCK_UNOWNED=$((T3_LOCK_UNOWNED + 1))
-      if [ "$T3_LOCK_UNOWNED" -ge 5 ]; then
-        rm -rf "$T3_LOCK"
+      FAB_LOCK_UNOWNED=$((FAB_LOCK_UNOWNED + 1))
+      if [ "$FAB_LOCK_UNOWNED" -ge 5 ]; then
+        rm -rf "$FAB_LOCK"
         continue
       fi
     fi
-    if [ "$T3_LOCK_WAITED" -ge @@T3_ARCHIVE_LOCK_WAIT_SECONDS@@ ]; then
-      printf 'Another t3 %s installation has held %s for too long.\\n' "$T3_ARCHIVE_VERSION" "$T3_LOCK" >&2
+    if [ "$FAB_LOCK_WAITED" -ge @@FAB_ARCHIVE_LOCK_WAIT_SECONDS@@ ]; then
+      printf 'Another fab %s installation has held %s for too long.\\n' "$FAB_ARCHIVE_VERSION" "$FAB_LOCK" >&2
       exit 1
     fi
     sleep 1
-    T3_LOCK_WAITED=$((T3_LOCK_WAITED + 1))
+    FAB_LOCK_WAITED=$((FAB_LOCK_WAITED + 1))
   done
-  trap 'rm -rf "$T3_LOCK"' EXIT
+  trap 'rm -rf "$FAB_LOCK"' EXIT
 fi
-if ! t3_runtime_ready; then
+if ! fab_runtime_ready; then
   case "$(uname -s)" in
-    Darwin) T3_PLATFORM="darwin" ;;
-    Linux) T3_PLATFORM="linux" ;;
-    *) printf 'Remote host %s has no t3 release archive.\\n' "$(uname -s)" >&2; exit 1 ;;
+    Darwin) FAB_PLATFORM="darwin" ;;
+    Linux) FAB_PLATFORM="linux" ;;
+    *) printf 'Remote host %s has no fab release archive.\\n' "$(uname -s)" >&2; exit 1 ;;
   esac
   case "$(uname -m)" in
-    arm64 | aarch64) T3_ARCH="arm64" ;;
-    x86_64 | amd64) T3_ARCH="x64" ;;
-    *) printf 'Remote host %s has no t3 release archive.\\n' "$(uname -m)" >&2; exit 1 ;;
+    arm64 | aarch64) FAB_ARCH="arm64" ;;
+    x86_64 | amd64) FAB_ARCH="x64" ;;
+    *) printf 'Remote host %s has no fab release archive.\\n' "$(uname -m)" >&2; exit 1 ;;
   esac
-  T3_ARCHIVE="t3-$T3_ARCHIVE_VERSION-$T3_PLATFORM-$T3_ARCH.tar.gz"
-  T3_STAGING="$(mktemp -d "$HOME/.t3/runtime/versions/.staging-XXXXXX")"
-  trap 'rm -rf "$T3_STAGING" "$T3_LOCK"' EXIT
-  t3_fetch() {
+  FAB_ARCHIVE="fab-$FAB_ARCHIVE_VERSION-$FAB_PLATFORM-$FAB_ARCH.tar.gz"
+  FAB_STAGING="$(mktemp -d "$HOME/.fab/runtime/versions/.staging-XXXXXX")"
+  trap 'rm -rf "$FAB_STAGING" "$FAB_LOCK"' EXIT
+  fab_fetch() {
     if command -v curl >/dev/null 2>&1; then curl -fsSL --connect-timeout 30 --max-time "$3" "$1" -o "$2"
     elif command -v wget >/dev/null 2>&1; then wget -q --timeout=30 --tries=1 "$1" -O "$2"
-    else printf 'Remote host needs curl or wget to download %s.\\n' "$T3_ARCHIVE" >&2; exit 1
+    else printf 'Remote host needs curl or wget to download %s.\\n' "$FAB_ARCHIVE" >&2; exit 1
     fi
   }
-  t3_fetch "$T3_RELEASE_BASE_URL/v$T3_ARCHIVE_VERSION/SHA256SUMS" "$T3_STAGING/SHA256SUMS" @@T3_ARCHIVE_CHECKSUMS_SECONDS@@
-  t3_fetch "$T3_RELEASE_BASE_URL/v$T3_ARCHIVE_VERSION/$T3_ARCHIVE" "$T3_STAGING/$T3_ARCHIVE" @@T3_ARCHIVE_DOWNLOAD_SECONDS@@
-  T3_EXPECTED="$(grep " \\*\\{0,1\\}$T3_ARCHIVE$" "$T3_STAGING/SHA256SUMS" | cut -d' ' -f1)"
+  fab_fetch "$FAB_RELEASE_BASE_URL/v$FAB_ARCHIVE_VERSION/SHA256SUMS" "$FAB_STAGING/SHA256SUMS" @@FAB_ARCHIVE_CHECKSUMS_SECONDS@@
+  fab_fetch "$FAB_RELEASE_BASE_URL/v$FAB_ARCHIVE_VERSION/$FAB_ARCHIVE" "$FAB_STAGING/$FAB_ARCHIVE" @@FAB_ARCHIVE_DOWNLOAD_SECONDS@@
+  FAB_EXPECTED="$(grep " \\*\\{0,1\\}$FAB_ARCHIVE$" "$FAB_STAGING/SHA256SUMS" | cut -d' ' -f1)"
   if command -v sha256sum >/dev/null 2>&1; then
-    T3_ACTUAL="$(sha256sum "$T3_STAGING/$T3_ARCHIVE" | cut -d' ' -f1)"
+    FAB_ACTUAL="$(sha256sum "$FAB_STAGING/$FAB_ARCHIVE" | cut -d' ' -f1)"
   else
-    T3_ACTUAL="$(shasum -a 256 "$T3_STAGING/$T3_ARCHIVE" | cut -d' ' -f1)"
+    FAB_ACTUAL="$(shasum -a 256 "$FAB_STAGING/$FAB_ARCHIVE" | cut -d' ' -f1)"
   fi
-  if [ -z "$T3_EXPECTED" ] || [ "$T3_ACTUAL" != "$T3_EXPECTED" ]; then
-    printf 'Checksum mismatch for %s.\\n' "$T3_ARCHIVE" >&2; exit 1
+  if [ -z "$FAB_EXPECTED" ] || [ "$FAB_ACTUAL" != "$FAB_EXPECTED" ]; then
+    printf 'Checksum mismatch for %s.\\n' "$FAB_ARCHIVE" >&2; exit 1
   fi
-  tar -xzf "$T3_STAGING/$T3_ARCHIVE" -C "$T3_STAGING" --strip-components=1
-  rm -f "$T3_STAGING/$T3_ARCHIVE" "$T3_STAGING/SHA256SUMS"
+  tar -xzf "$FAB_STAGING/$FAB_ARCHIVE" -C "$FAB_STAGING" --strip-components=1
+  rm -f "$FAB_STAGING/$FAB_ARCHIVE" "$FAB_STAGING/SHA256SUMS"
   # Prove the binary runs here (libc, arch) before marking it ready, or every
   # later launch would exec a broken install instead of retrying.
-  if ! "$T3_STAGING/t3" --version >/dev/null 2>&1; then
-    printf 'The t3 %s executable does not run on this host.\\n' "$T3_ARCHIVE_VERSION" >&2; exit 1
+  if ! "$FAB_STAGING/fab" --version >/dev/null 2>&1; then
+    printf 'The fab %s executable does not run on this host.\\n' "$FAB_ARCHIVE_VERSION" >&2; exit 1
   fi
-  printf '%s\\n' "$T3_ARCHIVE_VERSION" > "$T3_STAGING/.install-complete"
-  rm -rf "$T3_RUNTIME_DIR"
-  mv "$T3_STAGING" "$T3_RUNTIME_DIR"
+  printf '%s\\n' "$FAB_ARCHIVE_VERSION" > "$FAB_STAGING/.install-complete"
+  rm -rf "$FAB_RUNTIME_DIR"
+  mv "$FAB_STAGING" "$FAB_RUNTIME_DIR"
 fi
-if [ -n "\${T3_LOCK:-}" ]; then
-  rm -rf "$T3_LOCK"
+if [ -n "\${FAB_LOCK:-}" ]; then
+  rm -rf "$FAB_LOCK"
   trap - EXIT
 fi
-exec "$T3_RUNTIME_DIR/t3" "$@"
+exec "$FAB_RUNTIME_DIR/fab" "$@"
 `;
 
 const REMOTE_LAUNCH_SCRIPT = `set -eu
-@@T3_NODE_ENV_SCRIPT@@
+@@FAB_NODE_ENV_SCRIPT@@
 STATE_KEY="$1"
-STATE_DIR="$HOME/.t3/ssh-launch/$STATE_KEY"
-DEFAULT_SERVER_HOME="$HOME/.t3"
+STATE_DIR="$HOME/.fab/ssh-launch/$STATE_KEY"
+DEFAULT_SERVER_HOME="$HOME/.fab"
 DEFAULT_RUNTIME_FILE="$DEFAULT_SERVER_HOME/userdata/server-runtime.json"
 PORT_FILE="$STATE_DIR/port"
 PID_FILE="$STATE_DIR/pid"
 MANAGED_FILE="$STATE_DIR/managed"
 LOG_FILE="$STATE_DIR/server.log"
-RUNNER_FILE="$STATE_DIR/run-t3.sh"
-RUNNER_NEXT="$STATE_DIR/run-t3.next.$$"
+RUNNER_FILE="$STATE_DIR/run-fab.sh"
+RUNNER_NEXT="$STATE_DIR/run-fab.next.$$"
 mkdir -p "$STATE_DIR"
 cleanup_runner_next() {
   rm -f "$RUNNER_NEXT"
 }
 trap cleanup_runner_next EXIT
 cat >"$RUNNER_NEXT" <<'SH'
-@@T3_RUNNER_SCRIPT@@
+@@FAB_RUNNER_SCRIPT@@
 SH
 RUNNER_CHANGED=0
 if [ ! -f "$RUNNER_FILE" ] || ! cmp -s "$RUNNER_NEXT" "$RUNNER_FILE"; then
@@ -549,8 +549,8 @@ if [ ! -f "$RUNNER_FILE" ] || ! cmp -s "$RUNNER_NEXT" "$RUNNER_FILE"; then
 fi
 mv "$RUNNER_NEXT" "$RUNNER_FILE"
 chmod 700 "$RUNNER_FILE"
-T3_ARCHIVE_MODE=@@T3_ARCHIVE_MODE@@
-if [ "$T3_ARCHIVE_MODE" = "1" ]; then
+FAB_ARCHIVE_MODE=@@FAB_ARCHIVE_MODE@@
+if [ "$FAB_ARCHIVE_MODE" = "1" ]; then
   # The archive ships the helpers below inside the executable; the remote
   # needs no Node at all. Resolving the runner once here also downloads the
   # archive before the port and readiness probes rely on it.
@@ -560,21 +560,21 @@ elif ! ensure_remote_node_path; then
   exit 1
 fi
 pick_port() {
-  if [ "$T3_ARCHIVE_MODE" = "1" ]; then
-    "$RUNNER_FILE" __ssh-helper pick-port "$PORT_FILE" "@@T3_DEFAULT_REMOTE_PORT@@" "@@T3_REMOTE_PORT_SCAN_WINDOW@@"
+  if [ "$FAB_ARCHIVE_MODE" = "1" ]; then
+    "$RUNNER_FILE" __ssh-helper pick-port "$PORT_FILE" "@@FAB_DEFAULT_REMOTE_PORT@@" "@@FAB_REMOTE_PORT_SCAN_WINDOW@@"
     return
   fi
-  node - "$PORT_FILE" "@@T3_DEFAULT_REMOTE_PORT@@" "@@T3_REMOTE_PORT_SCAN_WINDOW@@" <<'NODE'
-@@T3_PICK_PORT_SCRIPT@@
+  node - "$PORT_FILE" "@@FAB_DEFAULT_REMOTE_PORT@@" "@@FAB_REMOTE_PORT_SCAN_WINDOW@@" <<'NODE'
+@@FAB_PICK_PORT_SCRIPT@@
 NODE
 }
 wait_ready() {
-  if [ "$T3_ARCHIVE_MODE" = "1" ]; then
-    "$RUNNER_FILE" __ssh-helper wait-ready "$REMOTE_PORT" "$1" "@@T3_READY_PROBE_TIMEOUT_MS@@"
+  if [ "$FAB_ARCHIVE_MODE" = "1" ]; then
+    "$RUNNER_FILE" __ssh-helper wait-ready "$REMOTE_PORT" "$1" "@@FAB_READY_PROBE_TIMEOUT_MS@@"
     return
   fi
-  node - "$REMOTE_PORT" "$1" "@@T3_READY_PROBE_TIMEOUT_MS@@" <<'NODE'
-@@T3_WAIT_READY_SCRIPT@@
+  node - "$REMOTE_PORT" "$1" "@@FAB_READY_PROBE_TIMEOUT_MS@@" <<'NODE'
+@@FAB_WAIT_READY_SCRIPT@@
 NODE
 }
 wait_for_pid_exit() {
@@ -594,7 +594,7 @@ server_running() {
   esac
 }
 resolve_default_runtime_port() {
-  if [ "$T3_ARCHIVE_MODE" = "1" ]; then
+  if [ "$FAB_ARCHIVE_MODE" = "1" ]; then
     "$RUNNER_FILE" __ssh-helper runtime-port "$DEFAULT_RUNTIME_FILE"
     return
   fi
@@ -638,7 +638,7 @@ if [ -n "$DEFAULT_REMOTE_PORT" ] && [ "$REMOTE_MANAGED" = "managed" ] && [ "$DEF
   printf '%s\\n' "$REMOTE_PORT" >"$PORT_FILE"
 elif [ -n "$DEFAULT_REMOTE_PORT" ]; then
   REMOTE_PORT="$DEFAULT_REMOTE_PORT"
-  if wait_ready "@@T3_REUSE_READY_TIMEOUT_MS@@"; then
+  if wait_ready "@@FAB_REUSE_READY_TIMEOUT_MS@@"; then
     ADOPTED_PID="$DEFAULT_RUNTIME_PID"
     if [ "$REMOTE_MANAGED" = "managed" ]; then
       if [ -n "$REMOTE_PID" ] && kill -0 "$REMOTE_PID" 2>/dev/null; then
@@ -668,7 +668,7 @@ if [ "$REMOTE_MANAGED" = "external" ]; then
   # it again could catch a momentary stall and launch a second server beside it.
   if server_running "$ADOPTED_PID"; then
     :
-  elif [ -z "$REMOTE_PORT" ] || ! wait_ready "@@T3_REUSE_READY_TIMEOUT_MS@@"; then
+  elif [ -z "$REMOTE_PORT" ] || ! wait_ready "@@FAB_REUSE_READY_TIMEOUT_MS@@"; then
     REMOTE_PID=""
     REMOTE_PORT=""
     REMOTE_MANAGED=""
@@ -682,8 +682,8 @@ elif [ -n "$REMOTE_PID" ] && [ -n "$REMOTE_PORT" ] && server_running "$REMOTE_PI
     REMOTE_PID=""
     REMOTE_PORT=""
     REMOTE_MANAGED=""
-  elif ! wait_ready "@@T3_READY_TIMEOUT_MS@@"; then
-    printf 'Remote T3 server is still running but did not become ready. Retry the connection; the server was left running.\\n' >&2
+  elif ! wait_ready "@@FAB_READY_TIMEOUT_MS@@"; then
+    printf 'Remote Fab server is still running but did not become ready. Retry the connection; the server was left running.\\n' >&2
     exit 1
   fi
 else
@@ -694,20 +694,20 @@ fi
 if [ -z "$REMOTE_PORT" ]; then
   REMOTE_PORT="$(pick_port)" || true
   if [ -z "$REMOTE_PORT" ]; then
-    if [ "$T3_ARCHIVE_MODE" = "1" ]; then
+    if [ "$FAB_ARCHIVE_MODE" = "1" ]; then
       printf 'Failed to find an available port on the remote host.\\n' >&2
     else
       printf 'Failed to find an available port on the remote host. Ensure node is available on PATH.\\n' >&2
     fi
     exit 1
   fi
-  nohup env T3CODE_NO_BROWSER=1 "$RUNNER_FILE" serve --host 127.0.0.1 --port "$REMOTE_PORT" --base-dir "$DEFAULT_SERVER_HOME" >>"$LOG_FILE" 2>&1 < /dev/null &
+  nohup env FAB_NO_BROWSER=1 "$RUNNER_FILE" serve --host 127.0.0.1 --port "$REMOTE_PORT" --base-dir "$DEFAULT_SERVER_HOME" >>"$LOG_FILE" 2>&1 < /dev/null &
   REMOTE_PID="$!"
   printf '%s\\n' "$REMOTE_PID" >"$PID_FILE"
   printf '%s\\n' "$REMOTE_PORT" >"$PORT_FILE"
   printf 'managed\\n' >"$MANAGED_FILE"
-  if ! wait_ready "@@T3_READY_TIMEOUT_MS@@"; then
-    printf 'Remote T3 server did not become ready on 127.0.0.1:%s.\\n' "$REMOTE_PORT" >&2
+  if ! wait_ready "@@FAB_READY_TIMEOUT_MS@@"; then
+    printf 'Remote Fab server did not become ready on 127.0.0.1:%s.\\n' "$REMOTE_PORT" >&2
     if [ -s "$LOG_FILE" ]; then
       tail -n 80 "$LOG_FILE" >&2 2>/dev/null || true
     else
@@ -723,12 +723,12 @@ printf '{"remotePort":%s,"serverKind":"%s"}\\n' "$REMOTE_PORT" "\${REMOTE_MANAGE
 `;
 
 const REMOTE_PAIRING_SCRIPT = `set -eu
-STATE_DIR="$HOME/.t3/ssh-launch/@@T3_STATE_KEY@@"
-DEFAULT_SERVER_HOME="$HOME/.t3"
-RUNNER_FILE="$STATE_DIR/run-t3.sh"
+STATE_DIR="$HOME/.fab/ssh-launch/@@FAB_STATE_KEY@@"
+DEFAULT_SERVER_HOME="$HOME/.fab"
+RUNNER_FILE="$STATE_DIR/run-fab.sh"
 mkdir -p "$STATE_DIR"
 cat >"$RUNNER_FILE" <<'SH'
-@@T3_RUNNER_SCRIPT@@
+@@FAB_RUNNER_SCRIPT@@
 SH
 chmod 700 "$RUNNER_FILE"
 PAIRING_BASE_DIR="$DEFAULT_SERVER_HOME"
@@ -736,7 +736,7 @@ PAIRING_BASE_DIR="$DEFAULT_SERVER_HOME"
 `;
 
 const REMOTE_STOP_SCRIPT = `set -eu
-STATE_DIR="$HOME/.t3/ssh-launch/@@T3_STATE_KEY@@"
+STATE_DIR="$HOME/.fab/ssh-launch/@@FAB_STATE_KEY@@"
 PID_FILE="$STATE_DIR/pid"
 PORT_FILE="$STATE_DIR/port"
 MANAGED_FILE="$STATE_DIR/managed"
@@ -750,7 +750,7 @@ if [ "$REMOTE_MANAGED" != "external" ] && [ -n "$REMOTE_PID" ] && kill -0 "$REMO
     sleep 0.1
   done
   if kill -0 "$REMOTE_PID" 2>/dev/null; then
-    printf 'Remote T3 server with PID %s did not stop within 2 seconds. Its ownership files were kept.\\n' "$REMOTE_PID" >&2
+    printf 'Remote Fab server with PID %s did not stop within 2 seconds. Its ownership files were kept.\\n' "$REMOTE_PID" >&2
     exit 1
   fi
 fi
@@ -759,7 +759,7 @@ printf '{"stopped":true}\\n'
 `;
 
 const REMOTE_LOG_TAIL_SCRIPT = `set -eu
-STATE_DIR="$HOME/.t3/ssh-launch/@@T3_STATE_KEY@@"
+STATE_DIR="$HOME/.fab/ssh-launch/@@FAB_STATE_KEY@@"
 LOG_FILE="$STATE_DIR/server.log"
 if [ -f "$LOG_FILE" ]; then
   tail -n 80 "$LOG_FILE" 2>/dev/null || true
@@ -771,7 +771,7 @@ export class SshInvalidArchiveVersionError extends Schema.TaggedError<SshInvalid
   { archiveVersion: Schema.String },
 ) {
   override get message(): string {
-    return `'${this.archiveVersion}' is not an exact t3 version and cannot name a runtime directory.`;
+    return `'${this.archiveVersion}' is not an exact fab version and cannot name a runtime directory.`;
   }
 }
 
@@ -786,11 +786,11 @@ export class SshMissingRunnerError extends Schema.TaggedError<SshMissingRunnerEr
   {},
 ) {
   override get message(): string {
-    return "A remote t3 runner needs an archive version or a node script path.";
+    return "A remote fab runner needs an archive version or a node script path.";
   }
 }
 
-export function buildRemoteT3RunnerScript(input?: RemoteT3RunnerOptions): string {
+export function buildRemoteFabRunnerScript(input?: RemoteFabRunnerOptions): string {
   const nodeScriptPath = input?.nodeScriptPath?.trim() || "";
   const archiveVersion = input?.archiveVersion?.trim() || "";
   if (nodeScriptPath === "" && archiveVersion === "") {
@@ -805,57 +805,57 @@ export function buildRemoteT3RunnerScript(input?: RemoteT3RunnerOptions): string
   );
   return stripTrailingNewlines(
     applyScriptPlaceholders(REMOTE_RUNNER_SCRIPT, {
-      T3_NODE_SCRIPT_PATH: shellSingleQuote(nodeScriptPath),
-      T3_ARCHIVE_VERSION: shellSingleQuote(archiveVersion),
-      T3_RELEASE_BASE_URL: shellSingleQuote(releaseBaseUrl),
-      T3_ARCHIVE_LOCK_WAIT_SECONDS: String(REMOTE_ARCHIVE_LOCK_WAIT_SECONDS),
-      T3_ARCHIVE_DOWNLOAD_SECONDS: String(REMOTE_ARCHIVE_DOWNLOAD_SECONDS),
-      T3_ARCHIVE_CHECKSUMS_SECONDS: String(REMOTE_ARCHIVE_CHECKSUMS_SECONDS),
-      T3_NODE_ENV_SCRIPT: buildRemoteNodeEnvScript(input),
+      FAB_NODE_SCRIPT_PATH: shellSingleQuote(nodeScriptPath),
+      FAB_ARCHIVE_VERSION: shellSingleQuote(archiveVersion),
+      FAB_RELEASE_BASE_URL: shellSingleQuote(releaseBaseUrl),
+      FAB_ARCHIVE_LOCK_WAIT_SECONDS: String(REMOTE_ARCHIVE_LOCK_WAIT_SECONDS),
+      FAB_ARCHIVE_DOWNLOAD_SECONDS: String(REMOTE_ARCHIVE_DOWNLOAD_SECONDS),
+      FAB_ARCHIVE_CHECKSUMS_SECONDS: String(REMOTE_ARCHIVE_CHECKSUMS_SECONDS),
+      FAB_NODE_ENV_SCRIPT: buildRemoteNodeEnvScript(input),
     }),
   );
 }
 
-export function buildRemoteNodeEnvScript(input?: RemoteT3RunnerOptions): string {
+export function buildRemoteNodeEnvScript(input?: RemoteFabRunnerOptions): string {
   return stripTrailingNewlines(
     applyScriptPlaceholders(REMOTE_NODE_ENV_SCRIPT, {
-      T3_NODE_ENGINE_RANGE: shellSingleQuote(input?.nodeEngineRange?.trim() || ""),
-      T3_NODE_ENGINE_CHECK_SCRIPT: stripTrailingNewlines(buildRemoteNodeEngineCheckScript()),
+      FAB_NODE_ENGINE_RANGE: shellSingleQuote(input?.nodeEngineRange?.trim() || ""),
+      FAB_NODE_ENGINE_CHECK_SCRIPT: stripTrailingNewlines(buildRemoteNodeEngineCheckScript()),
     }),
   );
 }
 
-function buildRemoteLaunchScript(input?: RemoteT3RunnerOptions): string {
+function buildRemoteLaunchScript(input?: RemoteFabRunnerOptions): string {
   return applyScriptPlaceholders(REMOTE_LAUNCH_SCRIPT, {
-    T3_ARCHIVE_MODE: isNodeScriptRunner(input) ? "0" : "1",
-    T3_NODE_ENV_SCRIPT: buildRemoteNodeEnvScript(input),
-    T3_RUNNER_SCRIPT: stripTrailingNewlines(buildRemoteT3RunnerScript(input)),
-    T3_PICK_PORT_SCRIPT: stripTrailingNewlines(REMOTE_PICK_PORT_SCRIPT),
-    T3_WAIT_READY_SCRIPT: stripTrailingNewlines(REMOTE_WAIT_READY_SCRIPT),
-    T3_DEFAULT_REMOTE_PORT: String(DEFAULT_REMOTE_PORT),
-    T3_REMOTE_PORT_SCAN_WINDOW: String(REMOTE_PORT_SCAN_WINDOW),
-    T3_READY_TIMEOUT_MS: String(REMOTE_READY_TIMEOUT_MS),
-    T3_REUSE_READY_TIMEOUT_MS: String(REMOTE_REUSE_READY_TIMEOUT_MS),
-    T3_READY_PROBE_TIMEOUT_MS: String(SSH_READY_PROBE_TIMEOUT_MS),
+    FAB_ARCHIVE_MODE: isNodeScriptRunner(input) ? "0" : "1",
+    FAB_NODE_ENV_SCRIPT: buildRemoteNodeEnvScript(input),
+    FAB_RUNNER_SCRIPT: stripTrailingNewlines(buildRemoteFabRunnerScript(input)),
+    FAB_PICK_PORT_SCRIPT: stripTrailingNewlines(REMOTE_PICK_PORT_SCRIPT),
+    FAB_WAIT_READY_SCRIPT: stripTrailingNewlines(REMOTE_WAIT_READY_SCRIPT),
+    FAB_DEFAULT_REMOTE_PORT: String(DEFAULT_REMOTE_PORT),
+    FAB_REMOTE_PORT_SCAN_WINDOW: String(REMOTE_PORT_SCAN_WINDOW),
+    FAB_READY_TIMEOUT_MS: String(REMOTE_READY_TIMEOUT_MS),
+    FAB_REUSE_READY_TIMEOUT_MS: String(REMOTE_REUSE_READY_TIMEOUT_MS),
+    FAB_READY_PROBE_TIMEOUT_MS: String(SSH_READY_PROBE_TIMEOUT_MS),
   });
 }
 
-function buildRemotePairingScript(stateKey: string, input?: RemoteT3RunnerOptions): string {
+function buildRemotePairingScript(stateKey: string, input?: RemoteFabRunnerOptions): string {
   return applyScriptPlaceholders(REMOTE_PAIRING_SCRIPT, {
-    T3_STATE_KEY: stateKey,
-    T3_RUNNER_SCRIPT: stripTrailingNewlines(buildRemoteT3RunnerScript(input)),
+    FAB_STATE_KEY: stateKey,
+    FAB_RUNNER_SCRIPT: stripTrailingNewlines(buildRemoteFabRunnerScript(input)),
   });
 }
 
 function buildRemoteStopScript(stateKey: string): string {
   return applyScriptPlaceholders(REMOTE_STOP_SCRIPT, {
-    T3_STATE_KEY: stateKey,
+    FAB_STATE_KEY: stateKey,
   });
 }
 
 function buildRemoteLogTailScript(stateKey: string): string {
   return applyScriptPlaceholders(REMOTE_LOG_TAIL_SCRIPT, {
-    T3_STATE_KEY: stateKey,
+    FAB_STATE_KEY: stateKey,
   });
 }
 
@@ -863,7 +863,7 @@ export const launchOrReuseRemoteServer = Effect.fn("ssh/tunnel.launchOrReuseRemo
   function* (
     target: DesktopSshEnvironmentTarget,
     input?: SshAuth.SshAuthOptions,
-    runner?: RemoteT3RunnerOptions,
+    runner?: RemoteFabRunnerOptions,
   ): Effect.fn.Return<
     { readonly remotePort: number; readonly remoteServerKind: "external" | "managed" | null },
     SshCommandError | SshInvalidTargetError | SshLaunchError,
@@ -923,7 +923,7 @@ export const launchOrReuseRemoteServer = Effect.fn("ssh/tunnel.launchOrReuseRemo
 export const issueRemotePairingToken = Effect.fn("ssh/tunnel.issueRemotePairingToken")(function* (
   target: DesktopSshEnvironmentTarget,
   input?: SshAuth.SshAuthOptions,
-  runner?: RemoteT3RunnerOptions,
+  runner?: RemoteFabRunnerOptions,
 ): Effect.fn.Return<
   {
     readonly credential: string;
@@ -1503,7 +1503,7 @@ const makeSshEnvironmentManager = Effect.fn("ssh/tunnel.SshEnvironmentManager.ma
   const createTunnelEntry = Effect.fn("ssh/tunnel.ensureTunnelEntry.create")(function* (input: {
     readonly key: string;
     readonly resolvedTarget: DesktopSshEnvironmentTarget;
-    readonly runner?: RemoteT3RunnerOptions;
+    readonly runner?: RemoteFabRunnerOptions;
   }): Effect.fn.Return<SshTunnelEntry, SshEnvironmentEffectError, SshEnvironmentEffectContext> {
     yield* Effect.logDebug("ssh.environment.tunnel.create.start", {
       ...sshTargetLogFields(input.resolvedTarget),
@@ -1619,7 +1619,7 @@ const makeSshEnvironmentManager = Effect.fn("ssh/tunnel.SshEnvironmentManager.ma
   const ensureTunnelEntry = Effect.fn("ssh/tunnel.ensureTunnelEntry")(function* (
     key: string,
     resolvedTarget: DesktopSshEnvironmentTarget,
-    runner?: RemoteT3RunnerOptions,
+    runner?: RemoteFabRunnerOptions,
   ): Effect.fn.Return<SshTunnelEntry, SshEnvironmentEffectError, SshEnvironmentEffectContext> {
     const entry = tunnels.get(key) ?? null;
 
@@ -1783,7 +1783,7 @@ const makeSshEnvironmentManager = Effect.fn("ssh/tunnel.SshEnvironmentManager.ma
 export class SshEnvironmentManager extends Context.Service<
   SshEnvironmentManager,
   SshEnvironmentManagerShape
->()("@t3tools/ssh/tunnel/SshEnvironmentManager") {
+>()("@fab/ssh/tunnel/SshEnvironmentManager") {
   static readonly layer = (options: SshEnvironmentManagerOptions = {}) =>
     Layer.effect(SshEnvironmentManager, makeSshEnvironmentManager(options));
 }

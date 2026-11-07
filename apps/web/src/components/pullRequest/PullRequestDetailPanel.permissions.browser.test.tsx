@@ -5,7 +5,7 @@ import {
   ProjectId,
   SourceControlProviderKind,
   type PullRequestDetailView,
-} from "@t3tools/contracts";
+} from "@fab/contracts";
 import { expect, it, vi } from "vite-plus/test";
 import { DraftId, useComposerDraftStore } from "~/composerDraftStore";
 import { act, render } from "../../../test/render";
