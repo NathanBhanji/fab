@@ -35,7 +35,6 @@ import {
   spawnAndCollect,
   type ServerProviderDraft,
 } from "@fab/provider-core/server/snapshotProbe";
-import { resolveClaudeSdkExecutablePath } from "./Drivers/ClaudeExecutable.ts";
 import { hasClaudeManagedMcpConfig, makeClaudeEnvironment } from "./Drivers/ClaudeHome.ts";
 import { discoverClaudeSkills, readClaudeSettingsEnv } from "./Drivers/ClaudeSkills.ts";
 import type { ProviderWorkspaceSnapshot } from "@fab/provider-core/server/driver";
@@ -186,7 +185,6 @@ function claudeAuthStatus(
 
 // Bedrock initialization includes backend startup and awsAuthRefresh, taking longer than first-party auth.
 const CAPABILITIES_PROBE_TIMEOUT_MS = 25_000;
-// Native CLI startup on Windows can exceed the shared probe deadline.
 const CLAUDE_VERSION_CHECK_TIMEOUT_MS = 20_000;
 
 const CLAUDE_CAPABILITIES_PROBE_SETTING_SOURCES = [
@@ -217,7 +215,6 @@ export function buildClaudeCapabilitiesProbeQueryOptions(input: {
       ...input.environment,
       // Disable claude.ai MCP separately; it is discovered outside filesystem config.
       ENABLE_CLAUDEAI_MCP_SERVERS: "false",
-      // Skipping this avoids a Windows tasklist | findstr process tree on every refresh.
       FORCE_CODE_TERMINAL: undefined,
       CLAUDE_CODE_AUTO_CONNECT_IDE: "0",
       CLAUDE_CODE_IDE_SKIP_AUTO_INSTALL: "1",
@@ -328,10 +325,7 @@ const probeClaudeCapabilities = (
   const abort = new AbortController();
   return Effect.gen(function* () {
     const claudeEnvironment = yield* makeClaudeEnvironment(claudeSettings, environment);
-    const executablePath = yield* resolveClaudeSdkExecutablePath(
-      claudeSettings.binaryPath,
-      claudeEnvironment,
-    );
+    const executablePath = claudeSettings.binaryPath;
     const managedMcpConfig = yield* hasClaudeManagedMcpConfig();
     return yield* Effect.tryPromise(async () => {
       const q = claudeQuery({

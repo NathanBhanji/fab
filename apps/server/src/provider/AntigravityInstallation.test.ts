@@ -41,24 +41,15 @@ const zipFixtures = {
     "UEsDBBQAAAAIAAAAIl1zEy/oFAAAABQAAAASAAAAYWd5X2FjcF9zZXJ2ZXIucGFyS8wryUwvSizLLKlUKCoFcnJTuQBQSwMEFAAAAAgAAAAiXV9yAykQAAAADgAAABUAAABsb2NhbGhhcm5lc3NfZXh0ZXJuYWzLyU9OzFHISCzKSy0u5gIAUEsBAhQDFAAAAAgAAAAiXXMTL+gUAAAAFAAAABIAAAAAAAAAAAAAAO2BAAAAAGFneV9hY3Bfc2VydmVyLnBhclBLAQIUAxQAAAAIAAAAIl1fcgMpEAAAAA4AAAAVAAAAAAAAAAAAAAD/oUQAAABsb2NhbGhhcm5lc3NfZXh0ZXJuYWxQSwUGAAAAAAIAAgCDAAAAhwAAAAAA",
   oversizedMember:
     "UEsDBBQAAAAIAAAAIl0WGThFFQAAABUAAAASAAAAYWd5X2FjcF9zZXJ2ZXIucGFyS8wryUwvSizLLKlUKCoFcnJTuSoAUEsDBBQAAAAIAAAAIl1fcgMpEAAAAA4AAAAVAAAAbG9jYWxoYXJuZXNzX2V4dGVybmFsy8lPTsxRyEgsykstLuYCAFBLAQIUAxQAAAAIAAAAIl0WGThFFQAAABUAAAASAAAAAAAAAAAAAADtgQAAAABhZ3lfYWNwX3NlcnZlci5wYXJQSwECFAMUAAAACAAAACJdX3IDKRAAAAAOAAAAFQAAAAAAAAAAAAAA7YFFAAAAbG9jYWxoYXJuZXNzX2V4dGVybmFsUEsFBgAAAAACAAIAgwAAAIgAAAAAAA==",
-  windows:
-    "UEsDBBQAAAAIAAAAIl1zEy/oFAAAABQAAAASAAAAYWd5X2FjcF9zZXJ2ZXIuZXhlS8wryUwvSizLLKlUKCoFcnJTuQBQSwMEFAAAAAgAAAAiXV9yAykQAAAADgAAABkAAABsb2NhbGhhcm5lc3NfZXh0ZXJuYWwuZXhly8lPTsxRyEgsykstLuYCAFBLAQIUAxQAAAAIAAAAIl1zEy/oFAAAABQAAAASAAAAAAAAAAAAAADtgQAAAABhZ3lfYWNwX3NlcnZlci5leGVQSwECFAMUAAAACAAAACJdX3IDKRAAAAAOAAAAGQAAAAAAAAAAAAAA7YFEAAAAbG9jYWxoYXJuZXNzX2V4dGVybmFsLmV4ZVBLBQYAAAAAAgACAIcAAACLAAAAAAA=",
 };
 
-// Linux platform mocks cannot enforce POSIX exec bits on NTFS; use the host platform.
-const hostPlatform: NodeJS.Platform =
-  HostProcess.Platform.defaultValue() === "win32" ? "win32" : "linux";
-const completeArchive = Buffer.from(
-  hostPlatform === "win32" ? zipFixtures.windows : zipFixtures.complete,
-  "base64",
-);
-const executableName = hostPlatform === "win32" ? "agy_acp_server.exe" : "agy_acp_server.par";
-const harnessName =
-  hostPlatform === "win32" ? "localharness_external.exe" : "localharness_external";
+const hostPlatform: NodeJS.Platform = "linux";
+const completeArchive = Buffer.from(zipFixtures.complete, "base64");
+const executableName = "agy_acp_server.par";
+const harnessName = "localharness_external";
 
 const releaseAsset = Effect.fn("test.antigravityReleaseAsset")(function* (
   archive: Uint8Array = completeArchive,
-  platform: NodeJS.Platform = hostPlatform,
 ) {
   const digest = yield* Digest.Digest;
   return {
@@ -67,11 +58,11 @@ const releaseAsset = Effect.fn("test.antigravityReleaseAsset")(function* (
     sha256: Hex.encode(yield* digest.digest(Digest.sha256, archive).pipe(Effect.orDie)),
     archiveBytes: archive.byteLength,
     executable: {
-      name: platform === "win32" ? "agy_acp_server.exe" : "agy_acp_server.par",
+      name: executableName,
       bytes: Buffer.byteLength(serverContents),
     },
     harness: {
-      name: platform === "win32" ? "localharness_external.exe" : "localharness_external",
+      name: harnessName,
       bytes: Buffer.byteLength(harnessContents),
     },
   } satisfies AntigravityReleaseAsset;
@@ -135,12 +126,11 @@ const makeHarness = Effect.fn("test.makeAntigravityInstallation")(function* (
   const platform = options.platform ?? hostPlatform;
   const arch = options.arch ?? "x64";
   const archive = options.archive ?? completeArchive;
-  const asset =
-    options.asset === undefined ? yield* releaseAsset(archive, platform) : options.asset;
+  const asset = options.asset === undefined ? yield* releaseAsset(archive) : options.asset;
   const managedDirectory = path.join(baseDir, "tools", "antigravity-acp", `${platform}-${arch}`);
   if (options.previous) {
     yield* writeRelease(managedDirectory, {
-      ...(yield* releaseAsset(archive, platform)),
+      ...(yield* releaseAsset(archive)),
       sha256: previousReleaseId,
       version: previousVersion,
     });
@@ -571,70 +561,67 @@ it.layer(Layer.mergeAll(NodeServices.layer, NodeCrypto.layer))("Antigravity inst
       }),
   );
 
-  // The mocked Linux PATH walk needs POSIX paths; Windows temp paths contain colons.
-  it.effect.skipIf(HostProcess.Platform.defaultValue() === "win32")(
-    "honors explicit paths and reports invalid overrides without falling back",
-    () =>
-      Effect.gen(function* () {
-        const fs = yield* FileSystem.FileSystem;
-        const path = yield* Path.Path;
-        const baseDir = yield* fs
-          .makeTempDirectoryScoped({ prefix: "fab-agy-path-test-" })
-          .pipe(Effect.flatMap((directory) => fs.realPath(directory)));
-        const externalDirectory = path.join(baseDir, "external");
-        const externalExecutable = path.join(externalDirectory, executableName);
-        const externalHarness = path.join(externalDirectory, harnessName);
-        yield* fs.makeDirectory(externalDirectory);
-        yield* fs.writeFileString(externalExecutable, "external server", { mode: 0o755 });
-        yield* fs.writeFileString(externalHarness, "external harness", { mode: 0o755 });
-        const { installation } = yield* makeHarness({
-          baseDir,
-          path: externalDirectory,
-          previous: true,
-        });
-        yield* expectPreviousRelease(installation);
-        expect(yield* installation.resolve(undefined, { PATH: externalDirectory })).toMatchObject({
-          source: "managed",
-          version: previousVersion,
-        });
-        expect(yield* installation.resolve(externalExecutable)).toMatchObject({
-          executablePath: externalExecutable,
-          source: "override",
-          managedVersionDirectory: null,
-        });
-        expect(yield* installation.resolve(executableName)).toMatchObject({
-          source: "override",
-        });
-        yield* fs.remove(externalHarness);
-        expect(yield* installation.resolve(externalExecutable).pipe(Effect.flip)).toMatchObject({
-          operation: "resolve",
-        });
-        expect(
-          yield* installation.resolve(path.join(baseDir, "missing")).pipe(Effect.flip),
-        ).toMatchObject({
-          operation: "resolve",
-        });
-        yield* expectPreviousRelease(installation);
-        yield* fs.writeFileString(externalHarness, "external harness", { mode: 0o755 });
-        yield* installation.remove();
-        expect(yield* installation.resolve()).toMatchObject({
-          source: "path",
-          executablePath: externalExecutable,
-        });
-        const isolated = yield* makeHarness({ baseDir });
-        expect(yield* isolated.installation.resolve().pipe(Effect.flip)).toMatchObject({
-          operation: "resolve",
-        });
-        expect(
-          yield* isolated.installation.resolve(undefined, { PATH: externalDirectory }),
-        ).toMatchObject({
-          source: "path",
-          executablePath: externalExecutable,
-        });
-        expect(
-          yield* isolated.installation.resolve(executableName, { PATH: externalDirectory }),
-        ).toMatchObject({ source: "override", executablePath: externalExecutable });
-      }),
+  it.effect("honors explicit paths and reports invalid overrides without falling back", () =>
+    Effect.gen(function* () {
+      const fs = yield* FileSystem.FileSystem;
+      const path = yield* Path.Path;
+      const baseDir = yield* fs
+        .makeTempDirectoryScoped({ prefix: "fab-agy-path-test-" })
+        .pipe(Effect.flatMap((directory) => fs.realPath(directory)));
+      const externalDirectory = path.join(baseDir, "external");
+      const externalExecutable = path.join(externalDirectory, executableName);
+      const externalHarness = path.join(externalDirectory, harnessName);
+      yield* fs.makeDirectory(externalDirectory);
+      yield* fs.writeFileString(externalExecutable, "external server", { mode: 0o755 });
+      yield* fs.writeFileString(externalHarness, "external harness", { mode: 0o755 });
+      const { installation } = yield* makeHarness({
+        baseDir,
+        path: externalDirectory,
+        previous: true,
+      });
+      yield* expectPreviousRelease(installation);
+      expect(yield* installation.resolve(undefined, { PATH: externalDirectory })).toMatchObject({
+        source: "managed",
+        version: previousVersion,
+      });
+      expect(yield* installation.resolve(externalExecutable)).toMatchObject({
+        executablePath: externalExecutable,
+        source: "override",
+        managedVersionDirectory: null,
+      });
+      expect(yield* installation.resolve(executableName)).toMatchObject({
+        source: "override",
+      });
+      yield* fs.remove(externalHarness);
+      expect(yield* installation.resolve(externalExecutable).pipe(Effect.flip)).toMatchObject({
+        operation: "resolve",
+      });
+      expect(
+        yield* installation.resolve(path.join(baseDir, "missing")).pipe(Effect.flip),
+      ).toMatchObject({
+        operation: "resolve",
+      });
+      yield* expectPreviousRelease(installation);
+      yield* fs.writeFileString(externalHarness, "external harness", { mode: 0o755 });
+      yield* installation.remove();
+      expect(yield* installation.resolve()).toMatchObject({
+        source: "path",
+        executablePath: externalExecutable,
+      });
+      const isolated = yield* makeHarness({ baseDir });
+      expect(yield* isolated.installation.resolve().pipe(Effect.flip)).toMatchObject({
+        operation: "resolve",
+      });
+      expect(
+        yield* isolated.installation.resolve(undefined, { PATH: externalDirectory }),
+      ).toMatchObject({
+        source: "path",
+        executablePath: externalExecutable,
+      });
+      expect(
+        yield* isolated.installation.resolve(executableName, { PATH: externalDirectory }),
+      ).toMatchObject({ source: "override", executablePath: externalExecutable });
+    }),
   );
 
   it.effect("keeps leased releases available while new sessions resolve the new release", () =>
@@ -731,55 +718,52 @@ it.layer(Layer.mergeAll(NodeServices.layer, NodeCrypto.layer))("Antigravity inst
       }),
   );
 
-  it.effect(
-    "reuses an immutable Windows release and preserves the pointer when rename is denied",
-    () =>
-      Effect.gen(function* () {
-        const fs = yield* FileSystem.FileSystem;
-        const path = yield* Path.Path;
-        const archive = Buffer.from(zipFixtures.windows, "base64");
-        const asset = yield* releaseAsset(archive, "win32");
-        let denyPointerRename = true;
-        const renameTargets: string[] = [];
-        const { installation, requests, validations } = yield* makeHarness({
-          previous: true,
-          platform: "win32",
-          archive,
-          fileSystem: FileSystem.FileSystem.of({
-            ...fs,
-            rename: (source, target) => {
-              renameTargets.push(target);
-              return denyPointerRename
-                ? Effect.fail(
-                    PlatformError.systemError({
-                      _tag: "PermissionDenied",
-                      module: "FileSystem",
-                      method: "rename",
-                      pathOrDescriptor: target,
-                      description: "EPERM: file is in use",
-                    }),
-                  )
-                : fs.rename(source, target);
-            },
-          }),
-        });
-        yield* writeRelease(installation.managedDirectory, asset, false);
-        yield* installation.start;
-        expect((yield* terminalState(installation)).phase).toBe("failed");
-        yield* expectPreviousRelease(installation);
-        expect(renameTargets).toEqual([path.join(installation.managedDirectory, "active.json")]);
+  it.effect("reuses an immutable release and preserves the pointer when rename is denied", () =>
+    Effect.gen(function* () {
+      const fs = yield* FileSystem.FileSystem;
+      const path = yield* Path.Path;
+      const archive = completeArchive;
+      const asset = yield* releaseAsset(archive);
+      let denyPointerRename = true;
+      const renameTargets: string[] = [];
+      const { installation, requests, validations } = yield* makeHarness({
+        previous: true,
+        archive,
+        fileSystem: FileSystem.FileSystem.of({
+          ...fs,
+          rename: (source, target) => {
+            renameTargets.push(target);
+            return denyPointerRename
+              ? Effect.fail(
+                  PlatformError.systemError({
+                    _tag: "PermissionDenied",
+                    module: "FileSystem",
+                    method: "rename",
+                    pathOrDescriptor: target,
+                    description: "EPERM: file is in use",
+                  }),
+                )
+              : fs.rename(source, target);
+          },
+        }),
+      });
+      yield* writeRelease(installation.managedDirectory, asset, false);
+      yield* installation.start;
+      expect((yield* terminalState(installation)).phase).toBe("failed");
+      yield* expectPreviousRelease(installation);
+      expect(renameTargets).toEqual([path.join(installation.managedDirectory, "active.json")]);
 
-        denyPointerRename = false;
-        yield* installation.start;
-        expect((yield* terminalState(installation)).phase).toBe("succeeded");
-        expect((yield* installation.resolve()).version).toBe("fixture-new");
-        expect(requests).toEqual([]);
-        expect(validations).toHaveLength(2);
-        expect(renameTargets).toEqual([
-          path.join(installation.managedDirectory, "active.json"),
-          path.join(installation.managedDirectory, "active.json"),
-        ]);
-      }),
+      denyPointerRename = false;
+      yield* installation.start;
+      expect((yield* terminalState(installation)).phase).toBe("succeeded");
+      expect((yield* installation.resolve()).version).toBe("fixture-new");
+      expect(requests).toEqual([]);
+      expect(validations).toHaveLength(2);
+      expect(renameTargets).toEqual([
+        path.join(installation.managedDirectory, "active.json"),
+        path.join(installation.managedDirectory, "active.json"),
+      ]);
+    }),
   );
 
   it.effect("reports unsupported hosts without downloading or changing state", () =>

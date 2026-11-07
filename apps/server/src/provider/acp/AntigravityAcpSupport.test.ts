@@ -5,7 +5,6 @@ import {
   PROVIDER_SEND_TURN_MAX_IMAGE_BYTES,
   type ChatAttachment,
 } from "@fab/contracts";
-import * as HostProcess from "@fab/shared/HostProcess";
 import * as Effect from "effect/Effect";
 import * as FileSystem from "effect/FileSystem";
 import * as Path from "effect/Path";
@@ -396,12 +395,6 @@ it.layer(NodeServices.layer)("buildAntigravityPrompt", (it) => {
       linked: false,
     },
     {
-      case: "a Windows host",
-      platform: "win32" as const,
-      model: { id: "gemini-3.8-flash", name: "Gemini 3.8 Flash" },
-      linked: false,
-    },
-    {
       case: "a clip over 20 MiB",
       model: { id: "gemini-3.8-flash", name: "Gemini 3.8 Flash" },
       linked: false,
@@ -409,7 +402,7 @@ it.layer(NodeServices.layer)("buildAntigravityPrompt", (it) => {
     },
   ])(
     "links an MP4 for $case only when supported",
-    ({ agentVersion = "1.4.5", platform = "linux", model, linked, ...size }) =>
+    ({ agentVersion = "1.4.5", model, linked, ...size }) =>
       Effect.gen(function* () {
         const fixture = yield* makeAttachmentFixture();
         const clip = {
@@ -430,7 +423,6 @@ it.layer(NodeServices.layer)("buildAntigravityPrompt", (it) => {
           agentVersion,
           currentModel: model,
         }).pipe(
-          Effect.provideService(HostProcess.Platform, platform),
           Effect.provideService(FileSystem.FileSystem, {
             ...fixture.fs,
             stream: () => Effect.die("Linked video is read by the agent").pipe(Stream.fromEffect),

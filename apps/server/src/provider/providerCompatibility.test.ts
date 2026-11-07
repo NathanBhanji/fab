@@ -135,7 +135,7 @@ describe("provider compatibility", () => {
 
   it.each([
     ["darwin", "arm64"],
-    ["win32", "x64"],
+    ["linux", "x64"],
   ] as const)(
     "supports the managed Antigravity runtime for %s-%s in the bundled manifest",
     (platform, arch) => {

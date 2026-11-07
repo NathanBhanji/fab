@@ -14,33 +14,12 @@ import type {
 } from "@fab/contracts";
 import * as Effect from "effect/Effect";
 import * as PlatformError from "effect/PlatformError";
-import * as Schema from "effect/Schema";
 import * as Stream from "effect/Stream";
 import * as ChildProcess from "effect/process/ChildProcess";
 import * as ChildProcessSpawner from "effect/process/ChildProcessSpawner";
 import { readCustomModelEntries } from "@fab/shared/model";
-import * as HostProcess from "@fab/shared/HostProcess";
 import { createProviderVersionAdvisory } from "./maintenanceResolver.ts";
 import { collectUint8StreamText } from "./collectStreamText.ts";
-
-const WINDOWS_COMMAND_NOT_FOUND_PATTERNS = [
-  /is not recognized as an internal or external command/i,
-  /n.o . reconhecido como um comando interno/i,
-  /non . riconosciuto come comando interno o esterno/i,
-  /n.est pas reconnu en tant que commande interne/i,
-  /no se reconoce como un comando interno o externo/i,
-  /wird nicht als interner oder externer befehl/i,
-] as const;
-
-export const isWindowsCommandNotFound = Effect.fn("isWindowsCommandNotFound")(function* (
-  code: number | null,
-  stderr: string,
-) {
-  const platform = yield* HostProcess.Platform;
-  if (platform !== "win32") return false;
-  if (code === 9009) return true;
-  return WINDOWS_COMMAND_NOT_FOUND_PATTERNS.some((pattern) => pattern.test(stderr));
-});
 
 export const DEFAULT_TIMEOUT_MS = 4_000;
 export const AUTH_PROBE_TIMEOUT_MS = 10_000;
@@ -55,22 +34,6 @@ export interface CommandResult {
   readonly stderr: string;
   readonly code: number;
 }
-
-export class ProviderCommandNotFoundError extends Schema.TaggedError<ProviderCommandNotFoundError>()(
-  "ProviderCommandNotFoundError",
-  {
-    binaryPath: Schema.String,
-    exitCode: Schema.Number,
-    stdoutLength: Schema.Number,
-    stderrLength: Schema.Number,
-  },
-) {
-  override get message(): string {
-    return `Provider command ${this.binaryPath} was not found (exit code ${this.exitCode}).`;
-  }
-}
-
-const isProviderCommandNotFoundError = Schema.is(ProviderCommandNotFoundError);
 
 export interface ProviderProbeResult {
   readonly installed: boolean;
@@ -99,12 +62,11 @@ export function nonEmptyTrimmed(value: string | undefined): string | undefined {
 }
 
 export function isCommandMissingCause(error: unknown): boolean {
-  if (isProviderCommandNotFoundError(error)) return true;
   return error instanceof PlatformError.PlatformError && error.reason._tag === "NotFound";
 }
 
 export const spawnAndCollect = Effect.fn("snapshotProbe.spawnAndCollect")(function* (
-  binaryPath: string,
+  _binaryPath: string,
   command: ChildProcess.Command,
 ) {
   const spawner = yield* ChildProcessSpawner.ChildProcessSpawner;
@@ -118,16 +80,7 @@ export const spawnAndCollect = Effect.fn("snapshotProbe.spawnAndCollect")(functi
     { concurrency: "unbounded" },
   );
 
-  const result: CommandResult = { stdout, stderr, code: exitCode };
-  if (yield* isWindowsCommandNotFound(exitCode, stderr)) {
-    return yield* new ProviderCommandNotFoundError({
-      binaryPath,
-      exitCode,
-      stdoutLength: stdout.length,
-      stderrLength: stderr.length,
-    });
-  }
-  return result;
+  return { stdout, stderr, code: exitCode } satisfies CommandResult;
 }, Effect.scoped);
 
 export function parseGenericCliVersion(output: string): string | null {

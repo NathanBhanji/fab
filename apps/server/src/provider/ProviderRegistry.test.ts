@@ -477,7 +477,6 @@ it.layer(
 
     it.effect("reads the version of a Codex CLI too old to run app-server (#20351)", () =>
       Effect.gen(function* () {
-        if ((yield* HostProcess.Platform) === "win32") return;
         const codexHome = yield* FileSystem.FileSystem.pipe(
           Effect.flatMap((fs) => fs.makeTempDirectoryScoped({ prefix: "fab-codex-home-" })),
         );
@@ -513,7 +512,6 @@ it.layer(
 
     it.effect("keeps a prerelease --version unclassified instead of reading it as stable", () =>
       Effect.gen(function* () {
-        if ((yield* HostProcess.Platform) === "win32") return;
         const { binaryPath } = yield* writeFakeCodexCli(
           [
             `[ "$1" = "--version" ] && { echo "codex-cli 0.159.0-alpha.1"; exit 0; }`,
@@ -535,7 +533,6 @@ it.layer(
 
     it.effect("keeps the probe failure without a version when --version also fails", () =>
       Effect.gen(function* () {
-        if ((yield* HostProcess.Platform) === "win32") return;
         const { binaryPath } = yield* writeFakeCodexCli(
           [
             `[ "$1" = "--version" ] && { echo "codex 0.1.0" >&2; exit 3; }`,
@@ -584,7 +581,6 @@ it.layer(
 
     it.effect("does not run --version when the Codex executable cannot start", () =>
       Effect.gen(function* () {
-        if ((yield* HostProcess.Platform) === "win32") return;
         const fs = yield* FileSystem.FileSystem;
         const path = yield* Path.Path;
         const { directory, binaryPath } = yield* writeFakeCodexCli(

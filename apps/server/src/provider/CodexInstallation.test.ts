@@ -10,9 +10,7 @@ import * as Effect from "effect/Effect";
 import * as Hex from "effect/encoding/Hex";
 import * as FileSystem from "effect/FileSystem";
 import * as Option from "effect/Option";
-import * as PlatformError from "effect/PlatformError";
 import * as Exit from "effect/Exit";
-import * as Queue from "effect/Queue";
 import * as Scope from "effect/Scope";
 import * as Stream from "effect/Stream";
 import { HttpClient, HttpClientError, HttpClientRequest, HttpClientResponse } from "effect/http";
@@ -38,16 +36,14 @@ const makeHarness = Effect.fn("test.makeCodexInstallation")(function* (
     downloadStatus?: number;
     baseDir?: string;
     local?: { version: string; appServerFails?: boolean; versionFails?: boolean };
-    platform?: NodeJS.Platform;
     spawner?: ChildProcessSpawner.ChildProcessSpawner["Service"];
-    runtimeRenameFailures?: number;
   } = {},
 ) {
   const fs = yield* FileSystem.FileSystem;
   const baseDir =
     input.baseDir ?? (yield* fs.makeTempDirectoryScoped({ prefix: "fab-codex-install-test-" }));
   const localDirectory = `${baseDir}/local`;
-  const localBinaryPath = `${localDirectory}/codex${input.platform === "win32" ? ".exe" : ""}`;
+  const localBinaryPath = `${localDirectory}/codex`;
   const probeLog = `${baseDir}/local-probes.txt`;
   if (input.local) {
     yield* fs.makeDirectory(localDirectory, { recursive: true });
@@ -60,29 +56,6 @@ const makeHarness = Effect.fn("test.makeCodexInstallation")(function* (
   let downloads = 0;
   const digest = yield* Digest.Digest;
   const sha256 = Hex.encode(yield* digest.digest(Digest.sha256, archive).pipe(Effect.orDie));
-  let runtimeRenameFailures = input.runtimeRenameFailures ?? 0;
-  const failedRenames = yield* Queue.unbounded<void>();
-  const lockingFs: FileSystem.FileSystem = {
-    ...fs,
-    // Suspended so each retry of the same effect is a fresh attempt, like the real rename.
-    rename: (from, to) =>
-      Effect.suspend(() =>
-        /[/\\]runtime$/u.test(from) && runtimeRenameFailures-- > 0
-          ? Queue.offer(failedRenames, undefined).pipe(
-              Effect.andThen(
-                Effect.fail(
-                  PlatformError.systemError({
-                    _tag: "PermissionDenied",
-                    module: "FileSystem",
-                    method: "rename",
-                    pathOrDescriptor: from,
-                  }),
-                ),
-              ),
-            )
-          : fs.rename(from, to),
-      ),
-  };
   const spawner = input.spawner ?? (yield* ChildProcessSpawner.ChildProcessSpawner);
   const installation = yield* CodexInstallation.makeCodexInstallation({
     baseDir,
@@ -96,13 +69,9 @@ const makeHarness = Effect.fn("test.makeCodexInstallation")(function* (
       forceRefresh: Effect.succeed(ModelManifest.BUNDLED_MODEL_MANIFEST),
       refreshInBackground: Effect.void,
     }),
-    Effect.provideService(HostProcess.Platform, input.platform ?? "darwin"),
+    Effect.provideService(HostProcess.Platform, "darwin"),
     Effect.provideService(HostProcess.Architecture, "arm64"),
-    Effect.provideService(HostProcess.Environment, {
-      PATH: input.local ? localDirectory : "",
-      SystemRoot: "C:\\Windows",
-    }),
-    Effect.provideService(FileSystem.FileSystem, lockingFs),
+    Effect.provideService(HostProcess.Environment, { PATH: input.local ? localDirectory : "" }),
     Effect.provideService(ChildProcessSpawner.ChildProcessSpawner, spawner),
     Effect.provideService(
       HttpClient.HttpClient,
@@ -129,7 +98,6 @@ const makeHarness = Effect.fn("test.makeCodexInstallation")(function* (
     baseDir,
     localBinaryPath,
     probeLog,
-    failedRenames,
     downloads: () => downloads,
   };
 });
@@ -527,5 +495,3 @@ it.effect("keeps an activated runtime when a later update fails verification", (
     expect((yield* update.installation.resolve()).version).toBe("0.156.1");
   }).pipe(Effect.scoped, Effect.provide(Layer.mergeAll(NodeServices.layer, NodeCrypto.layer))),
 );
-
-// Stands in for Windows' bsdtar: CRLF listings, and extraction writes the Windows layout.

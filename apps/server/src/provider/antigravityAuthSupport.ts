@@ -1,4 +1,4 @@
-// @effect-diagnostics-next-line nodeBuiltinImport:off - Effect's symlink has no type argument, and Windows needs a junction to link without elevation.
+// @effect-diagnostics-next-line nodeBuiltinImport:off - Effect has no rmdir that refuses a non-empty folder.
 import * as NodeFSP from "node:fs/promises";
 
 import type { AntigravityAuthMethod, ProviderInstanceId } from "@fab/contracts";
@@ -170,7 +170,6 @@ export function isAntigravitySignInRequiredError(error: unknown): boolean {
 
 export interface AntigravityInstanceDirectories {
   readonly profile: string;
-  /** Keep beside the profile: 120-character archive members under its longer name would exceed Windows' 260-character limit. */
   readonly runtimeTemp: string;
 }
 
@@ -199,7 +198,6 @@ function antigravityEnvironment(
 ) {
   const environment: NodeJS.ProcessEnv = {};
   for (const [key, value] of Object.entries(baseEnv)) {
-    // Windows treats environment keys as case-insensitive. Remove aliases too.
     if (!removedEnvironmentKeys.has(key.toUpperCase())) environment[key] = value;
   }
   // Put the GCP pair in settings.json because GOOGLE_API_KEY takes precedence in the environment.
@@ -224,9 +222,7 @@ function antigravityEnvironment(
     BROWSER: profile.browserCommand,
     PYTHONUNBUFFERED: "1",
     ELECTRON_RUN_AS_NODE: "1",
-    ...(profile.platform === "win32"
-      ? { TEMP: tempDirectory, TMP: tempDirectory }
-      : { TMPDIR: tempDirectory }),
+    TMPDIR: tempDirectory,
   };
 }
 
@@ -234,7 +230,6 @@ function antigravityEnvironment(
 const linkAntigravityUserSkills = Effect.fn("linkAntigravityUserSkills")(function* (input: {
   readonly profileDirectory: string;
   readonly userHome: string;
-  readonly platform: NodeJS.Platform;
 }): Effect.fn.Return<void, never, FileSystem.FileSystem | Path.Path> {
   const fs = yield* FileSystem.FileSystem;
   const path = yield* Path.Path;
@@ -271,9 +266,7 @@ const linkAntigravityUserSkills = Effect.fn("linkAntigravityUserSkills")(functio
         yield* fs.remove(link);
       }
       yield* fs.makeDirectory(path.dirname(link), { recursive: true });
-      yield* Effect.tryPromise(() =>
-        NodeFSP.symlink(target, link, input.platform === "win32" ? "junction" : "dir"),
-      );
+      yield* fs.symlink(target, link);
     }).pipe(
       Effect.catch((error) =>
         Effect.logWarning("Antigravity user skills are not linked into the profile.", {
@@ -302,11 +295,7 @@ export const prepareAntigravityProfile = Effect.fn("prepareAntigravityProfile")(
   const platform = input.platform ?? (yield* HostProcess.Platform);
   const userHome =
     input.userHome ??
-    resolveAntigravityUserHome(
-      platform,
-      input.baseEnv ?? process.env,
-      yield* HostProcess.HomeDirectory,
-    );
+    resolveAntigravityUserHome(input.baseEnv ?? process.env, yield* HostProcess.HomeDirectory);
   const runtimeExecutablePath =
     input.runtimeExecutablePath ??
     (yield* resolveNodeExecutable("Antigravity sign-in", input.baseEnv).pipe(
@@ -318,12 +307,11 @@ export const prepareAntigravityProfile = Effect.fn("prepareAntigravityProfile")(
           }),
       ),
     ));
-  const helperExecutable =
-    platform === "win32" ? runtimeExecutablePath.replaceAll("\\", "/") : runtimeExecutablePath;
+  const helperExecutable = runtimeExecutablePath;
   const browserArguments = [helperExecutable, "-e", browserHelperSource, "--", "%s"];
   const browserCommand = browserArguments.map(quoteBrowserArgument).join(" ");
   if (
-    browserCommand.includes(platform === "win32" ? ";" : ":") ||
+    browserCommand.includes(":") ||
     helperExecutable.includes("\r") ||
     helperExecutable.includes("\n") ||
     helperExecutable.includes("\0") ||
@@ -415,15 +403,13 @@ export const prepareAntigravityProfile = Effect.fn("prepareAntigravityProfile")(
           authSupportError("The Antigravity profile directory could not be created."),
         ),
       );
-    if (platform !== "win32") {
-      yield* fs
-        .chmod(directory, 0o700)
-        .pipe(
-          Effect.mapError(() =>
-            authSupportError("The Antigravity profile directory permissions could not be set."),
-          ),
-        );
-    }
+    yield* fs
+      .chmod(directory, 0o700)
+      .pipe(
+        Effect.mapError(() =>
+          authSupportError("The Antigravity profile directory permissions could not be set."),
+        ),
+      );
   }
   yield* fs
     .writeFileString(path.join(acpDirectory, "settings.json"), antigravityProfileSettings(auth))
@@ -432,7 +418,7 @@ export const prepareAntigravityProfile = Effect.fn("prepareAntigravityProfile")(
         authSupportError("The Antigravity profile settings could not be written."),
       ),
     );
-  yield* linkAntigravityUserSkills({ profileDirectory: geminiHome, userHome, platform });
+  yield* linkAntigravityUserSkills({ profileDirectory: geminiHome, userHome });
   return profile;
 });
 

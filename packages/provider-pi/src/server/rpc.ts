@@ -11,8 +11,6 @@ import * as Schema from "effect/Schema";
 import * as Stream from "effect/Stream";
 import * as ChildProcess from "effect/process/ChildProcess";
 import * as ChildProcessSpawner from "effect/process/ChildProcessSpawner";
-import * as HostProcess from "@fab/shared/HostProcess";
-import { resolveSpawnCommand } from "@fab/shared/shell";
 import {
   MAX_TOOL_OUTPUT_IMAGES,
   MAX_TOOL_OUTPUT_IMAGE_BASE64_LENGTH,
@@ -185,20 +183,15 @@ const terminatePiProcess = Effect.fn("PiRpc.terminatePiProcess")(function* (
 
 export const makePiRpcConnection = Effect.fnUntraced(function* (options: PiRpcSpawnOptions) {
   const spawner = yield* ChildProcessSpawner.ChildProcessSpawner;
-  const platform = yield* HostProcess.Platform;
   const scope = yield* Effect.scope;
 
-  const spawnCommand = yield* resolveSpawnCommand(options.command, [...options.args], {
-    env: options.env,
-  }).pipe(Effect.mapError((cause) => new PiRpcError({ operation: "spawn", cause })));
   const child = yield* spawner
     .spawn(
-      ChildProcess.make(spawnCommand.command, spawnCommand.args, {
+      ChildProcess.make(options.command, [...options.args], {
         ...(options.cwd === undefined ? {} : { cwd: options.cwd }),
         env: options.env,
         extendEnv: false,
-        shell: spawnCommand.shell,
-        detached: platform !== "win32",
+        detached: true,
         // On stdin EOF Pi quits without its SIGTERM handler, so the later SIGTERM kills it mid-cleanup.
         stdin: { stream: "pipe", endOnDone: false },
       }),
@@ -210,11 +203,7 @@ export const makePiRpcConnection = Effect.fnUntraced(function* (options: PiRpcSp
 
   const killProcessGroup = (signal: NodeJS.Signals): boolean => {
     try {
-      if (platform === "win32") {
-        process.kill(Number(child.pid), signal);
-      } else {
-        signalProcessGroup(Number(child.pid), signal);
-      }
+      signalProcessGroup(Number(child.pid), signal);
       return true;
     } catch {
       return false;
@@ -224,25 +213,14 @@ export const makePiRpcConnection = Effect.fnUntraced(function* (options: PiRpcSp
   const hasExited = (): boolean => {
     if (childExited) return true;
     try {
-      if (platform === "win32") process.kill(Number(child.pid), 0);
-      else signalProcessGroup(Number(child.pid), 0);
+      signalProcessGroup(Number(child.pid), 0);
       return false;
     } catch {
       return true;
     }
   };
 
-  // Windows process.kill leaves extension children and pipes alive; taskkill /T reaps the tree.
-  const terminateWindowsTree = Effect.gen(function* () {
-    if (hasExited()) return;
-    const taskkill = yield* spawner.spawn(
-      ChildProcess.make("taskkill", ["/PID", String(child.pid), "/T", "/F"]),
-    );
-    yield* taskkill.exitCode;
-  }).pipe(Effect.scoped, Effect.ignore);
-
-  const terminateProcess =
-    platform === "win32" ? terminateWindowsTree : terminatePiProcess(killProcessGroup, hasExited);
+  const terminateProcess = terminatePiProcess(killProcessGroup, hasExited);
 
   // Register teardown immediately after spawn so interrupted setup cannot leak a detached process.
   yield* Scope.addFinalizer(scope, terminateProcess.pipe(Effect.ignore, Effect.uninterruptible));

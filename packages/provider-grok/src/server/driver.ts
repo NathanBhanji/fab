@@ -83,7 +83,6 @@ const UPDATE: ProviderMaintenanceCapabilitiesResolver = {
       updateExecutable: context.resolvedCommandPath,
       updateArgs: ["update"],
       updateLockKey: "grok",
-      platform: context.platform,
       env: { ...context.env, npm_config_allow_scripts: GROK_NPM_PACKAGE },
     });
   }),

@@ -980,7 +980,6 @@ function grokPlanSessionPrefixes(host: GrokPlanPathHost): ReadonlySet<string> {
   addGrokSessionPrefix(prefixes, host.homeDirectory, true);
   addGrokSessionPrefix(prefixes, "~", true);
   addGrokSessionPrefix(prefixes, environment.HOME ?? "", true);
-  addGrokSessionPrefix(prefixes, environment.USERPROFILE ?? "", true);
   // ACP mock and isolated Grok spawns use a HOME that is not the server process home.
   addGrokSessionPrefix(prefixes, "/tmp/mock-home", true);
   const grokHome = environment.GROK_HOME ?? "";

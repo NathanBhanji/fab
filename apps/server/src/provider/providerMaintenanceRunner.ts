@@ -7,7 +7,6 @@ import {
   type ServerProviderUpdatedPayload,
   type ServerProviderUpdateState,
 } from "@fab/contracts";
-import { resolveSpawnCommand } from "@fab/shared/shell";
 import * as Cause from "effect/Cause";
 import * as Context from "effect/Context";
 import * as Data from "effect/Data";
@@ -103,15 +102,8 @@ const runProviderMaintenanceCommandWithSpawner = Effect.fn("ProviderMaintenanceR
     const collectCommandResult = Effect.fn("ProviderMaintenanceRunner.collectCommandResult")(
       function* () {
         const env = input.env ? { env: input.env, extendEnv: true } : {};
-        // Windows batch shims require shell dispatch through resolveSpawnCommand.
-        const resolved = yield* resolveSpawnCommand(input.command, input.args, env);
         const child = yield* input.spawner
-          .spawn(
-            ChildProcess.make(resolved.command, resolved.args, {
-              shell: resolved.shell,
-              ...env,
-            }),
-          )
+          .spawn(ChildProcess.make(input.command, input.args, env))
           .pipe(
             Effect.mapError(
               (cause) =>

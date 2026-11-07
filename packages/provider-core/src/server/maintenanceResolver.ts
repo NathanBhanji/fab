@@ -14,7 +14,7 @@ import {
 import { compareSemverVersions, satisfiesSemverRange } from "@fab/shared/semver";
 import * as HostProcess from "@fab/shared/HostProcess";
 import { causeErrorTag } from "@fab/shared/observability";
-import { resolveCommandPath, resolveSpawnCommand } from "@fab/shared/shell";
+import { resolveCommandPath } from "@fab/shared/shell";
 import * as Cache from "effect/Cache";
 import * as Config from "effect/Config";
 import * as DateTime from "effect/DateTime";
@@ -54,9 +54,6 @@ const compactEnv = (input: Record<string, Option.Option<string>>): NodeJS.Proces
 
 const CommandLookupEnvConfig = Config.all({
   PATH: Config.String("PATH").pipe(Config.option),
-  Path: Config.String("Path").pipe(Config.option),
-  path: Config.String("path").pipe(Config.option),
-  PATHEXT: Config.String("PATHEXT").pipe(Config.option),
 }).pipe(Config.map(compactEnv));
 
 const readCommandLookupEnv = CommandLookupEnvConfig.pipe(Effect.orElseSucceed(() => ({})));
@@ -66,7 +63,6 @@ export interface ProviderMaintenanceResolutionContext {
   readonly resolvedCommandPath: string;
   readonly realCommandPath: string;
   readonly env: NodeJS.ProcessEnv;
-  readonly platform: NodeJS.Platform;
 }
 
 export type ProviderMaintenanceResolverServices =
@@ -102,18 +98,9 @@ function nonEmptyString(value: unknown): string | null {
   return typeof value === "string" && value.trim().length > 0 ? value.trim() : null;
 }
 
-function quoteShellWord(word: string, platform: NodeJS.Platform): string {
-  const safeWord = platform === "win32" ? /^[\w./:\\@=-]+$/ : /^[\w./:@=-]+$/;
-  if (safeWord.test(word)) return word;
-  return platform === "win32"
-    ? `'${word.replace(/['\u2018\u2019]/g, "$&$&")}'`
-    : `'${word.replaceAll("'", "'\\''")}'`;
-}
-
-function quoteUpdateExecutable(executable: string, platform: NodeJS.Platform): string {
-  const quoted = quoteShellWord(executable, platform);
-  // Windows terminals default to PowerShell, where a quoted executable needs &.
-  return platform === "win32" && quoted !== executable ? `& ${quoted}` : quoted;
+function quoteShellWord(word: string): string {
+  if (/^[\w./:@=-]+$/.test(word)) return word;
+  return `'${word.replaceAll("'", "'\\''")}'`;
 }
 
 export function makeProviderMaintenanceCapabilities(input: {
@@ -123,22 +110,19 @@ export function makeProviderMaintenanceCapabilities(input: {
   readonly updateArgs: ReadonlyArray<string>;
   readonly updateLockKey: string | null;
   readonly updateCommand?: string;
-  readonly platform?: NodeJS.Platform;
   readonly env?: NodeJS.ProcessEnv;
   readonly latestVersion?: string | null;
   readonly lookupLatestVersion?: Effect.Effect<string | null>;
 }): ProviderMaintenanceCapabilities {
-  const platform = input.platform ?? HostProcess.Platform.defaultValue();
   const update =
     input.updateExecutable === null || input.updateLockKey === null
       ? null
       : {
           command:
             input.updateCommand ??
-            [
-              quoteUpdateExecutable(input.updateExecutable, platform),
-              ...input.updateArgs.map((arg) => quoteShellWord(arg, platform)),
-            ].join(" "),
+            [quoteShellWord(input.updateExecutable), ...input.updateArgs.map(quoteShellWord)].join(
+              " ",
+            ),
           executable: input.updateExecutable,
           args: input.updateArgs,
           lockKey: input.updateLockKey,
@@ -200,7 +184,6 @@ export function makeManualOnlyProviderMaintenanceCapabilities(input: {
   readonly packageName: string | null;
   readonly installPath?: string;
   readonly lookupLatestVersion?: Effect.Effect<string | null>;
-  readonly manualCommand?: string;
 }): ProviderMaintenanceCapabilities {
   return {
     ...makeProviderMaintenanceCapabilities({
@@ -214,21 +197,19 @@ export function makeManualOnlyProviderMaintenanceCapabilities(input: {
         : {}),
     }),
     ...(input.installPath ? { installPath: input.installPath } : {}),
-    ...(input.manualCommand ? { manualCommand: input.manualCommand } : {}),
   };
 }
 
 export function normalizeCommandPath(commandPath: string): string {
-  return commandPath.replaceAll("\\", "/").toLowerCase();
+  return commandPath.toLowerCase();
 }
 
 /**
- * Vite+ shims live in `<VP_HOME>/bin`: `~/.vite-plus` by default,
- * `~/.local/share/vite-plus` with the XDG layout, and `%LOCALAPPDATA%\vite-plus`
- * on Windows.
+ * Vite+ shims live in `<VP_HOME>/bin`: `~/.vite-plus` by default and
+ * `~/.local/share/vite-plus` with the XDG layout.
  */
 function isVitePlusGlobalCommandPath(commandPath: string): boolean {
-  return /\/(?:\.vite-plus|\.local\/share\/vite-plus|appdata\/local\/vite-plus)\/bin\//.test(
+  return /\/(?:\.vite-plus|\.local\/share\/vite-plus)\/bin\//.test(
     normalizeCommandPath(commandPath),
   );
 }
@@ -251,41 +232,8 @@ function isMiseCommandPath(commandPath: string): boolean {
     normalized.includes("/mise/installs/") ||
     normalized.includes("/mise/shims/") ||
     normalized.includes("/mise/command-wrappers/") ||
-    /\/mise(?:\.exe)?$/.test(normalized)
+    normalized.endsWith("/mise")
   );
-}
-
-const winGetClaudeCommandPath =
-  /^[a-z]:\/(?:users\/[^/]+\/appdata\/local\/microsoft|program files(?: \(x86\))?)\/winget\/(?:links|packages\/anthropic\.claudecode_[^/]+)\/claude\.exe$/;
-
-function isWinGetClaudeCommandPath(commandPath: string): boolean {
-  return winGetClaudeCommandPath.test(normalizeCommandPath(commandPath));
-}
-
-const CHOCOLATEY_CLAUDE_PACKAGE_ID = "claude-code";
-
-// Chocolatey's executable shim is not a symlink, so realpath cannot prove its owner.
-const chocolateyClaudeCommandPath = /\/chocolatey\/(?:bin|lib\/claude-code\/tools)\/claude\.exe$/;
-
-function isChocolateyClaudeCommandPath(commandPath: string, env: NodeJS.ProcessEnv): boolean {
-  const normalized = normalizeCommandPath(commandPath);
-  if (chocolateyClaudeCommandPath.test(normalized)) return true;
-  const root = nonEmptyString(env.ChocolateyInstall);
-  if (!root) return false;
-  const prefix = normalizeCommandPath(root.replace(/[\\/]+$/, ""));
-  return (
-    normalized === `${prefix}/bin/claude.exe` ||
-    normalized === `${prefix}/lib/claude-code/tools/claude.exe`
-  );
-}
-
-/** `choco search --exact --limit-output` prints `<id>|<version>` for a match and nothing otherwise. */
-export function parseChocolateyLatestVersion(output: string, packageId: string): string | null {
-  for (const line of output.split(/\r?\n/)) {
-    const [id, version] = line.trim().split("|", 2);
-    if (id?.toLowerCase() === packageId.toLowerCase()) return nonEmptyString(version);
-  }
-  return null;
 }
 
 function isPnpmGlobalCommandPath(commandPath: string): boolean {
@@ -294,7 +242,6 @@ function isPnpmGlobalCommandPath(commandPath: string): boolean {
     normalized.includes("/.local/share/pnpm/") ||
     normalized.includes("/library/pnpm/") ||
     normalized.includes("/local/share/pnpm/") ||
-    normalized.includes("/appdata/local/pnpm/") ||
     normalized.includes("/pnpm/global/")
   );
 }
@@ -303,8 +250,7 @@ export function npmGlobalPrefixFromCommandPath(
   realCommandPath: string,
   packageName: string,
 ): string | null {
-  const slashPath = realCommandPath.replaceAll("\\", "/");
-  const normalized = slashPath.toLowerCase();
+  const normalized = realCommandPath.toLowerCase();
   const packageSegment = `/lib/node_modules/${packageName.toLowerCase()}/`;
   const packageIndex = normalized.lastIndexOf(packageSegment);
   if (packageIndex < 0 || normalized.slice(0, packageIndex).includes("/node_modules/")) {
@@ -315,7 +261,7 @@ export function npmGlobalPrefixFromCommandPath(
   if (miseTool && miseTool !== "node") {
     return null;
   }
-  return packageIndex === 0 ? "/" : slashPath.slice(0, packageIndex);
+  return packageIndex === 0 ? "/" : realCommandPath.slice(0, packageIndex);
 }
 
 const HOMEBREW_KEG_PATTERN = /^(.*)\/(cellar|caskroom)\/([^/]+)\/[^/]+\//i;
@@ -329,7 +275,7 @@ export interface HomebrewOwnership {
 export function homebrewOwnershipFromCommandPath(
   realCommandPath: string,
 ): HomebrewOwnership | null {
-  const match = HOMEBREW_KEG_PATTERN.exec(realCommandPath.replaceAll("\\", "/"));
+  const match = HOMEBREW_KEG_PATTERN.exec(realCommandPath);
   if (!match) {
     return null;
   }
@@ -377,15 +323,7 @@ const runProbe = Effect.fn("runProbe")(function* (
 ) {
   const spawner = yield* ChildProcessSpawner.ChildProcessSpawner;
   const collect = Effect.gen(function* () {
-    // Windows package managers are `.cmd` shims that need the shell.
-    const resolved = yield* resolveSpawnCommand(command, args, { env, extendEnv: true });
-    const child = yield* spawner.spawn(
-      ChildProcess.make(resolved.command, resolved.args, {
-        env,
-        extendEnv: true,
-        shell: resolved.shell,
-      }),
-    );
+    const child = yield* spawner.spawn(ChildProcess.make(command, args, { env, extendEnv: true }));
     yield* Effect.addFinalizer(() => child.kill().pipe(Effect.ignore));
     // stderr is drained so a chatty tool cannot block on a full pipe.
     const [stdout, exitCode] = yield* Effect.all(
@@ -482,40 +420,6 @@ export const resolvePackageManagedProviderMaintenance = Effect.fn(
   });
   const commandPaths = [context.resolvedCommandPath, context.realCommandPath];
   const packageName = definition.npmPackageName;
-  // WinGet-managed claude update exits 0 without updating; Fab does not run winget upgrade.
-  if (
-    definition.provider === "claudeAgent" &&
-    context.platform === "win32" &&
-    commandPaths.some(isWinGetClaudeCommandPath)
-  ) {
-    return manual;
-  }
-  // Chocolatey's package directory is writable only by administrators, so an
-  // unelevated server cannot run `choco upgrade`; `claude update` through the
-  // shim installs a native copy elsewhere and leaves the shim's version alone.
-  if (
-    definition.provider === "claudeAgent" &&
-    context.platform === "win32" &&
-    commandPaths.some((commandPath) => isChocolateyClaudeCommandPath(commandPath, context.env))
-  ) {
-    const services = yield* Effect.context<ProviderMaintenanceResolverServices>();
-    return makeManualOnlyProviderMaintenanceCapabilities({
-      provider: definition.provider,
-      packageName,
-      installPath: context.realCommandPath,
-      manualCommand: "choco upgrade claude-code",
-      lookupLatestVersion: runProbe(
-        "choco",
-        ["search", CHOCOLATEY_CLAUDE_PACKAGE_ID, "--exact", "--limit-output"],
-        context.env,
-      ).pipe(
-        Effect.map((output) =>
-          output ? parseChocolateyLatestVersion(output, CHOCOLATEY_CLAUDE_PACKAGE_ID) : null,
-        ),
-        Effect.provideContext(services),
-      ),
-    });
-  }
 
   const nativeUpdate = definition.nativeUpdate;
   const nativeEnv = nativeUpdate?.env;
@@ -526,7 +430,6 @@ export const resolvePackageManagedProviderMaintenance = Effect.fn(
         updateExecutable: context.resolvedCommandPath,
         updateArgs: nativeUpdate.args,
         updateLockKey: `${definition.provider}-native`,
-        platform: context.platform,
         ...(nativeEnv
           ? { env: typeof nativeEnv === "function" ? nativeEnv(context) : nativeEnv }
           : {}),
@@ -612,7 +515,7 @@ export const resolvePackageManagedProviderMaintenance = Effect.fn(
   }
 
   // npm proof outranks a containing Homebrew keg; Homebrew Node globals still belong to npm.
-  const npmPrefix = yield* resolveNpmGlobalPrefix(context, packageName);
+  const npmPrefix = npmGlobalPrefixFromCommandPath(context.realCommandPath, packageName);
   if (npmPrefix) {
     // npm 12 requires script approval to install native binaries; older npm only warns about the flag.
     return makeProviderMaintenanceCapabilities({
@@ -732,43 +635,13 @@ const isVoltaPackageInstall = Effect.fn("isVoltaPackageInstall")(function* (
   packageName: string,
 ) {
   const path = yield* Path.Path;
-  if (
-    path.basename(normalizeCommandPath(context.realCommandPath)).replace(/\.exe$/, "") !==
-    "volta-shim"
-  ) {
+  if (path.basename(normalizeCommandPath(context.realCommandPath)) !== "volta-shim") {
     return false;
   }
   const voltaHome = path.dirname(path.dirname(context.resolvedCommandPath));
   const packageDir = path.join(voltaHome, "tools", "image", "packages", ...packageName.split("/"));
   const fileSystem = yield* FileSystem.FileSystem;
   return yield* fileSystem.exists(packageDir).pipe(Effect.orElseSucceed(() => false));
-});
-
-const resolveNpmGlobalPrefix = Effect.fn("resolveNpmGlobalPrefix")(function* (
-  context: ProviderMaintenanceResolutionContext,
-  packageName: string,
-) {
-  const fromRealPath = npmGlobalPrefixFromCommandPath(context.realCommandPath, packageName);
-  if (fromRealPath) {
-    return fromRealPath;
-  }
-  if ((yield* HostProcess.Platform) !== "win32") {
-    return null;
-  }
-  const fileSystem = yield* FileSystem.FileSystem;
-  const path = yield* Path.Path;
-  const shimDir = path.dirname(context.resolvedCommandPath);
-  const manifestPath = path.join(
-    shimDir,
-    "node_modules",
-    ...packageName.split("/"),
-    "package.json",
-  );
-  // Windows npm shims sit beside node_modules; POSIX project checkouts can mimic this layout.
-  const hasManifest = yield* fileSystem
-    .exists(manifestPath)
-    .pipe(Effect.orElseSucceed(() => false));
-  return hasManifest ? shimDir : null;
 });
 
 export function makePackageManagedProviderMaintenanceResolver(
@@ -878,7 +751,6 @@ export const resolveProviderMaintenanceCapabilitiesEffect = Effect.fn(
     resolvedCommandPath,
     realCommandPath,
     env,
-    platform: yield* HostProcess.Platform,
   });
 }, Effect.flatMap(withConfiguredNpmVersionLookup));
 
@@ -949,10 +821,7 @@ export function createProviderVersionAdvisory(input: {
     status: advisory.status,
     currentVersion: input.currentVersion,
     latestVersion,
-    updateCommand:
-      resolveLatestProviderUpdateAction(capabilities, latestVersion)?.command ??
-      capabilities.manualCommand ??
-      null,
+    updateCommand: resolveLatestProviderUpdateAction(capabilities, latestVersion)?.command ?? null,
     canUpdate: capabilities.update !== null,
     canInstallVersion: makeTargetedProviderUpdateAction(capabilities, "0.0.0") !== null,
     checkedAt: input.checkedAt ?? null,

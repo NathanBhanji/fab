@@ -71,11 +71,7 @@ const decodeOpenCodeSettings = Schema.decodeSync(OpenCodeSettings);
 const DRIVER_KIND = ProviderDriverKind.make("opencode");
 
 function isOpenCodeNativeCommandPath(commandPath: string): boolean {
-  const normalized = normalizeCommandPath(commandPath);
-  return (
-    normalized.endsWith("/.opencode/bin/opencode") ||
-    normalized.endsWith("/.opencode/bin/opencode.exe")
-  );
+  return normalizeCommandPath(commandPath).endsWith("/.opencode/bin/opencode");
 }
 
 /** Update only within the installed package generation; 2.x converts the shared database in place. */

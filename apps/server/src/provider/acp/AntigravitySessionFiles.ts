@@ -47,8 +47,8 @@ const warnRuntimeTempLeftovers = Effect.logWarning(
 );
 
 /**
- * Sweep only private runtimes before launch; Windows does not protect live extracted data files from deletion.
- * Moves leftovers aside and returns their slow deletion (seconds on Windows) to run off the startup path.
+ * Sweep only private runtimes before launch.
+ * Moves leftovers aside and returns their slow deletion to run off the startup path.
  */
 export const retireAntigravityRuntimeTempDirs = Effect.fn("retireAntigravityRuntimeTempDirs")(
   function* (tempDirectory: string) {

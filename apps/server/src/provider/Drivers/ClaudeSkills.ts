@@ -104,19 +104,10 @@ function parseSkillFrontmatter(contents: string): SkillFrontmatter {
   };
 }
 
-function claudeManagedSettingsPath(
-  path: Path.Path,
-  platform: NodeJS.Platform,
-  environment: NodeJS.ProcessEnv,
-): string | undefined {
-  if (platform === "darwin") {
-    return "/Library/Application Support/ClaudeCode/managed-settings.json";
-  }
-  if (platform === "win32") {
-    const programData = environment.PROGRAMDATA?.trim();
-    return programData ? path.join(programData, "ClaudeCode", "managed-settings.json") : undefined;
-  }
-  return "/etc/claude-code/managed-settings.json";
+function claudeManagedSettingsPath(platform: NodeJS.Platform): string {
+  return platform === "darwin"
+    ? "/Library/Application Support/ClaudeCode/managed-settings.json"
+    : "/etc/claude-code/managed-settings.json";
 }
 
 /** Claude Code settings files, lowest precedence first. */
@@ -125,10 +116,8 @@ function claudeSettingsPaths(
   configDirPath: string,
   cwd: string | undefined,
   platform: NodeJS.Platform,
-  environment: NodeJS.ProcessEnv,
   repositoryRoot?: string,
 ): ReadonlyArray<string> {
-  const managedPath = claudeManagedSettingsPath(path, platform, environment);
   const root = repositoryRoot !== undefined && repositoryRoot !== cwd ? repositoryRoot : undefined;
   return [
     path.join(configDirPath, "settings.json"),
@@ -139,7 +128,7 @@ function claudeSettingsPaths(
         ]
       : []),
     ...(root ? [path.join(root, ".claude", "settings.local.json")] : []),
-    ...(managedPath ? [managedPath] : []),
+    claudeManagedSettingsPath(platform),
   ];
 }
 
@@ -240,7 +229,6 @@ function parseSkillOverride(value: typeof SkillOverrideValue.Type): SkillOverrid
 const readSkillSettings = Effect.fn("readSkillSettings")(function* (
   configDirPath: string,
   cwd: string | undefined,
-  environment: NodeJS.ProcessEnv,
 ) {
   const fileSystem = yield* FileSystem.FileSystem;
   const path = yield* Path.Path;
@@ -254,7 +242,6 @@ const readSkillSettings = Effect.fn("readSkillSettings")(function* (
     configDirPath,
     cwd,
     platform,
-    environment,
     repositoryRoot,
   )) {
     const contents = yield* fileSystem
@@ -452,13 +439,7 @@ export const readClaudeSettingsEnv = Effect.fn("readClaudeSettingsEnv")(function
   const platform = yield* HostProcess.Platform;
   const configDirPath = yield* resolveClaudeConfigDirPath(config, environment, cwd);
   const settingsEnv: typeof SettingsEnv.Type = {};
-  for (const settingsPath of claudeSettingsPaths(
-    path,
-    configDirPath,
-    undefined,
-    platform,
-    environment,
-  )) {
+  for (const settingsPath of claudeSettingsPaths(path, configDirPath, undefined, platform)) {
     const contents = yield* fileSystem
       .readFileString(settingsPath)
       .pipe(Effect.orElseSucceed(() => undefined));
@@ -498,11 +479,7 @@ export const discoverClaudeSkills = Effect.fn("discoverClaudeSkills")(function* 
   const fileSystem = yield* FileSystem.FileSystem;
   const path = yield* Path.Path;
   const configDirPath = yield* resolveClaudeConfigDirPath(config, environment ?? process.env, cwd);
-  const { skillOverrides, enabledPlugins } = yield* readSkillSettings(
-    configDirPath,
-    cwd,
-    environment ?? process.env,
-  );
+  const { skillOverrides, enabledPlugins } = yield* readSkillSettings(configDirPath, cwd);
 
   const roots: ReadonlyArray<ClaudeSkillRoot> = [
     { directory: path.join(configDirPath, "skills"), scope: "user" },

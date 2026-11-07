@@ -94,9 +94,7 @@ export const hasClaudeManagedMcpConfig = Effect.fn("hasClaudeManagedMcpConfig")(
   const managedMcpConfigPath =
     platform === "darwin"
       ? "/Library/Application Support/ClaudeCode/managed-mcp.json"
-      : platform === "win32"
-        ? "C:\\Program Files\\ClaudeCode\\managed-mcp.json"
-        : "/etc/claude-code/managed-mcp.json";
+      : "/etc/claude-code/managed-mcp.json";
   return yield* fileSystem.exists(managedMcpConfigPath).pipe(Effect.orElseSucceed(() => false));
 });
 

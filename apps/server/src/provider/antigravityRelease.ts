@@ -62,28 +62,6 @@ const releaseAssets = new Map<string, AntigravityReleaseAsset>([
       harness: { name: "localharness_external", bytes: 127_512_832 },
     },
   ],
-  [
-    "win32-x64",
-    {
-      version: ANTIGRAVITY_RELEASE_VERSION,
-      url: "https://dl.google.com/agy-extensions/releases/windows/agy-acp-server-1.4.5-windows-x86_64.zip",
-      sha256: "d24f4c73c9f96d4f44384e281c855a56c72d8eaa9c5b0fad7ccb1635c6b63f50",
-      archiveBytes: 100_423_655,
-      executable: { name: "agy_acp_server.exe", bytes: 55_839_864 },
-      harness: { name: "localharness_external.exe", bytes: 147_843_736 },
-    },
-  ],
-  [
-    "win32-arm64",
-    {
-      version: ANTIGRAVITY_RELEASE_VERSION,
-      url: "https://dl.google.com/agy-extensions/releases/windows/agy-acp-server-1.4.5-windows-arm64.zip",
-      sha256: "ab0a9aac8349e08ef289be6d16da8f89e3abe60eba5158032ef78c4a1220261c",
-      archiveBytes: 102_703_121,
-      executable: { name: "agy_acp_server.exe", bytes: 62_293_488 },
-      harness: { name: "localharness_external.exe", bytes: 139_322_008 },
-    },
-  ],
 ]);
 
 export function resolveAntigravityReleaseAsset(

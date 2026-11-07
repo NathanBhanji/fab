@@ -6,7 +6,6 @@ import {
   type ProviderSendTurnInput,
   type RuntimeMode,
 } from "@fab/contracts";
-import * as HostProcess from "@fab/shared/HostProcess";
 import * as SecureRandom from "effect/crypto/SecureRandom";
 import * as Effect from "effect/Effect";
 import * as FileSystem from "effect/FileSystem";
@@ -373,7 +372,6 @@ export const buildAntigravityPrompt = Effect.fn("buildAntigravityPrompt")(functi
   const fileSystem = yield* FileSystem.FileSystem;
   const path = yield* Path.Path;
   // The agent runs on this host.
-  const platform = yield* HostProcess.Platform;
   const blocks: Array<EffectAcpSchema.ContentBlock> = [];
   const text = input.input?.trim();
   if (text) blocks.push({ type: "text", text });
@@ -393,9 +391,6 @@ export const buildAntigravityPrompt = Effect.fn("buildAntigravityPrompt")(functi
       attachment.type === "file" &&
       mimeType === "video/mp4" &&
       isQualifiedAntigravityRelease(input.agentVersion) &&
-      // The agent turns a file URI into a path with unquote(urlparse(uri).path), which drops
-      // Windows drives and UNC hosts. Keep the saved path there until Google fixes it.
-      platform !== "win32" &&
       antigravityModelAcceptsVideo(input.currentModel);
     const textFile =
       attachment.type === "file" &&

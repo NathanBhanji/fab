@@ -3147,9 +3147,7 @@ describe("PiAdapterV2", () => {
 
   it.effect.each([
     { toolName: "bash", exitCode: 0, legacy: false },
-    { toolName: "powershell", exitCode: 2, legacy: false },
     { toolName: "bash", exitCode: 1, legacy: true },
-    { toolName: "powershell", exitCode: 0, legacy: true },
   ])(
     "normalizes $toolName command results, exit=$exitCode legacy=$legacy",
     ({ toolName, exitCode, legacy }) =>
@@ -4748,24 +4746,22 @@ process.stdin.on("end", () => note("stdin end")).resume();
 process.stdout.write('{"type":"ready"}\\n');
 `;
 
-  it.live.skipIf(HostProcess.Platform.defaultValue() === "win32")(
-    "signals pi before its stdin reaches EOF",
-    () =>
-      Effect.gen(function* () {
-        const fileSystem = yield* FileSystem.FileSystem;
-        const cuesPath = `${yield* fileSystem.makeTempDirectoryScoped()}/cues`;
-        yield* Effect.gen(function* () {
-          const connection = yield* makePiRpcConnection({
-            command: process.execPath,
-            args: ["-e", recordShutdownCues, cuesPath],
-            cwd: undefined,
-            env: {},
-          });
-          assert.equal((yield* Queue.take(connection.events))["type"], "ready");
-        }).pipe(Effect.scoped);
+  it.live("signals pi before its stdin reaches EOF", () =>
+    Effect.gen(function* () {
+      const fileSystem = yield* FileSystem.FileSystem;
+      const cuesPath = `${yield* fileSystem.makeTempDirectoryScoped()}/cues`;
+      yield* Effect.gen(function* () {
+        const connection = yield* makePiRpcConnection({
+          command: process.execPath,
+          args: ["-e", recordShutdownCues, cuesPath],
+          cwd: undefined,
+          env: {},
+        });
+        assert.equal((yield* Queue.take(connection.events))["type"], "ready");
+      }).pipe(Effect.scoped);
 
-        const cues = (yield* fileSystem.readFileString(cuesPath)).split("\n").filter(Boolean);
-        assert.deepEqual(cues, ["SIGTERM"]);
-      }).pipe(Effect.provide(NodeServices.layer)),
+      const cues = (yield* fileSystem.readFileString(cuesPath)).split("\n").filter(Boolean);
+      assert.deepEqual(cues, ["SIGTERM"]);
+    }).pipe(Effect.provide(NodeServices.layer)),
   );
 });

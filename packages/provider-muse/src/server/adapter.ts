@@ -67,7 +67,6 @@ import {
   museApprovalMode,
   museCanonicalPath,
   musePermissionProfile,
-  museWorkspaceRoot,
   type createMuseSdkHost,
   type MuseSdkHost,
 } from "./sdk.ts";
@@ -296,7 +295,6 @@ export const makeMuseAdapterV2 = Effect.fn("makeMuseAdapterV2")(function* (
       // Native realpath also corrects filesystem case, which Muse validates.
       const requestedCwd = input.runtimePolicy.cwd ?? providerHost.paths.cwd;
       const cwd = yield* museCanonicalPath(requestedCwd);
-      const workspaceRoot = yield* museWorkspaceRoot(cwd);
       const now = yield* DateTime.now;
       let session: OrchestrationV2ProviderSession = {
         id: input.providerSessionId,
@@ -2084,7 +2082,7 @@ export const makeMuseAdapterV2 = Effect.fn("makeMuseAdapterV2")(function* (
                 ],
                 displayText: turnInput.message.text || "Image attachment",
                 // Resumed sessions retain old roots; pin edits to the current checkout.
-                workspaceRoots: [workspaceRoot],
+                workspaceRoots: [cwd],
                 ifBusy: "queue",
                 ...(effort ? { reasoningEffort: effort } : {}),
               },

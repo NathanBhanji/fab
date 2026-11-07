@@ -191,13 +191,11 @@ export const makeAcpRegistryAdapterV2 = Effect.fn("makeAcpRegistryAdapterV2")(fu
   const isCopilot =
     registryAgentId === "github-copilot-cli" ||
     (options.settings.source === "local" &&
-      /^copilot(\.exe|\.cmd)?$/i.test(options.settings.commandPath.split(/[\\/]/).pop() ?? ""));
+      /^copilot$/i.test(options.settings.commandPath.split("/").pop() ?? ""));
   const isClaude =
     registryAgentId === "claude-acp" ||
     (options.settings.source === "local" &&
-      /^claude-agent-acp(\.exe|\.cmd)?$/i.test(
-        options.settings.commandPath.split(/[\\/]/).pop() ?? "",
-      ));
+      /^claude-agent-acp$/i.test(options.settings.commandPath.split("/").pop() ?? ""));
   const runtimeOptions = isClaude
     ? {
         ...options,

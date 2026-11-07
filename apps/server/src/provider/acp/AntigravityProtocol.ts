@@ -354,13 +354,12 @@ function localImagePath(imagePath: string | undefined): string | undefined {
     try {
       const url = new URL(path);
       if (url.hostname && url.hostname !== "localhost") return undefined;
-      const pathname = decodeURIComponent(url.pathname);
-      return /^\/[a-z]:\//i.test(pathname) ? pathname.slice(1) : pathname;
+      return decodeURIComponent(url.pathname);
     } catch {
       return undefined;
     }
   }
-  return /^[a-z][a-z\d+.-]*:/i.test(path) && !/^[a-z]:[\\/]/i.test(path) ? undefined : path;
+  return /^[a-z][a-z\d+.-]*:/i.test(path) ? undefined : path;
 }
 
 function hasTruncatedText(value: unknown): boolean {

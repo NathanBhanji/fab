@@ -32,9 +32,7 @@ const update = makePackageManagedProviderMaintenanceResolver({
     isCommandPath: (commandPath) => {
       const normalized = normalizeCommandPath(commandPath);
       return (
-        normalized.endsWith("/.local/bin/claude") ||
-        normalized.endsWith("/.local/bin/claude.exe") ||
-        normalized.includes("/.local/share/claude/")
+        normalized.endsWith("/.local/bin/claude") || normalized.includes("/.local/share/claude/")
       );
     },
   },
@@ -46,11 +44,7 @@ const readUpdateChannel = Effect.fn("ClaudeMaintenance.readUpdateChannel")(funct
   const environment = yield* HostProcess.Environment;
   const platform = yield* HostProcess.Platform;
   const managedDirectory =
-    platform === "darwin"
-      ? "/Library/Application Support/ClaudeCode"
-      : platform === "win32"
-        ? path.join(environment.PROGRAMFILES || "C:\\Program Files", "ClaudeCode")
-        : "/etc/claude-code";
+    platform === "darwin" ? "/Library/Application Support/ClaudeCode" : "/etc/claude-code";
   const dropInDirectory = path.join(managedDirectory, "managed-settings.d");
   const dropIns = yield* fs.readDirectory(dropInDirectory).pipe(Effect.orElseSucceed(() => []));
   // The updater inherits the server's config directory, not the instance's homePath.

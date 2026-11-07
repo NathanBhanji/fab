@@ -110,16 +110,9 @@ it.live("discovers models through a home-relative OpenCode wrapper", () =>
         });
       }`,
     );
-    const windows = (yield* HostProcess.Platform) === "win32";
-    const wrapperPath = windows ? `${binaryPath}.cmd` : binaryPath;
     const node = yield* HostProcess.ExecutablePath;
-    yield* fs.writeFileString(
-      wrapperPath,
-      windows
-        ? `@echo off\r\n"${node}" "${scriptPath}" %*\r\n`
-        : `#!/bin/sh\nexec "${node}" "${scriptPath}" "$@"\n`,
-    );
-    if (!windows) yield* fs.chmod(wrapperPath, 0o755);
+    yield* fs.writeFileString(binaryPath, `#!/bin/sh\nexec "${node}" "${scriptPath}" "$@"\n`);
+    yield* fs.chmod(binaryPath, 0o755);
 
     const instance = yield* OpenCodeDriver.create({
       instanceId: ProviderInstanceId.make("opencode-home"),
@@ -128,7 +121,7 @@ it.live("discovers models through a home-relative OpenCode wrapper", () =>
       enabled: true,
       config: {
         ...OpenCodeDriver.defaultConfig(),
-        binaryPath: windows ? "~/opencode.cmd" : "~/opencode",
+        binaryPath: "~/opencode",
       },
     }).pipe(Effect.provideService(HostProcess.HomeDirectory, home));
     const snapshot = yield* instance.snapshot.refresh;
@@ -546,7 +539,7 @@ const resolveUpdate = (generation: "v1" | "v2", binaryPath: string) =>
     Effect.provide(Layer.mergeAll(NodeServices.layer, NodeCrypto.layer)),
   );
 
-it.effect.skipIf(HostProcess.Platform.defaultValue() === "win32")(
+it.effect(
   "updates npm-global OpenCode by generation and runs upgrade only for its own installer's path",
   () =>
     Effect.gen(function* () {
@@ -628,7 +621,7 @@ const layerUpdate = Layer.mergeAll(
 ).pipe(Layer.provideMerge(Layer.mergeAll(NodeServices.layer, NodeCrypto.layer)));
 
 it.layer(layerUpdate)("OpenCodeDriver updates", (it) => {
-  it.effect.skipIf(HostProcess.Platform.defaultValue() === "win32")(
+  it.effect(
     "offers no package update for an unknown version and follows a changed one on a fresh read",
     () =>
       Effect.gen(function* () {
