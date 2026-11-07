@@ -126,7 +126,7 @@ vi.mock(import("~/previewStateStore"), async (original) => ({
 }));
 vi.mock(import("~/state/environments"), async (original) => ({
   ...(await original()),
-  useEnvironment: (() => ({ label: "WSL" })) as never,
+  useEnvironment: (() => ({ label: "Linux" })) as never,
   useEnvironmentHttpBaseUrl: () => "http://172.25.85.75:3773",
   usePrimaryEnvironmentId: () => null,
 }));

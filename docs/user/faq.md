@@ -81,7 +81,7 @@ On iPhone, yes. You need iOS 26 or later. Tap the mic in the composer, talk, che
 
 ## Does it work on Windows, Mac, and Linux?
 
-Yes, all three. Desktop app, CLI, the works. One catch: there is no `fab` binary for Intel Macs, so use the desktop app there. Windows folks can also run agents inside WSL. [Install](./install.md)
+Yes, all three. Desktop app, CLI, the works. One catch: there is no `fab` binary for Intel Macs, so use the desktop app there. [Install](./install.md)
 
 ## Why is my provider not showing up?
 

@@ -28,7 +28,6 @@ import * as DesktopBackendManager from "./DesktopBackendManager.ts";
 import * as DesktopObservability from "../app/DesktopObservability.ts";
 import * as DesktopTelemetryPublisher from "../telemetry/DesktopTelemetryPublisher.ts";
 import * as DesktopBrowserHost from "../preview/DesktopBrowserHost.ts";
-import * as DesktopWslEnvironment from "../wsl/DesktopWslEnvironment.ts";
 
 const decodeDesktopBackendBootstrap = Schema.decodeEffect(
   Schema.fromJsonString(DesktopBackendBootstrap),
@@ -55,11 +54,8 @@ const baseConfig: DesktopBackendManager.DesktopBackendStartConfig = {
     desktopTelemetryFd: 4,
     desktopTelemetryControlFd: 5,
   },
-  bootstrapDelivery: "fd3",
-  extendEnv: true,
   httpBaseUrl: new URL("http://127.0.0.1:3773"),
   captureOutput: true,
-  preflightFailure: Option.none(),
 };
 
 const configWithObservability: DesktopBackendBootstrapValue = {
@@ -127,9 +123,6 @@ interface MakeInstanceInput {
   readonly onStartupFailure?: (
     failure: DesktopBackendManager.BackendStartupFailure,
   ) => Effect.Effect<void>;
-  readonly onPreflightFailed?: (
-    failure: DesktopBackendManager.PreflightFailure,
-  ) => Effect.Effect<boolean>;
   readonly config?: DesktopBackendManager.DesktopBackendStartConfig;
   readonly configResolve?: Effect.Effect<
     DesktopBackendManager.DesktopBackendStartConfig,
@@ -139,7 +132,6 @@ interface MakeInstanceInput {
   readonly desktopTelemetryPublisher?: Partial<
     DesktopTelemetryPublisher.DesktopTelemetryPublisher["Service"]
   >;
-  readonly pruneRuntimes?: (distro: string | null, runtimeId: string) => Effect.Effect<void>;
 }
 
 function makeTestInstance(input: MakeInstanceInput) {
@@ -173,9 +165,6 @@ function makeTestInstance(input: MakeInstanceInput) {
       ...input.desktopTelemetryPublisher,
     }),
     DesktopBrowserHost.layer,
-    DesktopWslEnvironment.layerTest(
-      input.pruneRuntimes === undefined ? {} : { pruneRuntimes: input.pruneRuntimes },
-    ),
   );
 
   const instance = DesktopBackendManager.makeBackendInstance({
@@ -185,7 +174,6 @@ function makeTestInstance(input: MakeInstanceInput) {
     ...(input.onReady ? { onReady: () => input.onReady! } : {}),
     ...(input.onShutdown ? { onShutdown: () => input.onShutdown! } : {}),
     ...(input.onStateDirOwned ? { onStateDirOwned: () => input.onStateDirOwned! } : {}),
-    ...(input.onPreflightFailed ? { onPreflightFailed: input.onPreflightFailed } : {}),
     ...(input.onStartupFailure ? { onStartupFailure: input.onStartupFailure } : {}),
   });
 

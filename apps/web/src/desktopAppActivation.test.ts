@@ -59,7 +59,7 @@ describe("desktop app activation", () => {
     expect(response).toMatchObject({ ok: true, projectId: createdProjectId });
   });
 
-  it("rejects a Windows path when the primary environment is WSL", async () => {
+  it("rejects a Windows path when the primary environment is Linux", async () => {
     const response = await handleDesktopAppActivationRequest(
       { ...request, platform: "win32" },
       dependencies({ getTarget: () => ({ environmentId, platform: "linux" }) }),

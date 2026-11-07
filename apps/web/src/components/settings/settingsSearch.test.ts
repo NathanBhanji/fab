@@ -107,7 +107,6 @@ describe("searchSettings", () => {
   it("hides desktop-only settings from browser search", () => {
     expect(SETTINGS_SEARCH_ITEMS.some((item) => item.id === "quit-confirmation")).toBe(true);
     expect(searchSettings("hold to quit")).toEqual([]);
-    expect(searchSettings("wsl")).toEqual([]);
     expect(searchSettings("update track")).toEqual([]);
   });
 
@@ -118,7 +117,6 @@ describe("searchSettings", () => {
       hasProviderSettingsEnvironment: false,
       hasMacProviderSettingsEnvironment: false,
       canManageLocalBackend: false,
-      isWslSettingsRowVisible: false,
       hasThreadAutoSettlement: false,
     });
 
@@ -136,7 +134,6 @@ describe("searchSettings", () => {
       "fab-connect",
       "hold-webhooks-while-offline",
       "tailscale-https",
-      "wsl-backend",
       "auto-settle-inactive-threads",
       "auto-settle-merged-threads",
       "days-before-auto-settle",
@@ -153,7 +150,6 @@ describe("searchSettings", () => {
       hasMacProviderSettingsEnvironment: false,
       canManageLocalBackend: false,
       localEnvironmentDisabled: true,
-      isWslSettingsRowVisible: false,
       hasThreadAutoSettlement: false,
     };
     const results = (hasPeerLinkHost: boolean) =>
@@ -264,7 +260,6 @@ describe("auto-settlement search availability", () => {
       hasProviderSettingsEnvironment: true,
       hasMacProviderSettingsEnvironment: false,
       canManageLocalBackend: false,
-      isWslSettingsRowVisible: false,
       hasThreadAutoSettlement: availability.eligibleEnvironmentIds.length > 0,
     });
     expect(searchSettings("auto-settle", items).map((item) => item.id)).toEqual([

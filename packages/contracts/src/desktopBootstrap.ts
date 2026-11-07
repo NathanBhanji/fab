@@ -11,13 +11,12 @@ export const DesktopBackendBootstrap = Schema.Struct({
   mode: Schema.Literal("desktop"),
   noBrowser: Schema.Boolean,
   port: PortSchema,
-  // Omit in WSL to use the Linux home instead of the mapped Windows directory.
   fabHome: Schema.optional(Schema.String),
   host: Schema.String,
   desktopBootstrapToken: Schema.String,
   // Derives rotating tokens instead of trusting desktopBootstrapToken indefinitely; see @fab/shared/desktopBootstrapToken.
   desktopBootstrapSecret: Schema.optionalKey(Schema.String),
-  // Absent means the backend must hydrate PATH, as WSL and older desktops require.
+  // Absent means the backend must hydrate PATH, as older desktops require.
   shellEnvironmentPrepared: Schema.optionalKey(Schema.Boolean),
   tailscaleServeEnabled: Schema.Boolean,
   tailscaleServePort: PortSchema,

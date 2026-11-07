@@ -41,8 +41,6 @@ export interface UpdatesHarnessOptions {
   readonly appVersion?: string;
   /** Starts from in-memory settings with this track saved, as after a restart. */
   readonly savedChannel?: DesktopAppSettings.DesktopSettings["updateChannel"];
-  /** Adds a WSL backend beside the primary, as on a Windows host with WSL enabled. */
-  readonly wslBackend?: boolean;
 }
 
 export function makeHarness(options: UpdatesHarnessOptions = {}) {
@@ -159,17 +157,7 @@ export function makeHarness(options: UpdatesHarnessOptions = {}) {
     waitForReady: () => Effect.succeed(true),
   };
   const layerBackend = DesktopBackendPool.layerTest(
-    options.backendInstances ??
-      (options.wslBackend
-        ? [
-            stubBackendInstance,
-            {
-              ...stubBackendInstance,
-              id: DesktopBackendPool.BackendInstanceId("wsl:Ubuntu"),
-              label: Effect.succeed("Ubuntu"),
-            },
-          ]
-        : [stubBackendInstance]),
+    options.backendInstances ?? [stubBackendInstance],
   );
 
   const layerEnvironment = DesktopEnvironment.layer({
@@ -227,12 +215,7 @@ export function makeHarness(options: UpdatesHarnessOptions = {}) {
                     }),
                   ),
                 ),
-          setWslBackendEnabled: () => Effect.die("unexpected WSL backend toggle"),
-          setWslDistro: () => Effect.die("unexpected WSL distro change"),
           setLocalEnvironmentEnabled: () => Effect.die("unexpected local environment toggle"),
-          setWslOnly: () => Effect.die("unexpected WSL-only toggle"),
-          applyWslWindowsFallback: Effect.die("unexpected WSL Windows fallback"),
-          applyWslWindowsFallbackInMemory: Effect.die("unexpected WSL Windows fallback"),
         } satisfies DesktopAppSettings.DesktopAppSettings["Service"])
       : DesktopAppSettings.layer;
 

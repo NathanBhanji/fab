@@ -252,7 +252,7 @@ describe("localSwitchBlockReason", () => {
 
     const windows = { connected: true, databaseMigration: 69 };
     expect(localSwitchBlockReason(nightly, stable, [windows], 1)).toBeNull();
-    // A WSL server's newer migration blocks the reinstall that would restart it.
+    // A second local backend's newer migration blocks the reinstall that would restart it.
     expect(
       localSwitchBlockReason(
         nightly,
@@ -261,7 +261,7 @@ describe("localSwitchBlockReason", () => {
         2,
       ),
     ).toContain("does not support yet");
-    // A WSL backend still starting has no client entry, so its database is unchecked.
+    // A local backend still starting has no client entry, so its database is unchecked.
     expect(localSwitchBlockReason(nightly, stable, [windows], 2)).toBe(
       "its server is not connected, so its database cannot be checked",
     );
@@ -337,7 +337,7 @@ describe("describeUpdateEverything", () => {
       localVersion: "1.1.0",
       localMachines: [
         { environmentId: id("local"), label: "Mainbook" },
-        { environmentId: id("wsl"), label: "Mainbook WSL" },
+        { environmentId: id("secondary"), label: "Mainbook secondary" },
       ],
       servers: [
         {
@@ -362,7 +362,7 @@ describe("describeUpdateEverything", () => {
       rows.map(({ label, app, skipped, providers }) => [label, app, skipped, providers]),
     ).toEqual([
       ["Mainbook", "this-app", null, ["Codex"]],
-      ["Mainbook WSL", "this-app", null, []],
+      ["Mainbook secondary", "this-app", null, []],
       ["bb-1", "server", null, ["Codex", "Claude"]],
       ["alvin", null, "needs a manual update", ["Claude"]],
       ["TheoRoom", null, "not connected", []],

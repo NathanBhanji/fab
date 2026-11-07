@@ -38,13 +38,13 @@ describe("browser target resolver", () => {
     ).toBe("http://192.168.1.25:3000/app");
   });
 
-  it("keeps localhost for servers on the desktop's own WSL or primary backend", async () => {
-    // WSL NAT advertises a distro IP, but loopback-bound servers only answer on localhost.
+  it("keeps localhost for servers on the desktop's own local or primary backend", async () => {
+    // A desktop-owned backend may advertise a non-loopback IP, but loopback-bound servers only answer on localhost.
     const { resolveDiscoveredServerUrl } = await import("./browserTargetResolver");
     env.isElectron = true;
     try {
       for (const target of [
-        { _tag: "BearerConnectionTarget", connectionId: "local:wsl:Ubuntu" },
+        { _tag: "BearerConnectionTarget", connectionId: "local:secondary" },
         { _tag: "PrimaryConnectionTarget" },
       ]) {
         readPreparedConnection.mockReturnValue({ httpBaseUrl: "http://172.24.66.27:3773", target });

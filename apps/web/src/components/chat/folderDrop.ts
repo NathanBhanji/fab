@@ -25,7 +25,7 @@ export function folderDropTarget(input: {
     : "remote";
 }
 
-// A direct saved connection to loopback shares the desktop's filesystem; WSL backends and SSH forwards do not.
+// A direct saved connection to loopback shares the desktop's filesystem; desktop-local backends and SSH forwards do not.
 function isSavedLoopbackConnection({
   target,
   httpBaseUrl,

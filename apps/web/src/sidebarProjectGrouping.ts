@@ -37,7 +37,6 @@ export interface SidebarProjectSnapshot extends Project {
   groupedProjectCount: number;
   environmentPresence: EnvironmentPresence;
   allRemoteMembersAreDesktopLocal: boolean;
-  allRemoteMembersAreWsl: boolean;
   memberProjects: readonly SidebarProjectGroupMember[];
   memberProjectRefs: readonly ScopedProjectRef[];
   remoteEnvironmentLabels: readonly string[];
@@ -140,7 +139,6 @@ export function buildSidebarProjectSnapshots(input: {
   primaryEnvironmentId: EnvironmentId | null;
   resolveEnvironmentLabel: (environmentId: EnvironmentId) => string | null;
   isDesktopLocalEnvironment?: (environmentId: EnvironmentId) => boolean;
-  isWslEnvironment?: (environmentId: EnvironmentId) => boolean;
 }): SidebarProjectSnapshot[] {
   return buildProjectGroups({
     projects: input.projects,
@@ -177,12 +175,9 @@ export function buildSidebarProjectSnapshots(input: {
       .flatMap((member) => (member.environmentLabel ? [member.environmentLabel] : []))
       .filter((label, index, labels) => labels.indexOf(label) === index);
     const isDesktopLocal = input.isDesktopLocalEnvironment ?? (() => false);
-    const isWsl = input.isWslEnvironment ?? (() => false);
     const allRemoteMembersAreDesktopLocal =
       remoteMembers.length > 0 &&
       remoteMembers.every((member) => isDesktopLocal(member.environmentId));
-    const allRemoteMembersAreWsl =
-      remoteMembers.length > 0 && remoteMembers.every((member) => isWsl(member.environmentId));
 
     return {
       ...representative,
@@ -192,7 +187,6 @@ export function buildSidebarProjectSnapshots(input: {
       environmentPresence:
         hasLocal && hasRemote ? "mixed" : hasRemote ? "remote-only" : "local-only",
       allRemoteMembersAreDesktopLocal,
-      allRemoteMembersAreWsl,
       memberProjects: members,
       memberProjectRefs: group.memberProjectRefs,
       remoteEnvironmentLabels,

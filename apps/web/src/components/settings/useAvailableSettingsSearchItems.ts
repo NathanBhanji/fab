@@ -2,14 +2,10 @@ import { AuthEnvironmentMaintainScope } from "@fab/contracts";
 
 import { usePrimaryCloudLinkState } from "~/cloud/primaryCloudLinkState";
 import { hasCloudPublicConfig } from "~/cloud/publicConfig";
-import { isElectron } from "~/env";
 import { isLocalEnvironmentDisabled } from "~/localEnvironment";
-import { desktopWslStateAtom } from "~/state/desktopWslState";
 import { useEnvironments, usePrimaryEnvironmentId } from "~/state/environments";
 import { usePeerLinkHosts } from "~/state/peerLinks";
-import { useEnvironmentQuery } from "~/state/query";
 import { useEnvironmentScope } from "~/state/session";
-import { isWslSettingsRowVisible } from "./ConnectionsSettings.logic";
 import { isProviderSettingsEnvironmentAvailable } from "./ProviderSettingsPanel.logic";
 import type { SettingsScopeSearch } from "./settingsScope";
 import {
@@ -51,12 +47,7 @@ export function useAvailableSettingsSearchItems(scopeSearch: SettingsScopeSearch
     (cloudLinkState?.managedTunnelActive ?? cloudLinkState?.linked ?? false) === true;
   const localEnvironmentDisabled = isLocalEnvironmentDisabled() === true;
   const canManageLocalBackend = !localEnvironmentDisabled && canMaintain;
-  const desktopWsl = useEnvironmentQuery(
-    isElectron && canManageLocalBackend ? desktopWslStateAtom : null,
-  );
   const cloudPublicConfig = hasCloudPublicConfig() === true;
-  const wslSettingsRowVisible =
-    isWslSettingsRowVisible({ state: desktopWsl.data, error: desktopWsl.error }) === true;
 
   return filterAvailableSettingsSearchItems({
     localEnvironmentDisabled,
@@ -65,7 +56,6 @@ export function useAvailableSettingsSearchItems(scopeSearch: SettingsScopeSearch
     hasProviderSettingsEnvironment,
     hasMacProviderSettingsEnvironment,
     canManageLocalBackend,
-    isWslSettingsRowVisible: wslSettingsRowVisible,
     hasThreadAutoSettlement,
     managedTunnelActive,
     hasPeerLinkHost,
