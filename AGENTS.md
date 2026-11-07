@@ -28,7 +28,9 @@ Fab has 3 key app surfaces: **web**, **desktop**, and **mobile**.
 
 **Desktop** is the main surface most users install first. It's a full Electron app that bundles the server runner as well. The desktop app can also be used as the host server, allowing remote connections from app.fab.invalid or the mobile app.
 
-**Mobile** is a React Native app for both iOS and Android, available on the App Store and Google Play. The mobile app allows for connecting to any Fab server to control work remotely.
+**Mobile** is a React Native app for iOS. The mobile app allows for connecting to any Fab server to control work remotely.
+
+**Supported platforms** are macOS and Linux (Ubuntu) for desktop and server, and iPhone for mobile. Windows, WSL, and Android code inherited from T3 Code is unsupported: do not extend it, test it, or add new branches for it. Removing it is fine when you are already changing that code.
 
 ## A note from Theo
 
@@ -45,7 +47,7 @@ Of note: Most Fab contributions will come from Fab itself, often controlled remo
 We need to be on the same page with terminology. When communicating, use this language:
 
 - **you** means the agent reading this file and changing Fab.
-- **we, us, and maintainers** mean Theo, Julius and the people building Fab. These are who you are talking to now.
+- **we, us, and maintainers** mean Nathan and the people building Fab. These are who you are talking to now.
 - **user** means the person using Fab to direct coding agents.
 - **agent** means the coding agent a user runs inside Fab. Depending on context, that may also include you.
 - **provider** means the agent runtime or harness Fab talks to, such as Codex, Claude, Cursor, or OpenCode.
@@ -58,9 +60,15 @@ We need to be on the same page with terminology. When communicating, use this la
 
 ## The three ways to hurt yourself
 
-1. **Killing by pattern.** Never `pkill -f`, `pgrep | kill`, or `kill` a PID you found by matching a name, path, or worktree string. Your own agent process has this worktree's path in its argv, and this machine runs several other dev servers at once. Kill only a PID you captured at spawn, or the owner of your port from `ss -H -ltnp` after confirming `/proc/<pid>/cwd` is your worktree.
+1. **Killing by pattern.** Never `pkill -f`, `pgrep | kill`, or `kill` a PID you found by matching a name, path, or worktree string. Your own agent process has this worktree's path in its argv, and this machine runs several other dev servers at once. Kill only a PID you captured at spawn, or the owner of your port (`lsof -nP -iTCP:<port> -sTCP:LISTEN` on macOS, `ss -H -ltnp` on Linux) after confirming its working directory (`lsof -a -p <pid> -d cwd`, or `/proc/<pid>/cwd`) is your worktree.
 2. **Writing to the live install.** `~/.fab/userdata` is the developer's real Fab database, in use while you work. Reading it and copying from it are fine, and a good way to get real test data (see Test data). Never start a server against it, never open it read-write, never clean it up.
 3. **Baking in origins.** Never set `VITE_HTTP_URL` or `VITE_WS_URL` for dev. Dev is single-origin and Vite proxies `/api`, `/ws`, `/oauth`, and `/.well-known`. Setting them bakes localhost into the bundle and silently breaks every remote browser.
+
+## Upstream is a reference, not a source
+
+Fab was imported from [T3 Code](https://github.com/pingdotgg/t3code) v0.1.7 (`322f6544`) and has diverged on purpose. We do not sync, merge, rebase onto, or cherry-pick from upstream, and there is no intake process.
+
+When upstream ships a large feature we want, we write our own version. Before implementing a feature or fix, check whether `pingdotgg/t3code` already has it or has relevant work in progress (current code, commits, open or merged PRs). If it does, read their implementation to learn the design and its pitfalls, then implement it to fit Fab's current code, naming, and platform scope. Do not copy their files or patches wholesale, and do not reintroduce Windows, Android, or hosted-service machinery that Fab dropped. Mention the upstream PR you learned from in the PR body.
 
 ## Hit every surface
 
@@ -100,6 +108,7 @@ An empty database is a bad test. Seed your worktree's `.fab` with a copy of real
 
 - Before you push, run `vp run check:changed`. It runs CI's fast checks for changed files: format, lint, knip, typecheck of affected packages and dependents, tests beside changes, and the cross-file checks those miss. CI still runs the full test suites.
 - While you iterate, run `vp test run <files>`. For big files, add `-t "<name>"`.
+- `git diff --check` is a formatting sanity check, not a test or behavioral check. Do not cite it as proof that behavior works.
 - Use `vp run typecheck`, not `npx tsc`; it caches per package. Both run tsc-rs (`typescript` is the `@tsc-rs/typescript` drop-in).
 - Run `node -e` snippets from `apps/server` or the owning package. `effect` does not resolve from the repo root.
 - Test behavior that can break, such as orchestration and event-sourcing, provider protocol translation, auth and permission guards, persistence and migrations, external-format parsing, race fixes, and the logic a bug fix changed. Leave out tests for what types already guarantee, trivial logic, copy text, smoke runs, mock-call mirrors, callback wiring, and props rendered to static markup.
@@ -135,7 +144,7 @@ An empty database is a bad test. Seed your worktree's `.fab` with a copy of real
   });
   ```
 
-- User-visible frontend changes should get one integrated pass in a real client: `test-fab-app` for web, `test-fab-mobile` for mobile. The primary agent does this once after integrating. Subagents do not launch their own dev servers.
+- Verify user-visible frontend changes with one integrated pass in a real client: `test-fab-app` for web, `test-fab-mobile` for mobile. A component mounted in a separate harness doesn't count as evidence; synthetic data in the real client is fine. The primary agent does this once after integrating. Subagents do not launch their own dev servers.
 
 - Real agent turns cost money. To watch a turn stream through the pipeline and UI, use the free `Replay (dev)` provider that `vp run dev` registers; [test-fab-app](.agents/skills/test-fab-app/SKILL.md) shows how to start one. Use a real provider only when the change depends on that provider's behavior, and then pick its cheapest model, such as Haiku for Claude or Luna for Codex.
 
@@ -148,12 +157,14 @@ For mobile verification, a missing or outdated native client is an install step,
 ## Pull requests
 
 - Never make a PR unless the developer explicitly asks you to do so.
-- If `origin` is git.cafe, follow [GitCafe mirror](docs/operations/development.md#gitcafe-mirror-optional): push to `origin`, open and track PRs with `cafe` and their git.cafe URLs, and keep `gh` for merging.
+- This repository is `NathanBhanji/fab`. It started from `pingdotgg/t3code` but does not track it. Never open PRs or issues against upstream, and do not `@` mention upstream accounts.
 - Conventional commit titles, plain language: `fix(web): new threads no longer spike CPU`.
 - Body: the problem in a sentence or two, then how you fixed it. End with the model and harness that did the work.
 - UI changes need before/after images. Motion or timing needs a short video.
 - Upload PR evidence to GitHub. Never commit PR-only screenshots or assets such as `.github/pr-assets/`.
-- One request is one PR. Split it only when the maintainer asks. Outside contributions follow the stricter [one problem per PR](CONTRIBUTING.md#one-problem) rule.
+- Make each PR the smallest change that works on its own, even within a larger request. Small PRs are easier to review, merge sooner, and can be tested and reverted individually. Splitting by layer, such as frontend and backend, or into parts that only work once the last lands does not count.
+- Rebase standalone branches onto latest `main` before opening.
+- When the PR body is long, begin it with a `> [!NOTE]` callout containing a TL;DR.
 - When babysitting: call `watch_pull_request` and end your turn. Fab wakes you on checks, comments, or conflicts. Do not poll or sleep. Verify each bot finding against the source, fix real ones, dismiss false positives with a written reason. Stay quiet when nothing is new. Stop when the bots are green on the latest commit.
 
 ## Documentation
@@ -206,6 +217,7 @@ Architecture and its constraints: `docs/internals/overview.md`. Glossary: `docs/
 - React effects are for synchronizing with something outside React. Derive in render and act in handlers instead of syncing state, but don't hide real lifecycle work in refs or stores to dodge one. The `fab/no-unreasoned-state-sync` lint rule reports every effect; one that stays states its reason with `// oxlint-disable-next-line fab/no-unreasoned-state-sync -- <why>`.
 - Our users drive agents all day and notice a dropped frame, a lying spinner, and a stale label. No continuously repainting animations; they peg the GPU on high-refresh displays.
 - If a rule here fights the task in front of you, say so loudly and get a human sign-off before breaking it.
+- Verify your work using isolated tools, such as a headless browser. Avoid interfering with the user's applications, mouse, or keyboard; ask permission before any action that could do so.
 
 ## Additional tips
 
