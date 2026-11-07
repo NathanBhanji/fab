@@ -5,12 +5,7 @@
  * @module DesktopManagedPolicy
  */
 import type { ManagedPolicyDocument } from "@fab/contracts";
-import {
-  layerWindowsRegistry,
-  ManagedPolicyFileError,
-  readManagedPolicy,
-  WindowsRegistry,
-} from "@fab/shared/managedPolicyFile";
+import { ManagedPolicyFileError, readManagedPolicy } from "@fab/shared/managedPolicyFile";
 import * as Context from "effect/Context";
 import * as Effect from "effect/Effect";
 import * as FileSystem from "effect/FileSystem";
@@ -42,12 +37,11 @@ export const layer = Layer.effect(
           ChildProcessSpawner.ChildProcessSpawner,
           yield* ChildProcessSpawner.ChildProcessSpawner,
         ),
-        Effect.provideService(WindowsRegistry, yield* WindowsRegistry),
       ),
     );
     return DesktopManagedPolicy.of({ read });
   }),
-).pipe(Layer.provide(layerWindowsRegistry(() => import("ffi-rs"))));
+);
 
 /** A machine with `policy` deployed, one whose policy cannot be used, or none. */
 export const layerTest = (policy?: ManagedPolicyDocument | ManagedPolicyFileError) =>
