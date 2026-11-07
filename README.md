@@ -29,12 +29,6 @@ We wanted something performant, remote-ready, and truly open. If we ever go the 
 curl -fsSL https://fab.invalid/install.sh | sh
 ```
 
-On Windows, in PowerShell:
-
-```powershell
-irm https://fab.invalid/install.ps1 | iex
-```
-
 Then run `fab` to start the server and open the local web app. `fab service install` keeps it running in the background, `fab update` moves to a newer release, and `fab --help` has the full reference.
 
 To try it once without installing, run `npx fab@latest` instead.
@@ -42,18 +36,6 @@ To try it once without installing, run `npx fab@latest` instead.
 ### Desktop app
 
 Install the latest version of the desktop app from [GitHub Releases](https://github.com/nathanbhanji/fab/releases), or from your favorite package registry:
-
-#### Windows (`winget`)
-
-```bash
-winget install Bhanji.Fab
-```
-
-#### Windows (`scoop`)
-
-```bash
-scoop install extras/fab
-```
 
 #### macOS (Homebrew)
 
@@ -126,16 +108,8 @@ Building from source? Start at [docs/internals/overview.md](./docs/internals/ove
 
 Fab uses Vite+ so you'll need to install the global `vp` command-line tool.
 
-#### macOS / Linux
-
 ```bash
 curl -fsSL https://vite.plus | bash
-```
-
-#### Windows
-
-```bash
-irm https://vite.plus/ps1 | iex
 ```
 
 Checkout their getting started guide for more information: https://viteplus.dev/guide/

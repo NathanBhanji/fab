@@ -19,17 +19,13 @@ function getPlatformPath() {
     case "openbsd":
     case "linux":
       return "electron";
-    case "win32":
-      return "electron.exe";
     default:
       throw new Error(`Electron builds are not available on platform: ${hostPlatform}`);
   }
 }
 
 function ensureExecutable(filePath) {
-  if (hostPlatform !== "win32") {
-    NodeFS.chmodSync(filePath, 0o755);
-  }
+  NodeFS.chmodSync(filePath, 0o755);
 }
 
 function repairPathFile(electronDir, platformPath) {
@@ -209,7 +205,6 @@ export function ensureElectronRuntime() {
   return electronPath;
 }
 
-// `file://${argv[1]}` never matches on Windows (drive letters need `file:///C:/`).
 if (process.argv[1] && NodeURL.pathToFileURL(process.argv[1]).href === import.meta.url) {
   const electronPath = ensureElectronRuntime();
   process.stdout.write(`${electronPath}\n`);

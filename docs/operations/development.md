@@ -254,7 +254,6 @@ Local artifact builds are unsigned by default and write to `release/`:
 ```sh
 vp run dist:desktop:dmg
 vp run dist:desktop:linux
-vp run dist:desktop:win
 ```
 
 DMGs default to the host architecture. Use `--arch` to choose another target and `--keep-stage`
@@ -263,7 +262,7 @@ options.
 
 ### Prepared server bytecode
 
-Native macOS and Windows desktop artifact builds generate server bytecode with the packaged
+Native macOS desktop artifact builds generate server bytecode with the packaged
 Electron executable, after ASAR creation and before signing. Linux builds skip generation until
 native packaging and relocated AppImage reuse have been validated. macOS x64 builds on ARM64
 hosts run the packaged x64 Electron under Rosetta to generate the cache. Other cross-platform and
@@ -274,9 +273,7 @@ Worker-only modules compile normally.
 Electron's Node 24 cache has no read-only option and includes the producer UID in its directory
 name. The backend links individual prepared files into its writable cache with keys for the
 installed module paths. Node replaces files atomically, so regeneration cannot write through those
-links into signed resources. Windows uses hard links and falls back to normal caching when volumes
-differ or resource permissions prevent linking. Protected installations therefore may not reuse
-prepared bytecode. No cache bytes are copied during startup.
+links into signed resources. No cache bytes are copied during startup.
 
 The key calculation follows Node's internal portable ESM format. Generation checks that the
 packaged engine produced the expected CLI entry and fails the build if that format changes.
@@ -319,22 +316,6 @@ For a cross-architecture or universal build, add the requested Rust targets:
 ```sh
 rustup target add aarch64-apple-darwin x86_64-apple-darwin
 ```
-
-### Windows installer prerequisites
-
-Install Rust, Python 3, and Visual Studio Build Tools with **Desktop development with C++**.
-Include the Windows SDK and the MSVC build tools and Spectre-mitigated libraries for the target
-architecture. Add its Rust target:
-
-```powershell
-rustup target add x86_64-pc-windows-msvc
-# For an ARM64 installer:
-rustup target add aarch64-pc-windows-msvc
-```
-
-NSIS is downloaded by electron-builder. WSL support additionally needs the Linux CLI archive
-passed as `--wsl-runtime`; see the
-[release runbook](./release.md#windows-payload-topology-and-update-validation).
 
 ### Signing and passkeys
 

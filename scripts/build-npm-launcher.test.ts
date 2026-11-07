@@ -105,7 +105,7 @@ exit 7
 });
 
 it.layer(NodeServices.layer)("build-npm-launcher", (it) => {
-  it.effect.skipIf(HostProcess.Platform.defaultValue() === "win32")(
+  it.effect(
     "publishes a launcher that downloads, verifies, caches, and runs the release executable",
     () =>
       Effect.gen(function* () {
@@ -343,65 +343,63 @@ fs.readFileSync = (file, ...rest) => {
         );
       }),
   );
-  it.effect.skipIf(HostProcess.Platform.defaultValue() === "win32")(
-    "does not publish an unusable release",
-    () =>
-      Effect.gen(function* () {
-        const fs = yield* FileSystem.FileSystem;
-        const path = yield* Path.Path;
-        for (const executable of [
-          "#!/fab-test-missing-loader\n",
-          '#!/bin/sh\necho "runtime loader failed" >&2\nexit 42\n',
-          "#!/bin/sh\nkill -TERM $$\n",
-          '#!/bin/sh\ntrap \'echo caught > "$FAB_TEST_TERM"; exit 42\' TERM\necho ready > "$FAB_TEST_READY"\nwhile :; do :; done\n',
-        ]) {
-          const root = yield* fs.makeTempDirectoryScoped({ prefix: "fab-npm-validation-test-" });
-          const output = yield* buildNpmLauncher({
-            version: VERSION,
-            outputDir: path.join(root, "out"),
-          });
-          const release = yield* serveFakeRelease(root, executable);
-          const home = path.join(root, "home");
-          const dir = path.join(home, "runtime/versions", VERSION);
-          const probeTimeoutHook = path.join(root, "probe-timeout.mjs");
-          yield* fs.writeFileString(
-            probeTimeoutHook,
-            `import childProcess from "node:child_process";
+  it.effect("does not publish an unusable release", () =>
+    Effect.gen(function* () {
+      const fs = yield* FileSystem.FileSystem;
+      const path = yield* Path.Path;
+      for (const executable of [
+        "#!/fab-test-missing-loader\n",
+        '#!/bin/sh\necho "runtime loader failed" >&2\nexit 42\n',
+        "#!/bin/sh\nkill -TERM $$\n",
+        '#!/bin/sh\ntrap \'echo caught > "$FAB_TEST_TERM"; exit 42\' TERM\necho ready > "$FAB_TEST_READY"\nwhile :; do :; done\n',
+      ]) {
+        const root = yield* fs.makeTempDirectoryScoped({ prefix: "fab-npm-validation-test-" });
+        const output = yield* buildNpmLauncher({
+          version: VERSION,
+          outputDir: path.join(root, "out"),
+        });
+        const release = yield* serveFakeRelease(root, executable);
+        const home = path.join(root, "home");
+        const dir = path.join(home, "runtime/versions", VERSION);
+        const probeTimeoutHook = path.join(root, "probe-timeout.mjs");
+        yield* fs.writeFileString(
+          probeTimeoutHook,
+          `import childProcess from "node:child_process";
 import { syncBuiltinESMExports } from "node:module";
 const { spawnSync } = childProcess;
 childProcess.spawnSync = (command, args, options) => spawnSync(command, args,
   options?.timeout === undefined ? options : { ...options, timeout: 500 });
 syncBuiltinESMExports();
 `,
-          );
-          const env = {
-            PATH: process.env.PATH,
-            FAB_HOME: home,
-            FAB_RELEASE_BASE_URL: release.baseUrl,
-            FAB_TEST_READY: path.join(root, "probe-ready"),
-            FAB_TEST_TERM: path.join(root, "probe-term"),
-          };
-          const launcher = path.join(output.packageDir, "bin/fab.mjs");
-          const failed = yield* run(
-            process.execPath,
-            ["--import", probeTimeoutHook, launcher, "serve"],
-            { cwd: root, env },
-          );
-          assert.equal(failed.exitCode, 1, failed.stderr);
-          assert.deepStrictEqual(yield* fs.readDirectory(path.dirname(dir)), [], failed.stderr);
-          assert.include(failed.stderr, "could not run");
-          if (executable.includes("runtime loader failed")) {
-            assert.include(failed.stderr, "runtime loader failed");
-          }
-          if (executable.includes("trap")) {
-            assert.isTrue(yield* fs.exists(env.FAB_TEST_READY));
-            assert.isFalse(yield* fs.exists(env.FAB_TEST_TERM));
-          }
-          if ((yield* HostProcess.Platform) === "linux") {
-            assert.include(failed.stderr, "glibc");
-            assert.include(failed.stderr, "musl");
-          }
+        );
+        const env = {
+          PATH: process.env.PATH,
+          FAB_HOME: home,
+          FAB_RELEASE_BASE_URL: release.baseUrl,
+          FAB_TEST_READY: path.join(root, "probe-ready"),
+          FAB_TEST_TERM: path.join(root, "probe-term"),
+        };
+        const launcher = path.join(output.packageDir, "bin/fab.mjs");
+        const failed = yield* run(
+          process.execPath,
+          ["--import", probeTimeoutHook, launcher, "serve"],
+          { cwd: root, env },
+        );
+        assert.equal(failed.exitCode, 1, failed.stderr);
+        assert.deepStrictEqual(yield* fs.readDirectory(path.dirname(dir)), [], failed.stderr);
+        assert.include(failed.stderr, "could not run");
+        if (executable.includes("runtime loader failed")) {
+          assert.include(failed.stderr, "runtime loader failed");
         }
-      }),
+        if (executable.includes("trap")) {
+          assert.isTrue(yield* fs.exists(env.FAB_TEST_READY));
+          assert.isFalse(yield* fs.exists(env.FAB_TEST_TERM));
+        }
+        if ((yield* HostProcess.Platform) === "linux") {
+          assert.include(failed.stderr, "glibc");
+          assert.include(failed.stderr, "musl");
+        }
+      }
+    }),
   );
 });

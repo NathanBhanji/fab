@@ -10,7 +10,7 @@ const { version } = JSON.parse(
   fs.readFileSync(path.join(import.meta.dirname, "../package.json"), "utf8"),
 );
 
-const SUPPORTED = ["darwin-arm64", "linux-arm64", "linux-x64", "win32-arm64", "win32-x64"];
+const SUPPORTED = ["darwin-arm64", "linux-arm64", "linux-x64"];
 
 function fabHome() {
   const raw = (process.env.FAB_HOME || "").trim();
@@ -62,7 +62,7 @@ async function download(url, file) {
 }
 
 async function install(dir, key) {
-  const archive = `fab-${version}-${key}.${process.platform === "win32" ? "zip" : "tar.gz"}`;
+  const archive = `fab-${version}-${key}.tar.gz`;
   const base = (
     process.env.FAB_RELEASE_BASE_URL || "https://github.com/nathanbhanji/fab/releases/download"
   ).replace(/\/+$/, "");
@@ -82,24 +82,17 @@ async function install(dir, key) {
     if ((await download(`${base}/v${version}/${archive}`, file)) !== line[1].toLowerCase()) {
       throw new Error(`checksum mismatch for ${archive}`);
     }
-    // Windows' own tar.exe reads zip; a Git-for-Windows tar on PATH cannot.
-    const tar =
-      process.platform === "win32" ? `${process.env.SystemRoot}\\System32\\tar.exe` : "tar";
-    const extract = spawnSync(tar, ["-xf", file, "-C", staging, "--strip-components=1"], {
+    const extract = spawnSync("tar", ["-xf", file, "-C", staging, "--strip-components=1"], {
       stdio: "inherit",
     });
     if (extract.status !== 0) throw new Error(`could not extract ${archive}`);
     fs.rmSync(file);
-    const validate = spawnSync(
-      path.join(staging, process.platform === "win32" ? "fab.exe" : "fab"),
-      ["--version"],
-      {
-        stdio: ["ignore", "ignore", "pipe"],
-        encoding: "utf8",
-        timeout: 30_000,
-        killSignal: "SIGKILL",
-      },
-    );
+    const validate = spawnSync(path.join(staging, "fab"), ["--version"], {
+      stdio: ["ignore", "ignore", "pipe"],
+      encoding: "utf8",
+      timeout: 30_000,
+      killSignal: "SIGKILL",
+    });
     if (validate.status !== 0) {
       throw executableError(
         key,
@@ -173,15 +166,11 @@ async function main() {
 
   // Service IPC and signals must reach the child; terminal Ctrl-C already does, so do not forward SIGINT twice.
   const ipc = process.send !== undefined;
-  const child = spawn(
-    path.join(dir, process.platform === "win32" ? "fab.exe" : "fab"),
-    process.argv.slice(2),
-    {
-      stdio: ipc ? ["inherit", "inherit", "inherit", "ipc"] : "inherit",
-      // The executable lives in the Fab home, so this is how it knows npm launched it.
-      env: { ...process.env, FAB_NPM_LAUNCHER_PATH: import.meta.filename },
-    },
-  );
+  const child = spawn(path.join(dir, "fab"), process.argv.slice(2), {
+    stdio: ipc ? ["inherit", "inherit", "inherit", "ipc"] : "inherit",
+    // The executable lives in the Fab home, so this is how it knows npm launched it.
+    env: { ...process.env, FAB_NPM_LAUNCHER_PATH: import.meta.filename },
+  });
   if (ipc) {
     process.on("message", (message) => child.connected && child.send(message));
     child.on("message", (message) => process.connected && process.send(message));
