@@ -1,12 +1,7 @@
 {
-  "platforms": [
-    "apple"
-  ],
+  "platforms": ["apple"],
   "apple": {
-    "modules": [
-      "FabNativeControlsModule",
-      "FabKeyboardCommandsModule"
-    ],
+    "modules": ["FabNativeControlsModule", "FabKeyboardCommandsModule"],
     "appDelegateSubscribers": [
       "FabWorkspaceOrientationSubscriber",
       "FabMenuDismissTouchGateSubscriber",

@@ -1,11 +1,7 @@
 {
-  "platforms": [
-    "apple"
-  ],
+  "platforms": ["apple"],
   "apple": {
-    "modules": [
-      "FabHighlightsModule"
-    ],
+    "modules": ["FabHighlightsModule"],
     "podspecPath": "FabHighlightsNative.podspec"
   }
 }

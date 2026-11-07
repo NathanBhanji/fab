@@ -931,12 +931,7 @@ const main = Command.make(
       const home = environment.HOME ?? environment.USERPROFILE;
       if (!home)
         return yield* new NativeClientError({ message: "HOME or USERPROFILE must be set." });
-      return yield* installIntoSession(
-        home,
-        platform,
-        session.value,
-        Option.getOrUndefined(metro),
-      );
+      return yield* installIntoSession(home, platform, session.value, Option.getOrUndefined(metro));
     }
     const target = yield* resolveDevice(platform, Option.getOrUndefined(requested));
     const device = target.id;

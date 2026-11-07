@@ -1,10 +1,6 @@
 {
-  "platforms": [
-    "apple"
-  ],
+  "platforms": ["apple"],
   "apple": {
-    "modules": [
-      "FabComposerEditorModule"
-    ]
+    "modules": ["FabComposerEditorModule"]
   }
 }

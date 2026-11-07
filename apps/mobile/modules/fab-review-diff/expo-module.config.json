@@ -1,11 +1,7 @@
 {
-  "platforms": [
-    "apple"
-  ],
+  "platforms": ["apple"],
   "apple": {
-    "modules": [
-      "FabReviewDiffModule"
-    ],
+    "modules": ["FabReviewDiffModule"],
     "podspecPath": "FabReviewDiffNative.podspec"
   }
 }

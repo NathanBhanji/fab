@@ -1,11 +1,7 @@
 {
-  "platforms": [
-    "apple"
-  ],
+  "platforms": ["apple"],
   "apple": {
-    "modules": [
-      "FabTerminalModule"
-    ],
+    "modules": ["FabTerminalModule"],
     "podspecPath": "FabTerminalNative.podspec"
   }
 }
