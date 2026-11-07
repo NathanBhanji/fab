@@ -103,7 +103,6 @@ it.live.each(
           OPENAI_BASE_URL: "https://user-proxy.test",
           FAB_CODEX_LAUNCH_ARGS: "--config model_provider=global-proxy",
           PATH: process.env.PATH,
-          SystemRoot: process.env.SystemRoot,
         };
         const runtime = yield* makeCodexManagedRuntime({
           instanceId,

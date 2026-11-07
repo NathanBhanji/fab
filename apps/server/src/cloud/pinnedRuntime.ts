@@ -15,7 +15,6 @@ import {
   CLI_RELEASE_CHECKSUMS_FILE,
   cliArchiveFileName,
   cliArchivePlatformKey,
-  cliArchiveTarCommand,
   cliReleaseAssetUrl,
   type CliArchivePlatformKey,
   parseChecksums,
@@ -214,7 +213,7 @@ const installFromArchive = Effect.fn("cloud.pinned_runtime.install_archive")(fun
   // Strip the archive's stem directory so the executable lands at <versionDir>/fab.
   yield* input.runner
     .run({
-      command: cliArchiveTarCommand(input.platform, process.env),
+      command: "tar",
       args: ["-xf", archivePath, "-C", stagingDir, "--strip-components=1"],
       timeout: PINNED_RUNTIME_INSTALL_TIMEOUT,
     })

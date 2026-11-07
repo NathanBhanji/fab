@@ -5055,7 +5055,6 @@ describe("AcpAdapterV2", () => {
         instanceId,
         settings: DEFAULT_GROK_SETTINGS,
         environment: {},
-        hostPlatform: yield* HostProcess.Platform,
         selfInvocation: yield* resolveSelfInvocation(),
         makeRuntime: (input) =>
           makeMockRuntime({
@@ -5125,7 +5124,6 @@ describe("AcpAdapterV2", () => {
           instanceId,
           settings: DEFAULT_GROK_SETTINGS,
           environment: {},
-          hostPlatform: yield* HostProcess.Platform,
           selfInvocation: yield* resolveSelfInvocation(),
           makeRuntime: (input) =>
             makeMockRuntime({
@@ -5211,14 +5209,12 @@ describe("AcpAdapterV2", () => {
       const mockAgentPath = yield* path.fromFileUrl(
         new URL("../../../scripts/acp-mock-agent.ts", import.meta.url),
       );
-      const hostPlatform = yield* HostProcess.Platform;
       // Stands in for `grok inspect --json`, the catalog behind the `$` picker.
       const catalog = { skills: [{ name: "deploy", source: { path: "/s/deploy/SKILL.md" } }] };
       const grokPath = writeFakeCli({
         directory: yield* fileSystem.makeTempDirectoryScoped(),
         name: "grok",
         source: `process.stdout.write(${JSON.stringify(`${JSON.stringify(catalog)}\n`)});\n`,
-        platform: hostPlatform,
       });
       const protocolEvents = yield* Queue.unbounded<EffectAcpProtocol.AcpProtocolLogEvent>();
       const instanceId = ProviderInstanceId.make("grok-skill-mention");
@@ -5227,7 +5223,6 @@ describe("AcpAdapterV2", () => {
         settings: { ...DEFAULT_GROK_SETTINGS, binaryPath: grokPath },
         // The fake CLI needs `node` on its PATH.
         environment: { ...process.env },
-        hostPlatform,
         selfInvocation: yield* resolveSelfInvocation(),
         makeRuntime: (input) =>
           makeMockRuntime({ childProcessSpawner, mockAgentPath, protocolEvents })(input).pipe(
@@ -5308,7 +5303,6 @@ describe("AcpAdapterV2", () => {
           instanceId,
           settings: DEFAULT_GROK_SETTINGS,
           environment: {},
-          hostPlatform: yield* HostProcess.Platform,
           selfInvocation: yield* resolveSelfInvocation(),
           makeRuntime: (input) =>
             makeMockRuntime({
@@ -8587,7 +8581,6 @@ describe("AcpAdapterV2", () => {
             instanceId,
             settings: DEFAULT_GROK_SETTINGS,
             environment: {},
-            hostPlatform: yield* HostProcess.Platform,
             selfInvocation,
           },
           yield* HostProcess.HomeDirectory,

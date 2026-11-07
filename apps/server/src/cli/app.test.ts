@@ -1,4 +1,4 @@
-// @effect-diagnostics nodeBuiltinImport:off -- The integration fixture binds the same platform socket or named pipe as the CLI.
+// @effect-diagnostics nodeBuiltinImport:off -- The integration fixture binds the same Unix socket as the CLI.
 import * as NodeChildProcess from "node:child_process";
 import * as NodeEvents from "node:events";
 import * as NodeFSP from "node:fs/promises";
@@ -75,12 +75,10 @@ async function startFakeDesktop(input: {
     userId: input.userId,
     joinPath: NodePath.join,
   });
-  if (target.directory !== null) {
-    await NodeFSP.mkdir(target.directory, { recursive: true, mode: 0o700 });
-    await NodeFSP.unlink(target.address).catch((error: NodeJS.ErrnoException) => {
-      if (error.code !== "ENOENT") throw error;
-    });
-  }
+  await NodeFSP.mkdir(target.directory, { recursive: true, mode: 0o700 });
+  await NodeFSP.unlink(target.address).catch((error: NodeJS.ErrnoException) => {
+    if (error.code !== "ENOENT") throw error;
+  });
 
   const received: DesktopAppActivationRequest[] = [];
   const server = NodeNet.createServer((socket) => {
@@ -114,11 +112,9 @@ async function startFakeDesktop(input: {
     received,
     close: async () => {
       await new Promise<void>((resolve) => server.close(() => resolve()));
-      if (target.directory !== null) {
-        await NodeFSP.unlink(target.address).catch((error: NodeJS.ErrnoException) => {
-          if (error.code !== "ENOENT") throw error;
-        });
-      }
+      await NodeFSP.unlink(target.address).catch((error: NodeJS.ErrnoException) => {
+        if (error.code !== "ENOENT") throw error;
+      });
     },
   };
 }
@@ -238,7 +234,6 @@ describe("fab app", () => {
               Effect.provideService(HostProcess.UserId, expectedUserId),
             );
             const directory = desktop.directory;
-            assert(directory !== null);
             if (unsafe === "permissions") {
               yield* Effect.promise(() => NodeFSP.chmod(directory, 0o755));
             } else if (unsafe === "symlink") {

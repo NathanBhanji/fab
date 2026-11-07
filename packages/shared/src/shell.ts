@@ -5,7 +5,6 @@ import * as NodeChildProcess from "node:child_process";
 import * as NodeFS from "node:fs";
 import * as Cache from "effect/Cache";
 import * as Clock from "effect/Clock";
-import * as Duration from "effect/Duration";
 import * as Effect from "effect/Effect";
 import * as FileSystem from "effect/FileSystem";
 import * as Option from "effect/Option";
@@ -15,12 +14,7 @@ import type { ShellEnvironmentPatch } from "@fab/contracts";
 import * as HostProcess from "./HostProcess.ts";
 import * as Context from "effect/Context";
 const SHELL_ENV_NAME_PATTERN = /^[A-Z0-9_]+$/;
-const WINDOWS_PATH_DELIMITER = ";";
 const POSIX_PATH_DELIMITER = ":";
-const WINDOWS_SHELL_CANDIDATES = ["pwsh.exe", "powershell.exe"] as const;
-const WINDOWS_SHELL_PROBE_TIMEOUT_MS = 5000;
-// A shell stuck in the kernel survives the kill and holds stdout, so execFile's callback never fires.
-const WINDOWS_SHELL_PROBE_DEADLINE = Duration.millis(WINDOWS_SHELL_PROBE_TIMEOUT_MS + 1000);
 
 type ExecFileSyncLike = (
   file: string,
@@ -47,11 +41,6 @@ export interface CommandAvailabilityOptions {
   readonly env?: NodeJS.ProcessEnv;
   readonly extendEnv?: boolean;
 }
-
-export type CommandAvailabilityChecker = (
-  command: string,
-  options?: CommandAvailabilityOptions,
-) => Effect.Effect<boolean, never, FileSystem.FileSystem | Path.Path>;
 
 export interface ResolvedSpawnCommand {
   readonly command: string;
@@ -97,10 +86,6 @@ export const SpawnExecutableResolution = Context.Reference<SpawnExecutableResolv
     defaultValue: () => resolveSpawnExecutableWithNode,
   },
 );
-
-export interface WindowsEnvironmentProbeOptions {
-  readonly loadProfile?: boolean;
-}
 
 function trimNonEmpty(value: string | null | undefined): string | undefined {
   const trimmed = value?.trim();
@@ -226,24 +211,6 @@ export function buildEnvironmentCaptureCommand(
     .join("; ");
 }
 
-function buildWindowsEnvironmentCaptureCommand(names: ReadonlyArray<string>): string {
-  return [
-    "$ErrorActionPreference = 'Stop'",
-    ...names.flatMap((name) => {
-      if (!SHELL_ENV_NAME_PATTERN.test(name)) {
-        throw new Error(`Unsupported environment variable name: ${name}`);
-      }
-
-      return [
-        `Write-Output '${envCaptureStart(name)}'`,
-        `$value = [Environment]::GetEnvironmentVariable('${name}')`,
-        "if ($null -ne $value -and $value.Length -gt 0) { Write-Output $value }",
-        `Write-Output '${envCaptureEnd(name)}'`,
-      ];
-    }),
-  ].join("; ");
-}
-
 function extractEnvironmentValue(output: string, name: string): string | undefined {
   const startMarker = envCaptureStart(name);
   const endMarker = envCaptureEnd(name);
@@ -298,134 +265,12 @@ export const readEnvironmentFromLoginShell: ShellEnvironmentReader = (
   return environment;
 };
 
-export type WindowsShellEnvironmentReader = (
-  names: ReadonlyArray<string>,
-  options?: WindowsEnvironmentProbeOptions,
-) => Effect.Effect<Partial<Record<string, string>>>;
-
-export const WindowsShellEnvironment = Context.Reference<WindowsShellEnvironmentReader>(
-  "@fab/shared/shell/WindowsShellEnvironment",
-  {
-    defaultValue: () => readEnvironmentFromWindowsShell,
-  },
-);
-
-export const CommandAvailability = Context.Reference<CommandAvailabilityChecker>(
-  "@fab/shared/shell/CommandAvailability",
-  {
-    defaultValue: () => isCommandAvailable,
-  },
-);
-
-const execWindowsEnvironmentProbe = (
-  file: string,
-  args: ReadonlyArray<string>,
-  options: { encoding: "utf8"; timeout: number },
-) =>
-  Effect.callback<Option.Option<string>>((resume) => {
-    let child: NodeChildProcess.ChildProcess;
-    try {
-      child = NodeChildProcess.execFile(
-        file,
-        args,
-        { ...options, windowsHide: true },
-        (error, stdout) => {
-          resume(Effect.succeed(error ? Option.none() : Option.some(stdout)));
-        },
-      );
-    } catch {
-      resume(Effect.succeedNone);
-      return;
-    }
-    return Effect.sync(() => {
-      child.kill();
-      child.stdout?.destroy();
-      child.stderr?.destroy();
-      child.unref();
-    });
-  });
-
-export const readEnvironmentFromWindowsShell = Effect.fn("shell.readEnvironmentFromWindowsShell")(
-  function* (
-    names: ReadonlyArray<string>,
-    options: WindowsEnvironmentProbeOptions = {},
-    execFile: typeof execWindowsEnvironmentProbe = execWindowsEnvironmentProbe,
-  ) {
-    if (names.length === 0) return {};
-
-    const command = buildWindowsEnvironmentCaptureCommand(names);
-    const args = [
-      "-NoLogo",
-      ...(options.loadProfile ? ([] as const) : (["-NoProfile"] as const)),
-      "-NonInteractive",
-      "-Command",
-      command,
-    ];
-    for (const shell of WINDOWS_SHELL_CANDIDATES) {
-      const output = yield* execFile(shell, args, {
-        encoding: "utf8",
-        timeout: WINDOWS_SHELL_PROBE_TIMEOUT_MS,
-      }).pipe(Effect.timeoutOption(WINDOWS_SHELL_PROBE_DEADLINE), Effect.map(Option.flatten));
-      if (Option.isNone(output)) continue;
-
-      const environment: Partial<Record<string, string>> = {};
-      for (const name of names) {
-        const value = extractEnvironmentValue(output.value, name);
-        if (value !== undefined) environment[name] = value;
-      }
-      return environment;
-    }
-
-    return {};
-  },
-);
-
 function stripWrappingQuotes(value: string): string {
   return value.replace(/^"+|"+$/g, "");
 }
 
-function pathDelimiterForPlatform(platform: NodeJS.Platform): string {
-  return platform === "win32" ? WINDOWS_PATH_DELIMITER : POSIX_PATH_DELIMITER;
-}
-
-function normalizePathEntryForComparison(entry: string, platform: NodeJS.Platform): string {
-  const normalized = stripWrappingQuotes(entry.trim());
-  return platform === "win32" ? normalized.toLowerCase() : normalized;
-}
-
-function sanitizePathEntry(entry: string, platform: NodeJS.Platform): string {
-  return platform === "win32" ? entry.replaceAll('"', "") : entry;
-}
-
-export function mergePathValues(
-  preferredPath: string | undefined,
-  inheritedPath: string | undefined,
-  platform: NodeJS.Platform,
-): string | undefined {
-  const delimiter = pathDelimiterForPlatform(platform);
-  const merged: string[] = [];
-  const seen = new Set<string>();
-
-  for (const rawValue of [preferredPath, inheritedPath]) {
-    if (!rawValue) continue;
-
-    for (const entry of rawValue.split(delimiter)) {
-      const sanitized = sanitizePathEntry(entry.trim(), platform);
-      if (sanitized.length === 0) continue;
-
-      const normalized = normalizePathEntryForComparison(sanitized, platform);
-      if (normalized.length === 0 || seen.has(normalized)) continue;
-
-      seen.add(normalized);
-      merged.push(sanitized);
-    }
-  }
-
-  return merged.length > 0 ? merged.join(delimiter) : undefined;
-}
-
 function readEnvPath(env: NodeJS.ProcessEnv): string | undefined {
-  return env.PATH ?? env.Path ?? env.path;
+  return env.PATH;
 }
 
 function resolvePathEnvironmentVariable(env: NodeJS.ProcessEnv): string {
@@ -687,80 +532,6 @@ export const isCommandAvailable = Effect.fn("shell.isCommandAvailable")(function
   options: CommandAvailabilityOptions = {},
 ) {
   return (yield* resolveCommandPath(command, options)) !== null;
-});
-
-function resolveKnownWindowsCliDirs(env: NodeJS.ProcessEnv): ReadonlyArray<string> {
-  const appData = env.APPDATA?.trim();
-  const localAppData = env.LOCALAPPDATA?.trim();
-  const userProfile = env.USERPROFILE?.trim();
-
-  return [
-    ...(appData ? [`${appData}\\npm`] : []),
-    ...(localAppData ? [`${localAppData}\\Programs\\nodejs`, `${localAppData}\\Volta\\bin`] : []),
-    ...(localAppData ? [`${localAppData}\\pnpm`] : []),
-    ...(userProfile
-      ? [`${userProfile}\\.local\\bin`, `${userProfile}\\.bun\\bin`, `${userProfile}\\scoop\\shims`]
-      : []),
-  ];
-}
-
-/** Keep one PATH spelling in copied Windows environment records. */
-function setWindowsPath(env: NodeJS.ProcessEnv, value: string | null): void {
-  for (const key of Object.keys(env)) {
-    if (key.toUpperCase() === "PATH") {
-      delete env[key];
-    }
-  }
-  if (value !== null) env.PATH = value;
-}
-
-function mergeWindowsEnv(
-  currentEnv: NodeJS.ProcessEnv,
-  patch: Partial<Record<string, string>>,
-): NodeJS.ProcessEnv {
-  const nextEnv: NodeJS.ProcessEnv = { ...currentEnv };
-  for (const [key, value] of Object.entries(patch)) {
-    if (value === undefined) continue;
-    if (key === "PATH") {
-      setWindowsPath(nextEnv, value);
-    } else {
-      nextEnv[key] = value;
-    }
-  }
-  return nextEnv;
-}
-
-export const resolveWindowsEnvironment = Effect.fn("shell.resolveWindowsEnvironment")(function* (
-  env: NodeJS.ProcessEnv,
-): Effect.fn.Return<Partial<NodeJS.ProcessEnv>, never, FileSystem.FileSystem | Path.Path> {
-  const readEnvironment = yield* WindowsShellEnvironment;
-  const commandAvailable = yield* CommandAvailability;
-  const inheritedPath = readEnvPath(env);
-  const shellPath = (yield* readEnvironment(["PATH"], { loadProfile: false })).PATH;
-  const mergedPath = mergePathValues(shellPath, inheritedPath, "win32");
-  const knownCliPath = resolveKnownWindowsCliDirs(env).join(WINDOWS_PATH_DELIMITER);
-  const baselinePath = mergePathValues(mergedPath, knownCliPath, "win32");
-  const baselinePatch: Partial<NodeJS.ProcessEnv> = baselinePath ? { PATH: baselinePath } : {};
-  const baselineEnv = mergeWindowsEnv(env, baselinePatch);
-
-  if (yield* commandAvailable("node", { env: baselineEnv })) {
-    return baselinePatch;
-  }
-
-  const profiledEnvironment = yield* readEnvironment(["PATH", "FNM_DIR", "FNM_MULTISHELL_PATH"], {
-    loadProfile: true,
-  });
-  const profiledPath = mergePathValues(profiledEnvironment.PATH, baselinePath, "win32");
-  const profiledPatch: Partial<NodeJS.ProcessEnv> = {
-    ...(profiledPath ? { PATH: profiledPath } : {}),
-    ...(profiledEnvironment.FNM_DIR ? { FNM_DIR: profiledEnvironment.FNM_DIR } : {}),
-    ...(profiledEnvironment.FNM_MULTISHELL_PATH
-      ? { FNM_MULTISHELL_PATH: profiledEnvironment.FNM_MULTISHELL_PATH }
-      : {}),
-  };
-  return Object.keys(profiledPatch).length > 0
-    ? { ...baselinePatch, ...profiledPatch }
-    : baselinePatch;
 });
 
 export function applyShellEnvironment(

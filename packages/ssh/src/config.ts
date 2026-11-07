@@ -289,15 +289,8 @@ const readKnownHostsHostnames = Effect.fnUntraced(function* (filePath: string) {
 export const discoverSshHosts = Effect.fnUntraced(
   function* (input: { readonly homeDir?: string }) {
     const path = yield* Path.Path;
-    const env = yield* Config.all({
-      home: Config.String("HOME").pipe(Config.option),
-      userProfile: Config.String("USERPROFILE").pipe(Config.option),
-    });
-    const homeDir =
-      input?.homeDir ??
-      Option.getOrUndefined(env.home) ??
-      Option.getOrUndefined(env.userProfile) ??
-      "";
+    const home = yield* Config.String("HOME").pipe(Config.option);
+    const homeDir = input?.homeDir ?? Option.getOrUndefined(home) ?? "";
     if (homeDir.trim().length === 0) {
       return [];
     }

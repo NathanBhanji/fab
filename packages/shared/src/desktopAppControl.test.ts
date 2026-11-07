@@ -29,17 +29,4 @@ describe("resolveDesktopAppControlAddress", () => {
     expect(first.directory).toBe(directory);
     expect(first.address).not.toBe(second.address);
   });
-
-  it("uses a Windows named pipe", () => {
-    const result = resolveDesktopAppControlAddress({
-      stateDir: "C:\\Users\\user\\.fab\\userdata",
-      platform: "win32",
-      tempDir: "C:\\Temp",
-      userId: undefined,
-      joinPath: (...segments) => segments.join("\\"),
-    });
-
-    expect(result.directory).toBeNull();
-    expect(result.address).toMatch(/^\\\\\.\\pipe\\fab-app-[a-f0-9]{24}$/);
-  });
 });

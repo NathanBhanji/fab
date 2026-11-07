@@ -44,7 +44,7 @@ const handleMethod = (message: Record<string, unknown>) => {
           respond(message.id as number | string, {
             userAgent: "mock-codex-app-server",
             codexHome: process.cwd(),
-            platformFamily: platform === "win32" ? "windows" : "unix",
+            platformFamily: "unix",
             platformOs: platform === "darwin" ? "macos" : platform,
           });
         });
@@ -53,7 +53,7 @@ const handleMethod = (message: Record<string, unknown>) => {
       respond(message.id as number | string, {
         userAgent: "mock-codex-app-server",
         codexHome: process.cwd(),
-        platformFamily: platform === "win32" ? "windows" : "unix",
+        platformFamily: "unix",
         platformOs: platform === "darwin" ? "macos" : platform,
       });
       return;

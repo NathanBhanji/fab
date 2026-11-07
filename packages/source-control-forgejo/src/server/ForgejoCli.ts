@@ -67,7 +67,6 @@ function forgejoKeysPaths(input: {
   readonly platform: string;
   readonly home: string;
   readonly dataHome?: string;
-  readonly appData?: string;
 }) {
   if (input.platform === "darwin")
     return ["forgejo-cli", "Cyborus"].map((organization) =>
@@ -76,16 +75,6 @@ function forgejoKeysPaths(input: {
         "Library",
         "Application Support",
         `${organization}.forgejo-cli`,
-        "keys.json",
-      ),
-    );
-  if (input.platform === "win32")
-    return ["forgejo-cli", "Cyborus"].map((organization) =>
-      NodePath.win32.join(
-        input.appData || NodePath.win32.join(input.home, "AppData", "Roaming"),
-        organization,
-        "forgejo-cli",
-        "data",
         "keys.json",
       ),
     );
@@ -252,7 +241,6 @@ export const make = Effect.gen(function* () {
       ...(globalThis.process.env.XDG_DATA_HOME
         ? { dataHome: globalThis.process.env.XDG_DATA_HOME }
         : {}),
-      ...(globalThis.process.env.APPDATA ? { appData: globalThis.process.env.APPDATA } : {}),
     })) {
       const exists = yield* fileSystem.exists(path).pipe(
         Effect.mapError(

@@ -7,7 +7,6 @@ import * as SqlClient from "effect/sql/SqlClient";
 
 import * as NodeSqliteClient from "@fab/shared/nodeSqliteClient";
 import { runSqliteState } from "./fab-sqlite-state.ts";
-import * as HostProcess from "@fab/shared/HostProcess";
 import { symlinksSupported } from "@fab/shared/testing/symlinks";
 
 const createFixtureDatabase = Effect.fn("createSqliteStateFixtureDatabase")(function* (
@@ -60,7 +59,7 @@ it.layer(NodeServices.layer)("fab-sqlite-state", (it) => {
           sql: "INSERT INTO fixtures (id, label) VALUES (2, 'seeded')",
         });
         assert.equal(mutation.operation, "exec");
-        if (mutation.operation === "exec" && (yield* HostProcess.Platform) !== "win32") {
+        if (mutation.operation === "exec") {
           assert.equal((yield* fs.stat(mutation.backup)).mode & 0o777, 0o600);
         }
 
