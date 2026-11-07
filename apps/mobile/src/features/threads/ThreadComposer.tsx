@@ -186,7 +186,6 @@ function useCompactComposerEditor(text: ScaledTextRole, value: string) {
       }
     },
     editorProps: {
-      singleLineCentered: !isExpanded,
       scrollEnabled: contentHeight >= text.lineHeight * 4,
       contentInsetVertical: inset,
       onContentSizeChange: (size: { width: number; height: number }) => {

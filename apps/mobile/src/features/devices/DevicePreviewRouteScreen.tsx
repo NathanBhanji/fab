@@ -22,13 +22,9 @@ import { AppText } from "../../components/ui/AppText";
 import { ControlPill } from "../../components/ui/ControlPill";
 import { Menu } from "../../components/ui/Menu";
 import { GlassSurface } from "../../components/ui/GlassSurface";
-import {
-  androidHeaderMenuActions,
-  findHeaderMenuAction,
-} from "../../components/ui/headerMenu.android";
 import type { AppBarMenuItem } from "../../components/ui/AppBar.types";
+import type { MenuAction } from "@react-native-menu/menu";
 import { useAppForeground } from "../../lib/appState";
-import { useHardwareBack } from "../../lib/backHandler";
 import { deriveBottomControlInsets } from "../../lib/reserved-regions";
 import { useNativeColumnLayoutMetrics } from "../../native/native-layout-metrics";
 import { uuidv4 } from "../../lib/uuid";
@@ -124,10 +120,6 @@ export function DevicePreviewScreen({
     });
     return () => subscription.remove();
   }, [focused, foreground, embedded]);
-  useHardwareBack(!controlsVisible, () => {
-    setControlsVisible(true);
-    return true;
-  });
 
   const shutDownDevice = async () => {
     if (!preview || shuttingDown) return;
@@ -367,14 +359,55 @@ export function DevicePreviewScreen({
   );
 }
 
+function menuActions(items: ReadonlyArray<AppBarMenuItem>): MenuAction[] {
+  return items.flatMap((item): MenuAction[] =>
+    "items" in item
+      ? item.inline && !item.title
+        ? menuActions(item.items)
+        : [
+            {
+              id: item.id,
+              title: item.title ?? "",
+              image: item.icon,
+              subactions: menuActions(item.items),
+            },
+          ]
+      : [
+          {
+            id: item.id,
+            title: item.title,
+            subtitle: item.subtitle,
+            image: item.icon,
+            state: item.selected ? "on" : undefined,
+            attributes: item.disabled ? { disabled: true } : undefined,
+          },
+        ],
+  );
+}
+
+function findMenuAction(
+  items: ReadonlyArray<AppBarMenuItem>,
+  id: string,
+): Extract<AppBarMenuItem, { readonly onPress: () => void }> | undefined {
+  for (const item of items) {
+    if ("items" in item) {
+      const action = findMenuAction(item.items, id);
+      if (action) return action;
+    } else if (item.id === id) {
+      return item;
+    }
+  }
+  return undefined;
+}
+
 function DeviceOptionsMenu({ items }: { readonly items: ReadonlyArray<AppBarMenuItem> }) {
   return (
     <Menu
-      actions={androidHeaderMenuActions(items)}
+      actions={menuActions(items)}
       isAnchoredToRight
       title="Device options"
       onPressAction={({ nativeEvent }) => {
-        const action = findHeaderMenuAction(items, nativeEvent.event);
+        const action = findMenuAction(items, nativeEvent.event);
         if (action && !action.disabled) action.onPress();
       }}
     >

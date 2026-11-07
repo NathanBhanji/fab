@@ -41,7 +41,7 @@ Your agents run wherever Fab runs: your desktop, a server, a VPS. You connect to
 
 ## How do I use Fab on my phone?
 
-Get the [iOS](https://apps.apple.com/us/app/fab-remote-claude-more/id6787819824) or [Android](https://play.google.com/store/apps/details?id=dev.bhanji.fab) app, then connect it to your computer with Fab Connect or a pairing link. The phone is a remote. Your computer does the work and needs to stay on. [Mobile setup](./install.md#mobile-app) · [Remote access](./remote-access.md)
+Get the [iPhone app](https://apps.apple.com/us/app/fab-remote-claude-more/id6787819824), then connect it to your computer with Fab Connect or a pairing link. The phone is a remote. Your computer does the work and needs to stay on. [Mobile setup](./install.md#mobile-app) · [Remote access](./remote-access.md)
 
 ## Why does Fab Connect keep disconnecting?
 
@@ -77,7 +77,7 @@ Open **Settings > Storage** and turn on automatic worktree cleanup. You can also
 
 ## Is there voice input?
 
-On iPhone, yes. You need iOS 26 or later. Tap the mic in the composer, talk, check the text, then send. Web, desktop, and Android do not have it yet. [Voice input on iPhone](./composer.md#voice-input-on-iphone)
+On iPhone, yes. You need iOS 26 or later. Tap the mic in the composer, talk, check the text, then send. Web and desktop do not have it yet. [Voice input on iPhone](./composer.md#voice-input-on-iphone)
 
 ## Does it work on Windows, Mac, and Linux?
 

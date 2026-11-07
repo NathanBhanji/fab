@@ -7,7 +7,6 @@ import { describe, expect, it } from "vite-plus/test";
 const SOURCE_ROOT = __dirname;
 
 const PLATFORM_EXTENSION_ORDER = {
-  android: [".android.ts", ".android.tsx", ".native.ts", ".native.tsx", ".ts", ".tsx"],
   ios: [".ios.ts", ".ios.tsx", ".native.ts", ".native.tsx", ".ts", ".tsx"],
 } as const;
 
@@ -20,14 +19,6 @@ const isGraphFile = (filePath: string): boolean =>
   !filePath.includes(".test.") &&
   !filePath.includes("test-support") &&
   !filePath.endsWith(".d.ts");
-
-function isRelevantForPlatform(filePath: string, platform: Platform): boolean {
-  const name = NodePath.basename(filePath);
-  if (platform === "android") {
-    return !name.includes(".ios.");
-  }
-  return !name.includes(".android.");
-}
 
 function collectSourceFiles(dir: string, out: string[] = []): string[] {
   for (const entry of NodeFS.readdirSync(dir)) {
@@ -104,9 +95,7 @@ interface PlatformGraph {
 
 function buildPlatformGraph(platform: Platform): PlatformGraph {
   const extensionOrder = PLATFORM_EXTENSION_ORDER[platform];
-  const files = collectSourceFiles(SOURCE_ROOT)
-    .filter((file) => isRelevantForPlatform(file, platform))
-    .sort();
+  const files = collectSourceFiles(SOURCE_ROOT).sort();
   const staticEdges = new Map<string, string[]>();
   const crossLayerEdges = new Set<string>();
   for (const file of files) {

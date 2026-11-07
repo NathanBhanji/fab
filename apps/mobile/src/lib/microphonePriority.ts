@@ -16,7 +16,7 @@ interface MicrophoneInput {
   readonly type: string;
 }
 
-// A car without CarPlay, and Android Auto, routes its microphone over Bluetooth, so it is a Bluetooth device.
+// A car without CarPlay routes its microphone over Bluetooth, so it is a Bluetooth device.
 const KIND_BY_PORT_TYPE: Readonly<Record<string, MicrophoneKind>> = {
   MicrophoneWired: "wired",
   USBAudio: "wired",
@@ -46,13 +46,11 @@ export function microphoneEntryKey(entry: MicrophoneEntry): string {
 
 export function microphoneOrder(
   saved: ReadonlyArray<MicrophoneEntry> = [],
-  platform: "ios" | "android" = "ios",
 ): ReadonlyArray<MicrophoneEntry> {
-  const kinds = MICROPHONE_KINDS.filter((kind) => platform === "ios" || kind !== "carPlay");
   const order: MicrophoneEntry[] = [];
   const keys = new Set<string>();
   for (const entry of saved) {
-    if (!kinds.includes(entry.kind)) continue;
+    if (!MICROPHONE_KINDS.includes(entry.kind)) continue;
     const row =
       isMicrophoneDevice(entry) && DEVICE_KINDS.has(entry.kind) ? entry : { kind: entry.kind };
     const key = microphoneEntryKey(row);
@@ -60,7 +58,7 @@ export function microphoneOrder(
     keys.add(key);
     order.push(row);
   }
-  for (const kind of kinds) {
+  for (const kind of MICROPHONE_KINDS) {
     if (keys.has(`kind:${kind}`)) continue;
     const lastDevice = order.map((entry) => entry.kind).lastIndexOf(kind);
     const below = order.findIndex(

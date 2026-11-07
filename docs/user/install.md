@@ -117,18 +117,14 @@ command cannot reach the app, start or update the desktop app and try again.
 
 ## Mobile app
 
-Install Fab from the
-[App Store](https://apps.apple.com/us/app/fab-remote-claude-more/id6787819824) or
-[Google Play](https://play.google.com/store/apps/details?id=dev.bhanji.fab).
+Install Fab on iPhone from the
+[App Store](https://apps.apple.com/us/app/fab-remote-claude-more/id6787819824).
 The phone connects to a server on another machine. Follow
 [remote access](./remote-access.md) to link it through Fab Connect or a pairing URL.
 
 Store links and QR codes are also available in **Settings → About → Mobile app**
-on web and desktop. The store apps work with both stable and Nightly servers. Test builds are optional:
-
-- **iPhone and iPad:** TestFlight is invite-only.
-- **Android:** download an APK from the
-  [Android beta releases](https://github.com/nathanbhanji/fab/releases?q=android-beta-).
+on web and desktop. The App Store app works with both stable and Nightly servers. TestFlight
+test builds are optional and invite-only.
 
 If the app crashes during launch, open Settings → Diagnostics on the next launch
 that succeeds. It lists startup crashes from the last 7 days with the error and

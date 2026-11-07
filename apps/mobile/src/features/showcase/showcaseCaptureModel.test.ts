@@ -45,7 +45,7 @@ describe("isShowcaseThemeApplied", () => {
       isShowcaseThemeApplied({
         launchRequestRead: true,
         requestedTheme: "fab",
-        themeIds: { light: "fab", dark: "material-you" },
+        themeIds: { light: "fab", dark: "ocean" },
       }),
     ).toBe(false);
   });
@@ -76,7 +76,7 @@ describe("showcaseReadinessKey", () => {
     expect(
       showcaseReadinessKey({
         ...review,
-        renderSignal: { scene: "review", themeId: "material-you" },
+        renderSignal: { scene: "review", themeId: "ocean" },
       }),
     ).toBeNull();
     const drawn = { ...review, renderSignal: { scene: "review", themeId: "fab" } } as const;

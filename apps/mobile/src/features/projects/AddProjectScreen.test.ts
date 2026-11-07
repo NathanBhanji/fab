@@ -56,7 +56,6 @@ vi.mock("../workspace/useSelectWorkspaceDetail", async () => {
 vi.mock("../../native/StackHeader", () => ({
   nativeHeaderScrollEdgeEffects: () => undefined,
 }));
-vi.mock("../../components/ui/NavigationRow", () => ({ NavigationRow: "NavigationRow" }));
 vi.mock("../../components/ui/Button", () => ({ Button: "Button" }));
 vi.mock("../../components/ui/ScreenScrollView", () => ({ ScreenScrollView: "ScrollView" }));
 vi.mock("../settings/components/SettingsScreen", () => ({ SettingsScreen: "SettingsScreen" }));

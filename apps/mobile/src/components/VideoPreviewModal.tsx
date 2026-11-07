@@ -122,7 +122,7 @@ function OpenVideoPreviewModal(props: {
           <AppText className="flex-1 font-fab-medium text-base text-white" numberOfLines={2}>
             {props.name}
           </AppText>
-          <MediaActionsMenu media={mediaActions} inModal />
+          <MediaActionsMenu media={mediaActions} />
           <Pressable
             accessibilityRole="button"
             accessibilityLabel="Close video"

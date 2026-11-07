@@ -22,14 +22,7 @@ export function ScreenScrollView(props: ComponentProps<typeof ScrollView>) {
           ? { ...props.contentInset, bottom: (props.contentInset?.bottom ?? 0) + bottomInset }
           : props.contentInset
       }
-      contentContainerStyle={[
-        props.contentContainerStyle,
-        Platform.OS === "android" && {
-          width: "100%",
-          maxWidth: 720,
-          alignSelf: "center",
-        },
-      ]}
+      contentContainerStyle={props.contentContainerStyle}
     />
   );
 }

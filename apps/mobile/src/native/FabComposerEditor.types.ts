@@ -53,8 +53,6 @@ export interface ComposerEditorProps {
   readonly spellCheck?: boolean;
   readonly multiline?: boolean;
   readonly contentInsetVertical?: number;
-  /** Android: center a single line vertically (collapsed pill); no-op on iOS. */
-  readonly singleLineCentered?: boolean;
   readonly style?: StyleProp<ViewStyle>;
   readonly textStyle?: StyleProp<TextStyle>;
   readonly onChangeText: (value: string) => void;
@@ -76,13 +74,10 @@ export interface ComposerEditorProps {
     readonly width: number;
     readonly height: number;
   }) => void;
-  /**
-   * Hardware-keyboard Return behavior on iOS. No-op on Android, which has no
-   * hardware Return handling.
-   */
+  /** Hardware-keyboard Return behavior. */
   readonly enterBehavior?: ComposerEnterBehavior;
   readonly submitTitle?: string;
   readonly alternateSubmitTitle?: string;
-  /** Command chords set alternate to reverse follow-up behavior; Android always passes false. */
+  /** Command chords set alternate to reverse follow-up behavior. */
   readonly onSubmit?: (alternate: boolean) => void;
 }

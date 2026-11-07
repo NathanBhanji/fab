@@ -21,8 +21,8 @@ import { serverEnvironment } from "../../state/server";
 import { useAtomCommand } from "../../state/use-atom-command";
 import { Button } from "../../components/ui/Button";
 
-const LOCK_SYMBOL: AppSymbolName = { ios: "lock", android: "lock" };
-const PRIVATE_SYMBOL: AppSymbolName = { ios: "checkmark.shield", android: "lock" };
+const LOCK_SYMBOL: AppSymbolName = { ios: "lock" };
+const PRIVATE_SYMBOL: AppSymbolName = { ios: "checkmark.shield" };
 
 export function SecretRequestCard(props: {
   readonly environmentId: EnvironmentId;

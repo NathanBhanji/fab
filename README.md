@@ -1,6 +1,6 @@
 # Fab
 
-Fab is an "agent harness control surface". It enables control of the agents on your machine with a best-in-class mobile app ([iOS](https://apps.apple.com/us/app/fab-remote-claude-more/id6787819824), [Android](https://play.google.com/store/apps/details?id=dev.bhanji.fab)), [web app](https://app.fab.invalid) and [Electron-based desktop app](https://fab.invalid).
+Fab is an "agent harness control surface". It enables control of the agents on your machine with a best-in-class [iPhone app](https://apps.apple.com/us/app/fab-remote-claude-more/id6787819824), [web app](https://app.fab.invalid) and [Electron-based desktop app](https://fab.invalid).
 
 Works with your subscriptions on Claude Code, Codex, Cursor, Grok Build, OpenCode, Google Antigravity, and fx. If they're set up on your computer, Fab can control them.
 

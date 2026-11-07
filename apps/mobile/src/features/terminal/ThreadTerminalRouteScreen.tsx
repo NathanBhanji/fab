@@ -1002,7 +1002,7 @@ function ThreadTerminal(props: {
                       </ComposerToolbarScroller>
                       <ComposerToolbarButton
                         accessibilityLabel="Dismiss keyboard"
-                        icon={{ ios: "keyboard.chevron.compact.down", android: "keyboard_hide" }}
+                        icon={{ ios: "keyboard.chevron.compact.down" }}
                         onPress={handleDismissKeyboard}
                         showChevron={false}
                       />
@@ -1037,7 +1037,7 @@ function ThreadTerminal(props: {
                     pointerEvents="none"
                   >
                     <SymbolView
-                      name={{ ios: "keyboard", android: "keyboard" }}
+                      name={{ ios: "keyboard" }}
                       size={20}
                       tintColor={terminalTheme.foreground}
                       type="monochrome"

@@ -31,7 +31,6 @@ export function SegmentedControl<Value extends string | number>(
     colors,
     colorScheme,
     props.variant,
-    "ios",
     themeId,
   );
   return (

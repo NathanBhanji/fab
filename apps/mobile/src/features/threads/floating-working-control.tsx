@@ -329,7 +329,7 @@ export function FloatingWorkingControl(props: {
               activateOnPressIn
               className="h-11 w-11 border border-border bg-glass-fallback shadow-md shadow-black/10"
               disabled={!props.showScrollToEnd}
-              icon={{ ios: "chevron.down", android: "keyboard_arrow_down" }}
+              icon={{ ios: "chevron.down" }}
               onPress={props.onScrollToEnd}
             />
           </Animated.View>
@@ -348,7 +348,7 @@ export function FloatingWorkingControl(props: {
           accessibilityLabel="Scroll to end"
           activateOnPressIn
           className="h-11 w-11 border border-border bg-glass-fallback shadow-md shadow-black/10"
-          icon={{ ios: "chevron.down", android: "keyboard_arrow_down" }}
+          icon={{ ios: "chevron.down" }}
           onPress={props.onScrollToEnd}
         />
       )}
@@ -630,7 +630,7 @@ function ScrollToEndButton(props: { readonly disabled?: boolean; readonly onPres
       activateOnPressIn
       className="h-11 w-11 bg-transparent"
       disabled={props.disabled}
-      icon={{ ios: "chevron.down", android: "keyboard_arrow_down" }}
+      icon={{ ios: "chevron.down" }}
       onPress={props.onPress}
     />
   );

@@ -1,7 +1,7 @@
 import { cn } from "../../lib/cn";
 import { MOBILE_MOTION, MOBILE_SHAPE } from "../../lib/designTokens";
 import { useCallback, useEffect, useLayoutEffect, useState } from "react";
-import { AccessibilityInfo, Platform, StyleSheet, View, useWindowDimensions } from "react-native";
+import { AccessibilityInfo, Platform, View, useWindowDimensions } from "react-native";
 import { GestureDetector, usePanGesture } from "react-native-gesture-handler";
 import Animated, {
   cancelAnimation,
@@ -193,7 +193,6 @@ function SwipeableToast(props: ToastProps & { readonly onDismiss: () => void }) 
   }));
   return (
     <Animated.View
-      className={Platform.OS === "android" ? "overflow-hidden" : undefined}
       pointerEvents="box-none"
       exiting={TOAST_EXITING}
       onAccessibilityEscape={onDismiss}
@@ -203,21 +202,6 @@ function SwipeableToast(props: ToastProps & { readonly onDismiss: () => void }) 
     >
       <GestureDetector gesture={gesture}>
         <Animated.View collapsable={false} entering={toastEntering} style={animatedStyle}>
-          {Platform.OS === "android" ? (
-            // Keep the dismiss target separate so TalkBack can also focus the action button.
-            <View
-              accessible
-              accessibilityRole="alert"
-              accessibilityLiveRegion="assertive"
-              accessibilityLabel={props.message}
-              accessibilityActions={[{ name: "dismiss", label: "Dismiss message" }]}
-              onAccessibilityAction={({ nativeEvent }) => {
-                if (nativeEvent.actionName === "dismiss") onDismiss();
-              }}
-              pointerEvents="none"
-              style={StyleSheet.absoluteFill}
-            />
-          ) : null}
           <ToastContent {...props} glassReady={glassReady} />
         </Animated.View>
       </GestureDetector>

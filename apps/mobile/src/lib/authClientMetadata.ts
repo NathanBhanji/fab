@@ -14,7 +14,7 @@ export function authClientMetadata(appVersion?: string): AuthClientPresentationM
         : Device.deviceType === Device.DeviceType.PHONE
           ? "mobile"
           : "unknown",
-    ...(Platform.OS === "ios" ? { os: "iOS" } : Platform.OS === "android" ? { os: "Android" } : {}),
+    ...(Platform.OS === "ios" ? { os: "iOS" } : {}),
     ...(Number.isFinite(osMajorVersion) && osMajorVersion > 0 ? { osMajorVersion } : {}),
     ...(deviceModel ? { deviceModel } : {}),
     surface: "mobile",

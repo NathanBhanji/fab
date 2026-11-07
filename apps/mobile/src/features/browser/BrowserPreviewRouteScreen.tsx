@@ -125,10 +125,7 @@ function BrowserPreviewScreen({
                   accessibilityLabel: pictureInPicture.active
                     ? "Exit picture in picture"
                     : "Picture in picture",
-                  icon: {
-                    ios: pictureInPicture.active ? "pip.exit" : "pip.enter",
-                    android: "visibility",
-                  },
+                  icon: { ios: pictureInPicture.active ? "pip.exit" : "pip.enter" },
                   selected: pictureInPicture.active,
                   onPress: () => streamRef.current?.togglePictureInPicture(),
                 },

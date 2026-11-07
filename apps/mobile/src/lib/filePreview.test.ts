@@ -75,7 +75,7 @@ vi.mock("@react-navigation/native", () => ({
   useFocusEffect: (callback: () => (() => void) | undefined) => useEffect(callback, [callback]),
 }));
 vi.mock("react-native", () => ({
-  Platform: { OS: "android", select: (values: { android?: unknown }) => values.android },
+  Platform: { OS: "ios", select: (values: { ios?: unknown }) => values.ios },
   StyleSheet: { create: (styles: unknown) => styles },
   useWindowDimensions: () => ({ width: 390, height: 844, fontScale: 1 }),
   Text: ({ children }: { children?: ReactNode }) => createElement("span", null, children),

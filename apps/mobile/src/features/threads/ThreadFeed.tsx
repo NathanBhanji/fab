@@ -185,7 +185,6 @@ import {
 import { cn } from "../../lib/cn";
 import {
   deriveCenteredContentHorizontalPadding,
-  deriveThreadFeedInitialContentInset,
   deriveThreadWorkLogSizing,
   type LayoutVariant,
 } from "../../lib/layout";
@@ -1149,12 +1148,7 @@ function ArtifactTemplateCard(props: {
           type="monochrome"
         />
         <View className="absolute -right-1 -bottom-1 h-4 w-4 items-center justify-center rounded-full bg-fuchsia-500">
-          <SymbolView
-            name={{ ios: "sparkles", android: "auto_awesome" }}
-            size={9}
-            tintColor="white"
-            type="monochrome"
-          />
+          <SymbolView name={{ ios: "sparkles" }} size={9} tintColor="white" type="monochrome" />
         </View>
       </View>
       <View className="min-w-0 flex-1">
@@ -2807,11 +2801,6 @@ export const ThreadFeed = memo(function ThreadFeed({
   const bottomContentInset = props.contentBottomInset ?? 18;
   const usesNativeAutomaticInsets =
     props.usesAutomaticContentInsets === true && Platform.OS === "ios";
-  const initialContentInset = deriveThreadFeedInitialContentInset({
-    platform: Platform.OS,
-    usesNativeAutomaticInsets,
-    bottomContentInset,
-  });
   // LegendList cannot see UIKit's adjustedContentInset; include header height in anchor offsets.
   const navigationHeaderHeight = useContext(HeaderHeightContext);
   const anchorTopInset = usesNativeAutomaticInsets
@@ -3825,7 +3814,6 @@ export const ThreadFeed = memo(function ThreadFeed({
             // Include that extra inset in LegendList's scroll math so end scrolls reach the resting offset.
             contentInsetEndStaticAdjustment={usesNativeAutomaticInsets ? insets.bottom : 0}
             // Seed composer height until keyboard integration reports it, or the initial end scroll runs too early.
-            {...(initialContentInset ? { contentInset: initialContentInset } : {})}
             adjustedInsetCompensation={usesNativeAutomaticInsets ? insets.bottom : 0}
             freeze={props.freeze}
             // Follow the measured end immediately; animating estimates races row measurement on acknowledgement.

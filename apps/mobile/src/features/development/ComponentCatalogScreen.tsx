@@ -1,4 +1,3 @@
-import { NativeAppBarExample } from "./NativeAppBarExample";
 import { Toast } from "../../components/ui/Toast";
 import { Progress } from "../../components/ui/Progress";
 import { useNavigation } from "@react-navigation/native";
@@ -68,9 +67,7 @@ export function ComponentCatalogScreen() {
         <View className="gap-3">
           <AppText className="text-sm text-foreground-muted">Theme preview</AppText>
           <View className="flex-row flex-wrap gap-2">
-            {MOBILE_THEME_IDS.filter(
-              (id) => id !== "material-you" || appearance.systemColorsAvailable,
-            ).map((id) => (
+            {MOBILE_THEME_IDS.map((id) => (
               <Chip
                 key={id}
                 label={id}
@@ -148,7 +145,6 @@ export function ComponentCatalogScreen() {
               </View>
             </View>
             <View className="gap-3">
-              <NativeAppBarExample />
               <AppText className="text-lg font-fab-semibold">Buttons</AppText>
               <View className="flex-row flex-wrap gap-2">
                 <Button label="Primary" tone="primary" onPress={announceAction} />

@@ -1,6 +1,6 @@
 import { MOBILE_SHAPE } from "../../lib/designTokens";
 import type { ReactNode } from "react";
-import { Platform, View } from "react-native";
+import { View } from "react-native";
 
 import { AppText as Text } from "./AppText";
 
@@ -15,13 +15,7 @@ export function ListSection(props: {
     <View className="gap-2">
       {props.title ? (
         <View className="flex-row items-center justify-between gap-3">
-          <View
-            className={
-              Platform.OS === "android"
-                ? "min-w-0 flex-1 flex-row items-center gap-2 px-4"
-                : "min-w-0 flex-1 flex-row items-center gap-2 px-2"
-            }
-          >
+          <View className="min-w-0 flex-1 flex-row items-center gap-2 px-2">
             {props.titleIcon}
             <Text textRole="footnote" className="shrink font-fab-medium text-foreground-muted">
               {props.title}
@@ -32,10 +26,7 @@ export function ListSection(props: {
       ) : null}
       <View
         className="overflow-hidden border-continuous bg-grouped-card"
-        style={{
-          borderRadius:
-            Platform.OS === "android" ? MOBILE_SHAPE.group.android : MOBILE_SHAPE.group.ios,
-        }}
+        style={{ borderRadius: MOBILE_SHAPE.group.ios }}
       >
         {props.children}
       </View>

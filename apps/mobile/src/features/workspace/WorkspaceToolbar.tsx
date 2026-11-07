@@ -12,7 +12,6 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { SymbolView, type AppSymbolName } from "../../components/ui/AppSymbol";
 import { GlassSurface } from "../../components/ui/GlassSurface";
-import { useHardwareBack } from "../../lib/backHandler";
 import { useHardwareKeyboardCommand } from "../keyboard/hardwareKeyboardCommands";
 import { WorkspaceDock } from "./WorkspaceDock";
 import { WorkspaceSearchField } from "./WorkspaceSearchField";
@@ -78,14 +77,6 @@ export function WorkspaceToolbar(props: {
       );
     workspace?.dispatch({ type: "cancel" });
   };
-  const searchOpen =
-    workspace !== null &&
-    workspace.state.tabs[workspace.state.selectedTab].searchMode !== "resting";
-  useHardwareBack(searchOpen, () => {
-    if (keyboardVisible) Keyboard.dismiss();
-    else cancelSearch();
-    return true;
-  });
   // oxlint-disable-next-line fab/no-unreasoned-state-sync -- focuses the search TextInput after a focus request renders it
   useEffect(() => {
     if (focusRequest > 0) input.current?.focus();

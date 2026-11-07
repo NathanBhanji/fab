@@ -16,11 +16,10 @@ import {
   type NativeStackNavigationOptions,
 } from "@react-navigation/native-stack";
 import type { ReactNode } from "react";
-import { Platform, Pressable, ScrollView, StyleSheet, useWindowDimensions } from "react-native";
+import { Platform, Pressable, ScrollView, StyleSheet } from "react-native";
 import { useResolveClassNames } from "uniwind";
 
 import { AppText as Text } from "./components/ui/AppText";
-import { androidWorkspaceDestinationAnimation } from "./lib/android-workspace-navigation";
 import { getCompactBrandHeaderOptions } from "./components/CompactBrandTitle";
 import { WorkspaceConnectionStatusProvider } from "./features/home/WorkspaceConnectionTitle";
 import { WorkspaceRootScreen } from "./features/workspace/WorkspaceRootScreen";
@@ -142,8 +141,6 @@ import {
   SettingsLegalDocumentExternalHeaderButton,
 } from "./features/settings/components/SettingsLegalDocumentRouteScreen";
 import { NATIVE_LIQUID_GLASS_SUPPORTED } from "./native/native-glass";
-import { deriveLayout } from "./lib/layout";
-import { useNativeLayoutMetrics } from "./native/native-layout-metrics";
 import { nativeHeaderScrollEdgeEffects } from "./native/StackHeader";
 import { HORIZONTAL_FORM_SHEET_OPTIONS, formSheetDetents } from "./native/sheet-surface";
 import { workspaceDetailRouter } from "./features/workspace/workspace-detail-selection";
@@ -168,17 +165,10 @@ const GLASS_HEADER_OPTIONS: AppScreenOptions = {
   unstable_navigationItemStyle: NATIVE_LIQUID_GLASS_SUPPORTED ? "editor" : undefined,
 };
 
-// Hiding Android's native header after mount can leave detail panes measured short.
-// These screens render their own Material toolbar, so hide it from the first layout.
-const DETAIL_HEADER_OPTIONS: AppScreenOptions = {
-  ...GLASS_HEADER_OPTIONS,
-  headerShown: Platform.OS !== "android",
-};
-
 // Like Messages on the Duo: reading back through history (scrolling up) minimizes the
 // header, and reversing toward the latest message restores it. Other devices ignore it.
 const THREAD_HEADER_OPTIONS: AppScreenOptions = {
-  ...DETAIL_HEADER_OPTIONS,
+  ...GLASS_HEADER_OPTIONS,
   unstable_headerMinimizationBehavior: "onScrollUp",
 };
 
@@ -235,10 +225,6 @@ const SETTINGS_SCREENS = {
     options: {
       ...SETTINGS_PAGE_OPTIONS,
       title: "Settings",
-      ...(Platform.OS === "android" ? { animation: "none" as const } : {}),
-      // Android draws its own app bar here. Hidden only from inside the screen, the native one
-      // showed for the first frame of the Settings tab and pushed the page down.
-      headerShown: Platform.OS !== "android",
       headerBackVisible: false,
     },
   }),
@@ -407,11 +393,7 @@ const SETTINGS_SCREENS = {
     options: {
       ...SETTINGS_PAGE_OPTIONS,
       headerShown: false,
-      ...(Platform.OS === "android"
-        ? { presentation: "card" as const }
-        : {
-            ...THREAD_SETTINGS_SHEET_OPTIONS,
-          }),
+      ...THREAD_SETTINGS_SHEET_OPTIONS,
     },
   }),
   SettingsClientStorage: createNativeStackScreen({
@@ -626,15 +608,15 @@ const RootStackConfig = createWorkspaceStackNavigator({
         path: "pull-requests/:environmentId/:projectId/:repository/:number",
         parse: { number: Number },
       },
-      options: { ...DETAIL_HEADER_OPTIONS, ...FIXED_DUO_HEADER },
+      options: { ...GLASS_HEADER_OPTIONS, ...FIXED_DUO_HEADER },
     }),
     PullRequestGuideStop: createNativeStackScreen({
       screen: PullRequestGuideStopScreen,
-      options: DETAIL_HEADER_OPTIONS,
+      options: GLASS_HEADER_OPTIONS,
     }),
     PullRequestFile: createNativeStackScreen({
       screen: PullRequestFileRouteScreen,
-      options: DETAIL_HEADER_OPTIONS,
+      options: GLASS_HEADER_OPTIONS,
     }),
     PullRequestFiles: createNativeStackScreen({
       screen: PullRequestFilesSheet,
@@ -643,13 +625,12 @@ const RootStackConfig = createWorkspaceStackNavigator({
         ...HORIZONTAL_FORM_SHEET_OPTIONS,
         sheetAllowedDetents: formSheetDetents(0.6),
         sheetGrabberVisible: true,
-        sheetCornerRadius: Platform.OS === "android" ? 28 : undefined,
       },
     }),
     PullRequestReviewers: createNativeStackScreen({
       screen: PullRequestReviewersScreen,
       options: {
-        ...DETAIL_HEADER_OPTIONS,
+        ...GLASS_HEADER_OPTIONS,
         ...FIXED_DUO_HEADER,
         ...HORIZONTAL_FORM_SHEET_OPTIONS,
         sheetAllowedDetents: formSheetDetents(0.75),
@@ -660,44 +641,35 @@ const RootStackConfig = createWorkspaceStackNavigator({
     PullRequestLabels: createNativeStackScreen({
       screen: PullRequestLabelsScreen,
       // Presented like PullRequestFilterSearch, whose search sheet it shares.
-      options:
-        Platform.OS === "android"
-          ? { presentation: "card", headerShown: false }
-          : {
-              ...DETAIL_HEADER_OPTIONS,
-              ...HORIZONTAL_FORM_SHEET_OPTIONS,
-              sheetAllowedDetents: formSheetDetents(0.75),
-              sheetGrabberVisible: true,
-              headerBackVisible: false,
-            },
+      options: {
+        ...GLASS_HEADER_OPTIONS,
+        ...HORIZONTAL_FORM_SHEET_OPTIONS,
+        sheetAllowedDetents: formSheetDetents(0.75),
+        sheetGrabberVisible: true,
+        headerBackVisible: false,
+      },
     }),
     PullRequestFilterSearch: createNativeStackScreen({
       screen: PullRequestFilterSearchScreen,
-      // Android pushes it like the branch picker; a formSheet there leaves the list's header
-      // peeking above it once the keyboard opens.
-      options:
-        Platform.OS === "android"
-          ? { presentation: "card", headerShown: false }
-          : {
-              ...DETAIL_HEADER_OPTIONS,
-              ...HORIZONTAL_FORM_SHEET_OPTIONS,
-              sheetAllowedDetents: formSheetDetents(0.75),
-              sheetGrabberVisible: true,
-              headerBackVisible: false,
-            },
+      options: {
+        ...GLASS_HEADER_OPTIONS,
+        ...HORIZONTAL_FORM_SHEET_OPTIONS,
+        sheetAllowedDetents: formSheetDetents(0.75),
+        sheetGrabberVisible: true,
+        headerBackVisible: false,
+      },
     }),
     PullRequestDiscussion: createNativeStackScreen({
       screen: PullRequestDiscussionScreen,
-      options: DETAIL_HEADER_OPTIONS,
+      options: GLASS_HEADER_OPTIONS,
     }),
     PullRequestInlineComment: createNativeStackScreen({
       screen: PullRequestInlineCommentScreen,
       options: {
-        ...(Platform.OS === "android"
-          ? { presentation: "fullScreenModal" as const }
-          : { ...SHEET_GLASS_HEADER_OPTIONS, ...HORIZONTAL_FORM_SHEET_OPTIONS }),
-        sheetAllowedDetents: Platform.OS === "android" ? undefined : formSheetDetents(0.75),
-        sheetGrabberVisible: Platform.OS !== "android",
+        ...SHEET_GLASS_HEADER_OPTIONS,
+        ...HORIZONTAL_FORM_SHEET_OPTIONS,
+        sheetAllowedDetents: formSheetDetents(0.75),
+        sheetGrabberVisible: true,
       },
     }),
     PullRequestReview: createNativeStackScreen({
@@ -788,9 +760,7 @@ const RootStackConfig = createWorkspaceStackNavigator({
       options: {
         gestureEnabled: true,
         headerShown: false,
-        ...(Platform.OS === "android"
-          ? { presentation: "card" as const }
-          : THREAD_SETTINGS_SHEET_OPTIONS),
+        ...THREAD_SETTINGS_SHEET_OPTIONS,
       },
     }),
     ThreadTerminal: createNativeStackScreen({
@@ -834,12 +804,9 @@ const RootStackConfig = createWorkspaceStackNavigator({
       screen: ReviewCommentComposerSheet,
       linking: `${THREAD_LINKING_PREFIX}/review-comment`,
       options: {
-        // Android formSheets cannot host the keyboard-driven comment composer.
-        ...(Platform.OS === "android"
-          ? { presentation: "fullScreenModal" as const }
-          : HORIZONTAL_FORM_SHEET_OPTIONS),
-        sheetAllowedDetents: Platform.OS === "android" ? undefined : formSheetDetents(0.55),
-        sheetGrabberVisible: Platform.OS !== "android",
+        ...HORIZONTAL_FORM_SHEET_OPTIONS,
+        sheetAllowedDetents: formSheetDetents(0.55),
+        sheetGrabberVisible: true,
       },
     }),
     ThreadFiles: createNativeStackScreen({
@@ -874,11 +841,7 @@ const RootStackConfig = createWorkspaceStackNavigator({
       options: {
         gestureEnabled: true,
         headerShown: false,
-        ...(Platform.OS === "android"
-          ? { presentation: "card" as const }
-          : {
-              ...THREAD_SETTINGS_SHEET_OPTIONS,
-            }),
+        ...THREAD_SETTINGS_SHEET_OPTIONS,
       },
     }),
     ThreadQueue: createNativeStackScreen({
@@ -886,7 +849,7 @@ const RootStackConfig = createWorkspaceStackNavigator({
       options: {
         ...HORIZONTAL_FORM_SHEET_OPTIONS,
         headerShown: false,
-        sheetAllowedDetents: formSheetDetents(0.65, 0.95),
+        sheetAllowedDetents: formSheetDetents(0.65),
         sheetGrabberVisible: true,
       },
     }),
@@ -895,7 +858,7 @@ const RootStackConfig = createWorkspaceStackNavigator({
       options: {
         ...HORIZONTAL_FORM_SHEET_OPTIONS,
         headerShown: false,
-        sheetAllowedDetents: formSheetDetents(0.5, 0.9),
+        sheetAllowedDetents: formSheetDetents(0.5),
         sheetGrabberVisible: true,
       },
     }),
@@ -904,7 +867,7 @@ const RootStackConfig = createWorkspaceStackNavigator({
       options: {
         ...HORIZONTAL_FORM_SHEET_OPTIONS,
         headerShown: false,
-        sheetAllowedDetents: formSheetDetents(0.5, 0.9),
+        sheetAllowedDetents: formSheetDetents(0.5),
         sheetGrabberVisible: true,
       },
     }),
@@ -970,12 +933,11 @@ const RootStackConfig = createWorkspaceStackNavigator({
       screen: ConnectOnboardingRouteScreen,
       linking: "connect-onboarding",
       options: {
-        // Android root formSheets lack a native stack bar; the route provides AndroidSheetHeader.
-        ...(Platform.OS === "android" ? { headerShown: false } : SHEET_SOLID_HEADER_OPTIONS),
+        ...SHEET_SOLID_HEADER_OPTIONS,
         title: "Set up Fab Connect",
         gestureEnabled: true,
         ...HORIZONTAL_FORM_SHEET_OPTIONS,
-        sheetAllowedDetents: formSheetDetents(0.6, 0.95),
+        sheetAllowedDetents: formSheetDetents(0.6),
         sheetGrabberVisible: true,
       },
     }),
@@ -984,13 +946,9 @@ const RootStackConfig = createWorkspaceStackNavigator({
       linking: "connections",
       options: {
         title: "Environments",
-        ...(Platform.OS === "android"
-          ? { presentation: "card" as const, headerShown: false }
-          : {
-              ...HORIZONTAL_FORM_SHEET_OPTIONS,
-              sheetAllowedDetents: [0.55, 0.7],
-              sheetGrabberVisible: true,
-            }),
+        ...HORIZONTAL_FORM_SHEET_OPTIONS,
+        sheetAllowedDetents: [0.55, 0.7],
+        sheetGrabberVisible: true,
       },
     }),
     ConnectionsNew: createNativeStackScreen({
@@ -1003,7 +961,6 @@ const RootStackConfig = createWorkspaceStackNavigator({
         ...HORIZONTAL_FORM_SHEET_OPTIONS,
         sheetAllowedDetents: [0.55, 0.7],
         sheetGrabberVisible: true,
-        sheetCornerRadius: Platform.OS === "android" ? 28 : undefined,
       },
     }),
     NotFound: createNativeStackScreen({
@@ -1056,21 +1013,8 @@ registerPresentedRoutes(
 );
 
 export const RootStack = RootStackConfig.with(function AdaptiveRootStack({ Navigator }) {
-  const { width, height } = useWindowDimensions();
-  const nativeMetrics = useNativeLayoutMetrics();
-  const usesSplitView = deriveLayout({ width, height, nativeMetrics }).usesSplitView;
-
   /* oxlint-disable react/no-unstable-nested-components -- React Navigation invokes screenLayout as a render callback. */
-  return (
-    <Navigator
-      screenLayout={(props) => <GuardedScreenLayout {...props} />}
-      screenOptions={({ route }) =>
-        Platform.OS === "android"
-          ? { animation: androidWorkspaceDestinationAnimation(route.name, usesSplitView) }
-          : {}
-      }
-    />
-  );
+  return <Navigator screenLayout={(props) => <GuardedScreenLayout {...props} />} />;
 
   /* oxlint-enable react/no-unstable-nested-components */
 });

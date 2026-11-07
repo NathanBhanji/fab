@@ -1,11 +1,8 @@
 import { type ComponentProps, type ReactNode, useRef } from "react";
-import { Platform, Pressable, View } from "react-native";
+import { Pressable, View } from "react-native";
 import { cn } from "../../lib/cn";
 import { SymbolView } from "./AppSymbol";
 import { AppText as Text } from "./AppText";
-import { IconButton } from "./IconButton";
-import { Button } from "./Button";
-import { useAndroidControlSizing } from "./useAndroidControlSizing";
 
 export function ControlPill(props: {
   readonly icon?: ComponentProps<typeof SymbolView>["name"];
@@ -19,7 +16,6 @@ export function ControlPill(props: {
   readonly className?: string;
 }) {
   const variant = props.variant ?? "circle";
-  const { smallIconSize } = useAndroidControlSizing();
   const activatedOnPressInRef = useRef(false);
 
   const handlePressIn = () => {
@@ -76,47 +72,6 @@ export function ControlPill(props: {
         : "text-foreground",
   );
 
-  if (
-    Platform.OS === "android" &&
-    (variant === "pill" || variant === "primary") &&
-    props.label &&
-    props.onPress &&
-    !props.icon &&
-    !props.iconNode &&
-    !props.className &&
-    !props.activateOnPressIn &&
-    (!props.accessibilityLabel || props.accessibilityLabel === props.label)
-  ) {
-    return (
-      <Button
-        label={props.label}
-        onPress={props.onPress}
-        disabled={props.disabled}
-        tone={variant === "primary" ? "primary" : "secondary"}
-      />
-    );
-  }
-
-  if (
-    Platform.OS === "android" &&
-    props.accessibilityLabel &&
-    props.icon &&
-    !props.iconNode &&
-    !props.label &&
-    !props.className &&
-    !props.activateOnPressIn
-  ) {
-    return (
-      <IconButton
-        accessibilityLabel={props.accessibilityLabel}
-        icon={props.icon}
-        onPress={props.onPress}
-        disabled={props.disabled}
-        variant={variant === "primary" ? "primary" : variant === "danger" ? "danger" : "tonal"}
-      />
-    );
-  }
-
   return (
     <Pressable
       accessibilityLabel={props.accessibilityLabel ?? props.label}
@@ -132,7 +87,7 @@ export function ControlPill(props: {
       ) : props.icon ? (
         <SymbolView
           name={props.icon}
-          size={smallIconSize}
+          size={16}
           tintColorClassName={iconTintClassName}
           type="monochrome"
         />
