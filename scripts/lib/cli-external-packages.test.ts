@@ -34,7 +34,7 @@ describe("shouldBundleCliDependency", () => {
     for (const id of [
       "node-pty",
       "ffi-rs",
-      "@yuuang/ffi-rs-win32-x64-msvc",
+      "@yuuang/ffi-rs-darwin-arm64",
       "@ff-labs/fff-node",
       "@napi-rs/keyring",
       "@clerk/electron-passkeys",
@@ -120,7 +120,7 @@ it.layer(NodeServices.layer)("external package dependency closure", (it) => {
       assert.deepStrictEqual(
         violations,
         [],
-        `these dependencies of external packages would be bundled away and fail to resolve under WSL: ${violations.join(", ")}`,
+        `these dependencies of external packages would be bundled away and fail to resolve at runtime: ${violations.join(", ")}`,
       );
     }),
   );

@@ -7,7 +7,7 @@ const os = require("node:os");
 // afterPack runs before signing and installer creation, against the final ASAR layout.
 module.exports = async ({ appOutDir, electronPlatformName, arch, packager }) => {
   // Linux packaging and relocated AppImage cache reuse still need native validation.
-  if (electronPlatformName !== "darwin" && electronPlatformName !== "win32") {
+  if (electronPlatformName !== "darwin") {
     console.log(`[server-compile-cache] Skipping unsupported target ${electronPlatformName}`);
     return;
   }
@@ -27,17 +27,8 @@ module.exports = async ({ appOutDir, electronPlatformName, arch, packager }) => 
     return;
   }
   const product = packager.appInfo.productFilename;
-  const resources =
-    electronPlatformName === "darwin"
-      ? path.join(appOutDir, `${product}.app`, "Contents", "Resources")
-      : path.join(appOutDir, "resources");
-  const executable =
-    electronPlatformName === "darwin"
-      ? path.join(appOutDir, `${product}.app`, "Contents", "MacOS", product)
-      : path.join(
-          appOutDir,
-          electronPlatformName === "win32" ? `${product}.exe` : packager.executableName,
-        );
+  const resources = path.join(appOutDir, `${product}.app`, "Contents", "Resources");
+  const executable = path.join(appOutDir, `${product}.app`, "Contents", "MacOS", product);
   const helper = path.join(
     resources,
     "app.asar",

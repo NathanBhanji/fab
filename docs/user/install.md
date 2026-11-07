@@ -14,12 +14,6 @@ launch Fab and configure providers afterwards.
 curl -fsSL https://fab.invalid/install.sh | sh
 ```
 
-On Windows, in PowerShell:
-
-```powershell
-irm https://fab.invalid/install.ps1 | iex
-```
-
 This installs the `fab` binary to `~/.local/bin`. If your shell reports `command not found`
 afterwards, that directory is not on your `PATH` yet; the installer prints the
 line to add. Set `FAB_CHANNEL=nightly` to install the nightly train, or
@@ -68,7 +62,6 @@ or use a package manager:
 
 | Platform           | Install                                                   |
 | ------------------ | --------------------------------------------------------- |
-| Windows            | `winget install Bhanji.Fab`                               |
 | macOS              | `brew install --cask fab`                                 |
 | Debian, Ubuntu     | `sudo apt install ./Fab-*.deb`                            |
 | Arch Linux         | `yay -S fab-bin`                                          |
@@ -105,8 +98,7 @@ Nix manages both the desktop app and the bundled
 
 The desktop app includes the `fab` command-line tool. To run it from any
 terminal, open **Settings → About** and choose **Install** next to
-**fab command**. On macOS and Linux it adds a `fab` link to a folder on your
-`PATH`; on Windows it adds the app's command folder to your `PATH`. Open a new
+**fab command**. It adds a `fab` link to a folder on your `PATH`. Open a new
 terminal afterwards. **Remove** takes it off again. If you already have `fab`
 from npm, it stays as it is.
 

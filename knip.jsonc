@@ -34,7 +34,6 @@
         "sign-macos.ts",
         "prepare-server-compile-cache.cjs",
         "smoke-desktop-app.ts",
-        "verify-windows-desktop-artifact.ts",
       ],
       "ignoreDependencies": ["agent-device", "esbuild"],
       // The `fab` npm package's files: copied into the package, never imported.

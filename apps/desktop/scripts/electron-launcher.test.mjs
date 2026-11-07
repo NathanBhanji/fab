@@ -151,13 +151,10 @@ async function startupCleanupPattern(desktopDir) {
   return pattern;
 }
 
-it
-  // oxlint-disable-next-line fab/no-global-process-runtime -- Native pgrep is unavailable on Windows.
-  .skipIf(NodeOS.platform() === "win32")
-  .each([
-    "/tmp/fab-feature.one/apps/desktop",
-    "/tmp/fab-feature.one [two](three)+?^${four}|back\\slash*/apps/desktop",
-  ])("dev cleanup matches only the literal root argument: %s", async (desktopDir) => {
+it.each([
+  "/tmp/fab-feature.one/apps/desktop",
+  "/tmp/fab-feature.one [two](three)+?^${four}|back\\slash*/apps/desktop",
+])("dev cleanup matches only the literal root argument: %s", async (desktopDir) => {
   const pattern = await startupCleanupPattern(desktopDir);
   const flag = `--fab-dev-root=${desktopDir}`;
   const argvCases = [

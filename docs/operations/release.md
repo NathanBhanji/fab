@@ -31,11 +31,10 @@ the version.
 - Runs lint, typecheck, and tests alongside artifact builds. Publishing waits for every check.
 - Reads the shared production Fab Connect relay URL and Clerk client configuration before packaging clients.
 - Builds the platform-independent JS (server bundle, web client, Electron main) once in the `build_bundle` job and hands it to every platform job as the `js-bundle` artifact; the platform jobs only package it, so no runner rebuilds it.
-- Builds six desktop artifacts in parallel for both channels, each as its own job (`desktop_<platform>_<arch>`, one call of `release-desktop.yml`), gated only on the bundle. macOS and Linux targets build on hardware of their own architecture. Both Windows targets build and sign (with jsign) on a Linux runner, which packages faster than Windows runners, and a Windows job of the target's architecture (`windows-2025` or `windows-11-arm`, the `verify_runner`) runs the packaged natives and the CLI archive. The Windows jobs embed the same-arch Linux CLI archive as the WSL runtime and wait for that artifact partway through, not for the whole Linux job:
+- Builds four desktop artifacts in parallel for both channels, each as its own job (`desktop_<platform>_<arch>`, one call of `release-desktop.yml`), gated only on the bundle. Every target builds on hardware of its own architecture:
   - macOS `arm64` DMG
   - macOS `x64` DMG
   - Linux `x64` and `arm64` AppImage and `.deb`, from one electron-builder run. The `.deb` updates in the app through electron-updater, which installs it with `dpkg`.
-  - Windows `x64` and `arm64` NSIS installer
 - Opens the packaged Linux x64 AppImage (under Xvfb) and macOS arm64 DMG against a seeded database and opens a thread (`scripts/smoke-desktop-app.ts`). A build whose backend or bundle cannot start fails here, so nothing is published. The database in `scripts/fixtures/desktop-launch` is an old snapshot on purpose: the packaged server must migrate it forward, as it does for upgrading users. Do not regenerate it on schema changes.
 - Publishes one GitHub Release with all produced files.
   - Stable tags with a suffix after `X.Y.Z` (for example `1.2.3-alpha.1`) are published as GitHub prereleases.
@@ -44,11 +43,11 @@ the version.
   - Automatically generated release notes are pinned to the previous tag in the same channel, so stable compares to the previous stable tag and nightly compares to the previous nightly tag.
   - The release job's **Write release notes** step (`scripts/generate-release-notes.ts`) builds the body: a computed header line, a short summary from `gpt-6.1-terra`, and GitHub's generated list folded under `<details>`. It needs the `OPENAI_API_KEY` secret. The desktop update popover shows up to seven highlights and the number of other fixes and performance improvements. Mobile-only commits count toward release totals but cannot be highlights. The offered release's age comes from the update feed's `releaseDate`. The nightly Discord post shows the part above `<details>`. If summary generation fails, the release uses GitHub's generated notes.
 - Includes Electron auto-update metadata (for example `latest*.yml`, `nightly*.yml`, and `*.blockmap`) in release assets.
-- Builds a self-contained CLI archive per platform (`fab-<version>-<platform>-<arch>.tar.gz`, `.zip` on Windows) in the same job as that target's desktop artifact and attaches them to the GitHub Release with a `SHA256SUMS` file, on every channel, for five targets: macOS arm64, Linux x64 and arm64, Windows x64 and arm64. Every archive is smoke-tested on hardware of its own architecture, and every one but the Windows archives is also built and signed there. There is no macOS x64 archive: Node single-executables are unsupported on x64 macOS (the SEA docs list macOS as arm64 only) and the binary segfaults on start; the x64 desktop app is Electron and unaffected.
-  - The archive holds the server as a Node single-executable (`scripts/build-cli-archive.ts`), so unpacking it needs neither Node, npm, nor a compiler. It is the only form in which Fab manages a runtime: the desktop's SSH environments, the boot service, `fab update`, and the install scripts all download and verify this archive against `SHA256SUMS`. The `fab` npm package exists for people who run `npx fab` or `npm install -g fab` themselves, and it downloads this same archive too; nothing in the product installs from npm. The `curl | sh` installers are `scripts/install.sh` and `scripts/install.ps1`; the marketing site copies them into its `public/` at build time (`apps/marketing/scripts/stage-install-scripts.mjs`) and serves them at `fab.invalid/install.sh` and `/install.ps1`.
+- Builds a self-contained CLI archive per platform (`fab-<version>-<platform>-<arch>.tar.gz`) in the same job as that target's desktop artifact and attaches them to the GitHub Release with a `SHA256SUMS` file, on every channel, for three targets: macOS arm64, Linux x64 and arm64. Every archive is built, signed, and smoke-tested on hardware of its own architecture. There is no macOS x64 archive: Node single-executables are unsupported on x64 macOS (the SEA docs list macOS as arm64 only) and the binary segfaults on start; the x64 desktop app is Electron and unaffected.
+  - The archive holds the server as a Node single-executable (`scripts/build-cli-archive.ts`), so unpacking it needs neither Node, npm, nor a compiler. It is the only form in which Fab manages a runtime: the desktop's SSH environments, the boot service, `fab update`, and the install scripts all download and verify this archive against `SHA256SUMS`. The `fab` npm package exists for people who run `npx fab` or `npm install -g fab` themselves, and it downloads this same archive too; nothing in the product installs from npm. The `curl | sh` installer is `scripts/install.sh`; the marketing site copies it into its `public/` at build time (`apps/marketing/scripts/stage-install-scripts.mjs`) and serves it at `fab.invalid/install.sh`.
   - The root `package.json` pins `engines.node` to the exact Node version used by development, CI and standalone executables. Keep it exact: cross-target builds download that version, and native executable builds reject a different host Node version. TEMPORARY: Linux arm64 executables build only on a Linux arm64 host and are injected with postject, because Node's `--build-sea` output cannot load on 16 or 64 KiB page kernels. Revert when [nodejs/node#67048](https://github.com/nodejs/node/issues/67048) is fixed. Runtime changes need a new Fab release version because installed runtimes are cached by that version.
-  - macOS archives are signed with the Developer ID certificate and notarized when the Apple secrets are present (ad hoc otherwise, which still runs from `curl`/`tar` installs). Windows executables use the same Azure Trusted Signing setup as the installer. Every native addon in the macOS archive is signed too, since the hardened runtime refuses unsigned libraries.
-  - Each archive is extracted and executed (`scripts/smoke-cli-archive.ts`) on its build runner, or on the `verify_runner` for Windows.
+  - macOS archives are signed with the Developer ID certificate and notarized when the Apple secrets are present (ad hoc otherwise, which still runs from `curl`/`tar` installs). Every native addon in the macOS archive is signed too, since the hardened runtime refuses unsigned libraries.
+  - Each archive is extracted and executed (`scripts/smoke-cli-archive.ts`) on its build runner.
 - After the GitHub Release is published, publishes the `fab` npm package with OIDC trusted publishing from the same workflow file. It is only a launcher (`scripts/npm-launcher/fab.mjs`): on first run it downloads its exact version's CLI archive from the GitHub Release, verifies it against `SHA256SUMS`, and unpacks it into `<Fab home>/runtime/versions/<version>`, the layout the install scripts and `fab update` share. The executables are not on npm. They used to be, as `@fab/fab-<platform>-<arch>` optional dependencies, but npm's publish-time scanning held those 80-250 MB packages back for up to an hour after the launcher was live, and every install in that window got a launcher with no executable. Those packages stay on npm at their old versions and get no new ones. Because the launcher reads from the release, `publish_cli` runs after `release`, never before.
   - stable releases publish npm dist-tag `latest`
   - nightly releases publish npm dist-tag `nightly`
@@ -478,58 +477,12 @@ available.
   - `FAB_DESKTOP_UPDATE_REPOSITORY` (format `owner/repo`), if set.
   - otherwise `GITHUB_REPOSITORY` from GitHub Actions.
 - Required release assets for updater:
-  - platform installers (`.exe`, `.dmg`, `.AppImage`, `.deb`, plus macOS `.zip` for Squirrel.Mac update payloads)
+  - platform installers (`.dmg`, `.AppImage`, `.deb`, plus macOS `.zip` for Squirrel.Mac update payloads)
   - channel metadata: `latest*.yml` for stable releases, `nightly*.yml` for nightly releases
   - `*.blockmap` files (used for differential downloads)
 - macOS metadata note:
   - `electron-updater` reads `latest-mac.yml` on stable and `nightly-mac.yml` on nightly, for both Intel and Apple Silicon.
   - The workflow merges the per-arch mac manifests into one channel-specific mac manifest before publishing the GitHub Release.
-
-### Windows payload topology and update validation
-
-Windows packages the bundled server and only its runtime-external/native
-dependency closure in `resources/server.asar`. Native modules and helper
-executables declared as unpacked by that archive must be present at the matching
-paths below `resources/server.asar.unpacked`. The Windows-native backend reads
-the archive in place through Electron. Packaged Windows builds also ship
-`resources/wsl-runtime.tar.gz` plus its SHA-256 sidecar: the Linux CLI archive
-(`fab-<version>-linux-<arch>.tar.gz`, the same arch as the Windows host) built
-by the Linux desktop job and handed to the Windows desktop build as
-`--wsl-runtime`, copied in verbatim so WSL runs the exact bytes a Linux user
-downloads. WSL verifies and extracts that archive
-into `~/.fab/wsl-runtime/sha256-<archive-digest>` inside the selected distro,
-then reuses it for later launches of the same update.
-
-Windows keeps JavaScript and package metadata inside `app.asar` and unpacks only
-native libraries and helper executables. Avoid enabling whole-package smart
-unpacking: each loose file adds work to NSIS installation and counts against
-the payload limit.
-
-The artifact builder rejects a Windows package when any of these invariants
-break:
-
-- `resources/server.asar` is absent or does not contain the server entry.
-- Any file marked unpacked in the ASAR header is absent from
-  `resources/server.asar.unpacked`.
-- On same-architecture Windows builds, the packaged primary cannot load the fff
-  native library from inside `server.asar` through its `.unpacked` sibling.
-- The isolated, extracted sidecar cannot load the server entry with plain Node.
-- A Windows build given `--wsl-runtime` omits the WSL archive or SHA-256
-  sidecar, or the sidecar digest does not match the emitted archive.
-- The emitted WSL archive is not a Linux CLI release archive: it must unpack to
-  a single `fab-<version>-linux-<arch>` directory holding `fab`, `client/`, and
-  `node_modules/` with the Linux node-pty binary, and must not carry a loose
-  server bundle (`bin.mjs`).
-- The external Windows resource monitor is absent.
-- The unpacked Windows application contains more than 80 files.
-
-Cross-architecture Windows builds retain every structural and extracted-sidecar
-check, but skip executing the target Electron binary. A same-architecture build
-for each release target must exercise the primary native-load probe.
-
-NSIS differential packaging remains enabled. A sidecar layout transition can
-produce a larger one-time download; subsequent small releases retain their
-blockmaps, with a 60 MB maximum for a representative sidecar-to-sidecar update.
 
 ## 0) npm OIDC trusted publishing setup (CLI)
 
@@ -625,33 +578,7 @@ Notes:
     [macOS Browsers Passkeys form](https://developer.apple.com/contact/request/macos-browsers-passkeys/).
     After approval, regenerate the profile and update `MACOS_PROVISIONING_PROFILE`.
 
-## 3) Azure Trusted Signing setup (Windows)
-
-Required secrets used by the workflow:
-
-- `AZURE_TENANT_ID`
-- `AZURE_CLIENT_ID`
-- `AZURE_CLIENT_SECRET`
-- `AZURE_TRUSTED_SIGNING_ENDPOINT`
-- `AZURE_TRUSTED_SIGNING_ACCOUNT_NAME`
-- `AZURE_TRUSTED_SIGNING_CERTIFICATE_PROFILE_NAME`
-- `AZURE_TRUSTED_SIGNING_PUBLISHER_NAME`
-
-Checklist:
-
-1. Create Azure Trusted Signing account and certificate profile.
-2. Record ATS values:
-   - Endpoint
-   - Account name
-   - Certificate profile name
-   - Publisher name
-3. Create/choose an Entra app registration (service principal).
-4. Grant service principal permissions required by Trusted Signing.
-5. Create a client secret for the service principal.
-6. Add Azure secrets listed above in GitHub Actions secrets.
-7. Re-run a tag release and confirm Windows installer is signed.
-
-## 4) Ongoing release checklist
+## 3) Ongoing release checklist
 
 1. Pick the latest nightly and verify it: run the smoke test above against its artifacts and
    check the nightly channel for regressions.
@@ -667,14 +594,12 @@ Checklist:
    - release job uploads expected files
 5. Smoke test downloaded artifacts.
 
-## 5) Troubleshooting
+## 4) Troubleshooting
 
 - macOS build unsigned when expected signed:
   - Check all Apple secrets plus `APPLE_TEAM_ID` are populated and non-empty.
   - Confirm the provisioning profile belongs to `APPLE_TEAM_ID.dev.bhanji.fab` and includes
     Associated Domains.
-- Windows build unsigned when expected signed:
-  - Check all Azure ATS and auth secrets are populated and non-empty.
 - Build fails with signing error:
   - Retry with secrets removed to confirm unsigned path still works.
-  - Re-check certificate/profile names and tenant/client credentials.
+  - Re-check the certificate, provisioning profile, and App Store Connect API key values.

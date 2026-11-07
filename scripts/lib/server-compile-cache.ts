@@ -55,8 +55,7 @@ export function seedPreparedCache(prepared: string, active: string, runtime: str
       );
       try {
         // Node replaces cache files atomically. A directory link would instead allow writes into signed resources.
-        if (process.platform === "win32") NodeFS.linkSync(source, destination);
-        else NodeFS.symlinkSync(source, destination);
+        NodeFS.symlinkSync(source, destination);
       } catch {}
       if (!NodeFS.existsSync(destination)) return false;
     }
