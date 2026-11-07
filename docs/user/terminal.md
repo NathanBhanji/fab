@@ -14,7 +14,7 @@ programs keep these navigation keys.
 
 To copy all retained output, choose Select all in the terminal's context menu,
 then copy. Cmd+A on macOS and Ctrl+Shift+A elsewhere select the same output.
-Ctrl+A still moves to the beginning of shell input on Windows and Linux.
+Ctrl+A still moves to the beginning of shell input on Linux.
 Jump to latest in the context menu returns to the current output.
 
 ## fish

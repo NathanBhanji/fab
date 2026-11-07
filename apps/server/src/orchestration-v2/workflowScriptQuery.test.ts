@@ -3,7 +3,6 @@ import * as NodeFS from "node:fs";
 import * as NodeOS from "node:os";
 import * as NodePath from "node:path";
 import * as NodeChildProcess from "node:child_process";
-import * as HostProcess from "@fab/shared/HostProcess";
 import { it as effectIt } from "@effect/vitest";
 import * as Effect from "effect/Effect";
 import { afterAll, assert, describe } from "vite-plus/test";
@@ -31,15 +30,13 @@ afterAll(() => {
 });
 
 describe("workflow script containment", () => {
-  effectIt.effect.skipIf(HostProcess.Platform.defaultValue() === "win32")(
-    "rejects a FIFO without waiting for a writer",
-    () =>
-      Effect.gen(function* () {
-        const fifo = NodePath.join(root, "pipe.js");
-        NodeChildProcess.execFileSync("mkfifo", [fifo]);
-        const error = yield* Effect.flip(readWorkflowScript({ scriptPath: fifo }));
-        assert.equal(error.reason, "not-regular-file");
-      }),
+  effectIt.effect("rejects a FIFO without waiting for a writer", () =>
+    Effect.gen(function* () {
+      const fifo = NodePath.join(root, "pipe.js");
+      NodeChildProcess.execFileSync("mkfifo", [fifo]);
+      const error = yield* Effect.flip(readWorkflowScript({ scriptPath: fifo }));
+      assert.equal(error.reason, "not-regular-file");
+    }),
   );
 
   effectIt.effect("serves a real script under the projects root", () =>

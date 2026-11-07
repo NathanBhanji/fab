@@ -99,12 +99,12 @@ const MAX_HISTORY_CHUNK_LENGTH = 16 * 1024;
 const DEFAULT_PERSIST_DEBOUNCE_MS = 250;
 const DEFAULT_SUBPROCESS_POLL_INTERVAL_MS = 1_000;
 const MAX_SUBPROCESS_POLL_INTERVAL_MS = 60_000;
-// `ps` and WMI can take seconds on a loaded host and their tables are still
+// `ps` can take seconds on a loaded host and their tables are still
 // valid then; the timeout only ends a query that is truly stuck.
 const PROCESS_TABLE_QUERY_TIMEOUT = "15 seconds";
 // closeIdle queries while holding the thread lock, so it keeps a short budget
 // rather than stalling other operations on that thread behind a slow table.
-const CLOSE_IDLE_QUERY_TIMEOUT = { posix: "1 second", win32: "1500 millis" } as const;
+const CLOSE_IDLE_QUERY_TIMEOUT = "1 second";
 // Discover children started without terminal input or output.
 const QUIET_SUBPROCESS_SNAPSHOT_EVERY_TICKS = 30;
 const DEFAULT_PROCESS_KILL_GRACE_MS = 1_000;
@@ -134,7 +134,7 @@ class TerminalSubprocessCheckError extends Schema.TaggedError<TerminalSubprocess
   "TerminalSubprocessCheckError",
   {
     cause: Schema.optional(Schema.Defect()),
-    command: Schema.Literals(["powershell", "ps", "resource-monitor"]),
+    command: Schema.Literals(["ps", "resource-monitor"]),
     exitCode: Schema.optional(Schema.NullOr(Schema.Number)),
     timedOut: Schema.optional(Schema.Boolean),
     stdoutTruncated: Schema.optional(Schema.Boolean),
@@ -356,7 +356,7 @@ function truncateTerminalWireLabel(value: string): string {
   return value.slice(0, MAX_TERMINAL_LABEL_LENGTH);
 }
 
-function normalizeChildCommandName(raw: string, platform: NodeJS.Platform): string | null {
+function normalizeChildCommandName(raw: string): string | null {
   let trimmed = raw.trim();
   if (trimmed.length === 0) return null;
   if (
@@ -366,11 +366,8 @@ function normalizeChildCommandName(raw: string, platform: NodeJS.Platform): stri
     trimmed = trimmed.slice(1, -1).trim();
   }
   // Process names and macOS `comm` paths can contain spaces ("Google Chrome").
-  const separators = platform === "win32" ? /[\\/]/ : /\//;
-  const base = (trimmed.split(separators).at(-1) ?? trimmed).trim();
-  const withoutExe =
-    platform === "win32" && base.toLowerCase().endsWith(".exe") ? base.slice(0, -4) : base;
-  return withoutExe.length > 0 ? withoutExe : null;
+  const base = (trimmed.split("/").at(-1) ?? trimmed).trim();
+  return base.length > 0 ? base : null;
 }
 
 function terminalWireLabel(session: TerminalSessionState): string {
@@ -508,80 +505,32 @@ function enqueueProcessEvent(
   return true;
 }
 
-function defaultShellResolver(platform: NodeJS.Platform, env: NodeJS.ProcessEnv): string {
-  if (platform === "win32") {
-    return "pwsh.exe";
-  }
+function defaultShellResolver(env: NodeJS.ProcessEnv): string {
   return env.SHELL ?? "bash";
 }
 
-function normalizeShellCommand(
-  value: string | undefined,
-  platform: NodeJS.Platform,
-): string | null {
+function normalizeShellCommand(value: string | undefined): string | null {
   if (!value) return null;
   const trimmed = value.trim();
   if (trimmed.length === 0) return null;
-
-  if (platform === "win32") {
-    return trimmed;
-  }
 
   const firstToken = trimmed.split(/\s+/g)[0]?.trim();
   if (!firstToken) return null;
   return firstToken.replace(/^['"]|['"]$/g, "");
 }
 
-function basenameForPlatform(command: string, platform: NodeJS.Platform): string {
-  const normalized =
-    platform === "win32" ? command.replaceAll("/", "\\") : command.replaceAll("\\", "/");
-  const parts = normalized
-    .split(platform === "win32" ? /\\+/ : /\/+/)
-    .filter((part) => part.length > 0);
+function commandBasename(command: string): string {
+  const normalized = command.replaceAll("\\", "/");
+  const parts = normalized.split(/\/+/).filter((part) => part.length > 0);
   return parts.at(-1) ?? normalized;
 }
 
-function joinWindowsPath(...parts: ReadonlyArray<string>): string {
-  return parts
-    .map((part, index) => {
-      if (index === 0) return part.replace(/[\\/]+$/g, "");
-      return part.replace(/^[\\/]+|[\\/]+$/g, "");
-    })
-    .filter((part) => part.length > 0)
-    .join("\\");
-}
-
-function shellCandidateFromCommand(
-  command: string | null,
-  platform: NodeJS.Platform,
-): ShellCandidate | null {
+function shellCandidateFromCommand(command: string | null): ShellCandidate | null {
   if (!command || command.length === 0) return null;
-  const shellName = basenameForPlatform(command, platform).toLowerCase();
-  if (platform === "win32" && (shellName === "pwsh.exe" || shellName === "powershell.exe")) {
-    return { shell: command, args: ["-NoLogo"] };
-  }
-  if (platform !== "win32" && shellName === "zsh") {
+  if (commandBasename(command).toLowerCase() === "zsh") {
     return { shell: command, args: ["-o", "nopromptsp"] };
   }
   return { shell: command };
-}
-
-function windowsSystemRoot(env: NodeJS.ProcessEnv): string {
-  return env.SystemRoot?.trim() || env.windir?.trim() || "C:\\Windows";
-}
-
-function windowsPowerShellPath(env: NodeJS.ProcessEnv): string {
-  return joinWindowsPath(
-    windowsSystemRoot(env),
-    "System32",
-    "WindowsPowerShell",
-    "v1.0",
-    "powershell.exe",
-  );
-}
-
-function windowsCmdPath(env: NodeJS.ProcessEnv): string {
-  return joinWindowsPath(windowsSystemRoot(env), "System32", "cmd.exe");
 }
 
 function formatShellCandidate(candidate: ShellCandidate): string {
@@ -604,35 +553,17 @@ function uniqueShellCandidates(candidates: Array<ShellCandidate | null>): ShellC
 
 function resolveShellCandidates(
   shellResolver: () => string,
-  platform: NodeJS.Platform,
   env: NodeJS.ProcessEnv,
 ): ShellCandidate[] {
-  const requested = shellCandidateFromCommand(
-    normalizeShellCommand(shellResolver(), platform),
-    platform,
-  );
-
-  if (platform === "win32") {
-    return uniqueShellCandidates([
-      requested,
-      shellCandidateFromCommand("pwsh.exe", platform),
-      shellCandidateFromCommand(windowsPowerShellPath(env), platform),
-      shellCandidateFromCommand("powershell.exe", platform),
-      shellCandidateFromCommand(env.ComSpec ?? null, platform),
-      shellCandidateFromCommand(windowsCmdPath(env), platform),
-      shellCandidateFromCommand("cmd.exe", platform),
-    ]);
-  }
-
   return uniqueShellCandidates([
-    requested,
-    shellCandidateFromCommand(normalizeShellCommand(env.SHELL, platform), platform),
-    shellCandidateFromCommand("/bin/zsh", platform),
-    shellCandidateFromCommand("/bin/bash", platform),
-    shellCandidateFromCommand("/bin/sh", platform),
-    shellCandidateFromCommand("zsh", platform),
-    shellCandidateFromCommand("bash", platform),
-    shellCandidateFromCommand("sh", platform),
+    shellCandidateFromCommand(normalizeShellCommand(shellResolver())),
+    shellCandidateFromCommand(normalizeShellCommand(env.SHELL)),
+    shellCandidateFromCommand("/bin/zsh"),
+    shellCandidateFromCommand("/bin/bash"),
+    shellCandidateFromCommand("/bin/sh"),
+    shellCandidateFromCommand("zsh"),
+    shellCandidateFromCommand("bash"),
+    shellCandidateFromCommand("sh"),
   ]);
 }
 
@@ -737,10 +668,9 @@ function processTableSnapshotFromProcesses(
 function deriveSubprocessInspectResult(
   snapshot: TerminalProcessTableSnapshot,
   terminalPid: number,
-  platform: NodeJS.Platform,
 ): TerminalSubprocessInspectResult {
   const commandName = (pid: number) =>
-    normalizeChildCommandName(snapshot.commandById.get(pid) ?? "", platform);
+    normalizeChildCommandName(snapshot.commandById.get(pid) ?? "");
   const shellName = commandName(terminalPid);
   // Async prompt themes fork childless shell helpers that are not user commands.
   const childPid = (snapshot.childrenByParent.get(terminalPid) ?? []).find(
@@ -820,47 +750,6 @@ const posixProcessTableSnapshot = Effect.fn("terminal.posixProcessTableSnapshot"
     });
   }
   return parsePosixProcessTable(result.stdout);
-});
-
-const windowsProcessTableSnapshot = Effect.fn("terminal.windowsProcessTableSnapshot")(function* (
-  timeout: Duration.Input,
-): Effect.fn.Return<
-  TerminalProcessTableSnapshot,
-  TerminalSubprocessCheckError,
-  ProcessRunner.ProcessRunner
-> {
-  const processRunner = yield* ProcessRunner.ProcessRunner;
-  const command =
-    'Get-CimInstance Win32_Process -ErrorAction Stop | ForEach-Object { Write-Output "$($_.ProcessId)|$($_.ParentProcessId)|$($_.Name)" }';
-  const result = yield* processRunner
-    .run({
-      command: "powershell.exe",
-      args: ["-NoProfile", "-NonInteractive", "-Command", command],
-      timeout,
-      maxOutputBytes: 262_144,
-      outputMode: "truncate",
-      timeoutBehavior: "timedOutResult",
-    })
-    .pipe(
-      Effect.mapError(
-        (cause) => new TerminalSubprocessCheckError({ cause, command: "powershell" }),
-      ),
-    );
-  if (result.code !== 0 || result.timedOut || result.stdoutTruncated) {
-    return yield* new TerminalSubprocessCheckError({
-      command: "powershell",
-      exitCode: result.code,
-      timedOut: result.timedOut,
-      stdoutTruncated: result.stdoutTruncated,
-    });
-  }
-  const processes = result.stdout.split(/\r?\n/g).flatMap((line) => {
-    const [pidRaw, ppidRaw, name = ""] = line.trim().split("|", 3);
-    const pid = Number(pidRaw);
-    const ppid = Number(ppidRaw);
-    return Number.isInteger(pid) && pid > 0 && Number.isInteger(ppid) ? [{ pid, ppid, name }] : [];
-  });
-  return processTableSnapshotFromProcesses(processes);
 });
 
 interface TerminalHistoryChunk {
@@ -1349,7 +1238,6 @@ function stripAppImageRuntimeEnv(env: NodeJS.ProcessEnv): NodeJS.ProcessEnv {
 function createTerminalSpawnEnv(
   baseEnv: NodeJS.ProcessEnv,
   runtimeEnv: Record<string, string> | null | undefined,
-  platform: NodeJS.Platform,
   home: string,
 ): NodeJS.ProcessEnv {
   const spawnEnv: NodeJS.ProcessEnv = {};
@@ -1360,11 +1248,7 @@ function createTerminalSpawnEnv(
   }
   if (runtimeEnv) {
     for (const [key, value] of Object.entries(runtimeEnv)) {
-      const existingKey =
-        platform === "win32"
-          ? Object.keys(spawnEnv).find((candidate) => candidate.toLowerCase() === key.toLowerCase())
-          : undefined;
-      spawnEnv[existingKey ?? key] =
+      spawnEnv[key] =
         key === "CODEX_HOME" || key === "CLAUDE_CONFIG_DIR" ? expandHomePath(value, home) : value;
     }
   }
@@ -1373,14 +1257,9 @@ function createTerminalSpawnEnv(
   }
   // fish 4.1+ can wait 10s at startup for a DA1 reply before a renderer can answer.
   // Skip the query unless the user or provider already chose `query-term` or `no-query-term`.
-  const fishFeaturesKey =
-    platform === "win32"
-      ? (Object.keys(spawnEnv).find((candidate) => candidate.toLowerCase() === "fish_features") ??
-        "fish_features")
-      : "fish_features";
-  const fishFeatures = spawnEnv[fishFeaturesKey];
+  const fishFeatures = spawnEnv.fish_features;
   if (!fishFeatures?.includes("query-term")) {
-    spawnEnv[fishFeaturesKey] = fishFeatures ? `${fishFeatures},no-query-term` : "no-query-term";
+    spawnEnv.fish_features = fishFeatures ? `${fishFeatures},no-query-term` : "no-query-term";
   }
   return stripAppImageRuntimeEnv(spawnEnv);
 }
@@ -1520,7 +1399,7 @@ export const makeWithOptions = Effect.fn("TerminalManager.makeWithOptions")(func
   const agentScope = yield* AgentScope;
   // Inherit the full environment minus createTerminalSpawnEnv's blocklist; allowlists silently drop user tooling variables.
   const baseEnv = options.env ?? process.env;
-  const shellResolver = options.shellResolver ?? (() => defaultShellResolver(platform, baseEnv));
+  const shellResolver = options.shellResolver ?? (() => defaultShellResolver(baseEnv));
   const processRunner = yield* ProcessRunner.ProcessRunner;
   const resolveLaunchInputEnvironment = Effect.fn("terminal.resolveLaunchInputEnvironment")(
     function* <Input extends TerminalOpenInput | TerminalAttachInput>(
@@ -1542,12 +1421,9 @@ export const makeWithOptions = Effect.fn("TerminalManager.makeWithOptions")(func
   );
   // Share one process table per poll; per-terminal scans can exhaust PIDs on busy hosts.
   // Timed on success and failure so the poll loop can pace the next query.
-  const posixPsCommand = platform === "win32" ? undefined : yield* resolvePosixPsCommand();
+  const psCommand = yield* resolvePosixPsCommand();
   const fallbackProcessTableSnapshot = (timeout: Duration.Input) =>
-    (posixPsCommand === undefined
-      ? windowsProcessTableSnapshot(timeout)
-      : posixProcessTableSnapshot(posixPsCommand, timeout)
-    ).pipe(
+    posixProcessTableSnapshot(psCommand, timeout).pipe(
       Effect.provideService(ProcessRunner.ProcessRunner, processRunner),
       Effect.result,
       Effect.timed,
@@ -1556,7 +1432,7 @@ export const makeWithOptions = Effect.fn("TerminalManager.makeWithOptions")(func
         queryElapsedMs: Duration.toMillis(elapsed),
       })),
     );
-  // `fallbackTimeout` only bounds the ps/WMI fallback; a native process table
+  // `fallbackTimeout` only bounds the ps fallback; a native process table
   // or custom inspector is unaffected.
   const fetchProcessTableSnapshot = (
     fallbackTimeout: Duration.Input,
@@ -1605,7 +1481,7 @@ export const makeWithOptions = Effect.fn("TerminalManager.makeWithOptions")(func
               snapshot,
               (table): TerminalSubprocessInspector =>
                 (terminalPid) =>
-                  Effect.succeed(deriveSubprocessInspectResult(table, terminalPid, platform)),
+                  Effect.succeed(deriveSubprocessInspectResult(table, terminalPid)),
             ),
             snapshotSucceeded,
             queryElapsedMs,
@@ -2436,11 +2312,10 @@ export const makeWithOptions = Effect.fn("TerminalManager.makeWithOptions")(func
       increment(terminalSessionsTotal, { lifecycle: eventType }).pipe(
         Effect.andThen(
           Effect.gen(function* () {
-            const shellCandidates = resolveShellCandidates(shellResolver, platform, baseEnv);
+            const shellCandidates = resolveShellCandidates(shellResolver, baseEnv);
             const terminalEnv = createTerminalSpawnEnv(
               baseEnv,
               session.runtimeEnv,
-              platform,
               yield* HostProcess.HomeDirectory,
             );
             // Append managed install directories so agent commands resolve without shadowing user/system tools.
@@ -2458,20 +2333,13 @@ export const makeWithOptions = Effect.fn("TerminalManager.makeWithOptions")(func
                 Effect.provideService(Path.Path, path),
               );
               if (managedDirectories.length > 0) {
-                const delimiter = platform === "win32" ? ";" : ":";
-                const pathKey =
-                  platform === "win32"
-                    ? (Object.keys(terminalEnv).find(
-                        (candidate) => candidate.toLowerCase() === "path",
-                      ) ?? "PATH")
-                    : "PATH";
                 const merged = mergePathEntries(
-                  terminalEnv[pathKey],
-                  managedDirectories.join(delimiter),
+                  terminalEnv.PATH,
+                  managedDirectories.join(":"),
                   platform,
                 );
                 if (merged !== undefined) {
-                  terminalEnv[pathKey] = merged;
+                  terminalEnv.PATH = merged;
                 }
               }
             }
@@ -3426,9 +3294,8 @@ export const makeWithOptions = Effect.fn("TerminalManager.makeWithOptions")(func
           running.map((session) => [session.terminalId, terminalActivityMark(session)]),
         );
         // Inspect now so commands started after the last poll still protect their terminals.
-        const { inspector: inspectorResult } = yield* acquireSubprocessInspector(
-          platform === "win32" ? CLOSE_IDLE_QUERY_TIMEOUT.win32 : CLOSE_IDLE_QUERY_TIMEOUT.posix,
-        );
+        const { inspector: inspectorResult } =
+          yield* acquireSubprocessInspector(CLOSE_IDLE_QUERY_TIMEOUT);
         const inspector = yield* Effect.fromResult(inspectorResult);
         yield* Effect.forEach(
           running,

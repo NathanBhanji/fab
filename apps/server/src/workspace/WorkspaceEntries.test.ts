@@ -11,7 +11,6 @@ import * as PlatformError from "effect/PlatformError";
 import { vi } from "vite-plus/test";
 
 import * as ServerConfig from "../config.ts";
-import * as HostProcess from "@fab/shared/HostProcess";
 import * as VcsProcess from "../vcs/VcsProcess.ts";
 import * as WorkspaceEntries from "./WorkspaceEntries.ts";
 import * as WorkspacePaths from "./WorkspacePaths.ts";
@@ -84,11 +83,7 @@ const searchWorkspaceEntries = (input: {
   });
 
 const appendSeparator = (input: string) =>
-  Effect.map(HostProcess.Platform, (platform) =>
-    input.endsWith("/") || input.endsWith("\\")
-      ? input
-      : `${input}${platform === "win32" ? "\\" : "/"}`,
-  );
+  Effect.succeed(input.endsWith("/") ? input : `${input}/`);
 
 it.layer(layerTest, { excludeTestServices: true })("WorkspaceEntries", (it) => {
   afterEach(() => {
@@ -155,8 +150,6 @@ it.layer(layerTest, { excludeTestServices: true })("WorkspaceEntries", (it) => {
 
     it.effect("lists symlinks as what they point to, hiding ones that cannot be opened", () =>
       Effect.gen(function* () {
-        const platform = yield* HostProcess.Platform;
-        if (platform === "win32") return;
         const cwd = yield* makeTempDir({ git: true });
         const outside = yield* makeTempDir();
         const fileSystem = yield* FileSystem.FileSystem;
@@ -189,8 +182,6 @@ it.layer(layerTest, { excludeTestServices: true })("WorkspaceEntries", (it) => {
       // "Expand all folders" loads every folder it expands, so a link that loops would
       // keep nesting the same entries without end.
       Effect.gen(function* () {
-        const platform = yield* HostProcess.Platform;
-        if (platform === "win32") return;
         const cwd = yield* makeTempDir();
         const fileSystem = yield* FileSystem.FileSystem;
         const path = yield* Path.Path;
@@ -216,8 +207,6 @@ it.layer(layerTest, { excludeTestServices: true })("WorkspaceEntries", (it) => {
 
     it.effect("resolves a folder of many symlinks in bounded batches", () =>
       Effect.gen(function* () {
-        const platform = yield* HostProcess.Platform;
-        if (platform === "win32") return;
         const cwd = yield* makeTempDir();
         const fileSystem = yield* FileSystem.FileSystem;
         const path = yield* Path.Path;
@@ -266,20 +255,13 @@ it.layer(layerTest, { excludeTestServices: true })("WorkspaceEntries", (it) => {
         const cwd = yield* makeTempDir({ git: true });
         const fileSystem = yield* FileSystem.FileSystem;
         const path = yield* Path.Path;
-        const platform = yield* HostProcess.Platform;
         yield* writeTextFile(
           cwd,
           ".gitignore",
           "node_modules/\ndist/\n\\[id\\]/\n*.map\nfoo\n!foo/\n",
         );
         yield* Effect.forEach(
-          [
-            "node_modules",
-            "dist",
-            "[id]",
-            "src",
-            ...(platform !== "win32" ? [":foo"] : []),
-          ].flatMap((directory) =>
+          ["node_modules", "dist", "[id]", "src", ":foo"].flatMap((directory) =>
             Array.from({ length: 1001 }, (_, index) => `${directory}/pkg-${index}.js`),
           ),
           (relativePath) => writeTextFile(cwd, relativePath),
@@ -295,9 +277,7 @@ it.layer(layerTest, { excludeTestServices: true })("WorkspaceEntries", (it) => {
           yield* writeTextFile(cwd, relativePath);
         }
         yield* git(cwd, ["add", "-f", "dist/kept.js", "dist/vendored/index.js", "i/page.tsx"]);
-        if (platform !== "win32") {
-          yield* fileSystem.symlink(path.join(cwd, "src"), path.join(cwd, "node_modules/link"));
-        }
+        yield* fileSystem.symlink(path.join(cwd, "src"), path.join(cwd, "node_modules/link"));
 
         const workspaceEntries = yield* WorkspaceEntries.WorkspaceEntries;
         for (const { directoryPath, ignored, except } of [
@@ -306,14 +286,10 @@ it.layer(layerTest, { excludeTestServices: true })("WorkspaceEntries", (it) => {
           // git reads `[id]/page.tsx` as a pathspec, which matches the tracked `i/page.tsx`.
           { directoryPath: "[id]", ignored: true, except: ["[id]/page.tsx"] },
           { directoryPath: "src", ignored: false, except: ["src/bundle.map"] },
-          ...(platform !== "win32"
-            ? [
-                // git refuses to classify paths beyond a symlink, so nothing there is labelled.
-                { directoryPath: "node_modules/link", ignored: false, except: [] },
-                // Leading : is pathspec magic; Git sees foo/pkg-0.js, unignored by !foo/.
-                { directoryPath: ":foo", ignored: false, except: [] },
-              ]
-            : []),
+          // git refuses to classify paths beyond a symlink, so nothing there is labelled.
+          { directoryPath: "node_modules/link", ignored: false, except: [] },
+          // Leading : is pathspec magic; Git sees foo/pkg-0.js, unignored by !foo/.
+          { directoryPath: ":foo", ignored: false, except: [] },
         ]) {
           const { entries } = yield* workspaceEntries.list({ cwd, directoryPath });
           expect(entries.length, directoryPath).toBeGreaterThan(1000);
@@ -359,16 +335,9 @@ it.layer(layerTest, { excludeTestServices: true })("WorkspaceEntries", (it) => {
           const fileSystem = yield* FileSystem.FileSystem;
           const path = yield* Path.Path;
           yield* writeTextFile(cwd, ".git/HEAD");
-          const platform = yield* HostProcess.Platform;
-          if (platform !== "win32") yield* fileSystem.symlink(outside, path.join(cwd, "external"));
+          yield* fileSystem.symlink(outside, path.join(cwd, "external"));
           const workspaceEntries = yield* WorkspaceEntries.WorkspaceEntries;
-          for (const directoryPath of [
-            "../",
-            outside,
-            ".git",
-            "missing",
-            ...(platform !== "win32" ? ["external"] : []),
-          ]) {
+          for (const directoryPath of ["../", outside, ".git", "missing", "external"]) {
             const error = yield* workspaceEntries.list({ cwd, directoryPath }).pipe(Effect.flip);
             expect(error._tag).toBe("WorkspaceEntriesReadDirectoryError");
           }

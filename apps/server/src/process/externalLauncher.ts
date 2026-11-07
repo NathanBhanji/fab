@@ -1,4 +1,3 @@
-import * as NodePath from "@effect/platform-node/NodePath";
 import {
   EDITORS,
   ExternalLauncherError,
@@ -7,7 +6,6 @@ import {
   ExternalLauncherEditorSpawnError,
   ExternalLauncherUnknownEditorError,
   ExternalLauncherUnsupportedEditorError,
-  ExternalLauncherUnsupportedTargetError,
   type EditorId,
   type FileManagerRevealKind,
   type LaunchEditorInput,
@@ -22,7 +20,6 @@ import {
 import * as Config from "effect/Config";
 import * as Context from "effect/Context";
 import * as Effect from "effect/Effect";
-import * as Base64 from "effect/encoding/Base64";
 import * as FileSystem from "effect/FileSystem";
 import * as Layer from "effect/Layer";
 import * as Option from "effect/Option";
@@ -40,7 +37,6 @@ export {
   ExternalLauncherEditorSpawnError,
   ExternalLauncherUnknownEditorError,
   ExternalLauncherUnsupportedEditorError,
-  ExternalLauncherUnsupportedTargetError,
 } from "@fab/contracts";
 export type { LaunchEditorInput };
 interface EditorLaunch {
@@ -48,7 +44,6 @@ interface EditorLaunch {
   readonly target: string;
   readonly command: string;
   readonly args: ReadonlyArray<string>;
-  readonly detached?: boolean;
 }
 
 interface ProcessLaunch {
@@ -63,20 +58,7 @@ interface TargetPathAndPosition {
   readonly column: Option.Option<string>;
 }
 
-// cmd shims reparse %* after escaping is gone; newlines and quotes can expose shell operators.
-const WINDOWS_SHIM_UNSAFE_ARG_PATTERN = /[\u0000-\u001f\u007f"]/;
 const TARGET_WITH_POSITION_PATTERN = /^(.*?):(\d+)(?::(\d+))?$/;
-const POWERSHELL_ARGUMENTS_PREFIX = [
-  "-NoProfile",
-  "-NonInteractive",
-  "-ExecutionPolicy",
-  "Bypass",
-  "-EncodedCommand",
-] as const;
-
-// Detached Windows PowerShell exits 0 without executing; only WSL interop keeps detached launches.
-const WINDOWS_POWERSHELL_DETACHED = false;
-
 const DETACHED_IGNORE_STDIO_OPTIONS = {
   detached: true,
   stdin: "ignore",
@@ -95,28 +77,14 @@ const compactEnv = (input: Record<string, Option.Option<string>>): NodeJS.Proces
   );
 
 const BrowserLaunchEnvConfig = Config.all({
-  SYSTEMROOT: Config.String("SYSTEMROOT").pipe(Config.option),
-  windir: Config.String("windir").pipe(Config.option),
-  WSL_DISTRO_NAME: Config.String("WSL_DISTRO_NAME").pipe(Config.option),
-  WSL_INTEROP: Config.String("WSL_INTEROP").pipe(Config.option),
-  SSH_CONNECTION: Config.String("SSH_CONNECTION").pipe(Config.option),
-  SSH_TTY: Config.String("SSH_TTY").pipe(Config.option),
-  container: Config.String("container").pipe(Config.option),
   DISPLAY: Config.String("DISPLAY").pipe(Config.option),
   WAYLAND_DISPLAY: Config.String("WAYLAND_DISPLAY").pipe(Config.option),
 }).pipe(Config.map(compactEnv));
 
 const CommandLookupEnvConfig = Config.all({
   PATH: Config.String("PATH").pipe(Config.option),
-  Path: Config.String("Path").pipe(Config.option),
-  path: Config.String("path").pipe(Config.option),
-  PATHEXT: Config.String("PATHEXT").pipe(Config.option),
   HOME: Config.String("HOME").pipe(Config.option),
-  LOCALAPPDATA: Config.String("LOCALAPPDATA").pipe(Config.option),
-  ProgramFiles: Config.String("ProgramFiles").pipe(Config.option),
-  ProgramW6432: Config.String("ProgramW6432").pipe(Config.option),
   XDG_DATA_HOME: Config.String("XDG_DATA_HOME").pipe(Config.option),
-  "ProgramFiles(x86)": Config.String("ProgramFiles(x86)").pipe(Config.option),
 }).pipe(Config.map(compactEnv));
 
 const readBrowserLaunchEnv = BrowserLaunchEnvConfig.pipe(Effect.orElseSucceed(() => ({})));
@@ -163,65 +131,6 @@ function resolveCommandEditorArgs(
   }
 }
 
-function encodeUtf16LeBase64(input: string): string {
-  const bytes = new Uint8Array(input.length * 2);
-  for (let index = 0; index < input.length; index += 1) {
-    const code = input.charCodeAt(index);
-    bytes[index * 2] = code & 0xff;
-    bytes[index * 2 + 1] = code >>> 8;
-  }
-  return Base64.encode(bytes);
-}
-
-function escapePowerShellStringLiteral(input: string): string {
-  return `'${input.replaceAll("'", "''")}'`;
-}
-
-function resolvePowerShellPath(env: NodeJS.ProcessEnv = {}): string {
-  return `${env.SYSTEMROOT || env.windir || String.raw`C:\Windows`}\\System32\\WindowsPowerShell\\v1.0\\powershell.exe`;
-}
-
-function resolveWslPowerShellPath(): string {
-  return "/mnt/c/Windows/System32/WindowsPowerShell/v1.0/powershell.exe";
-}
-
-// WSL automount roots vary; resolve PowerShell via PATH to match launchEditor's availability check.
-const WSL_POWERSHELL_COMMAND = "powershell.exe";
-
-function shouldUseWindowsHostFromWsl(
-  platform: NodeJS.Platform,
-  env: NodeJS.ProcessEnv = {},
-): boolean {
-  return (
-    platform === "linux" &&
-    (env.WSL_DISTRO_NAME !== undefined || env.WSL_INTEROP !== undefined) &&
-    env.SSH_CONNECTION === undefined &&
-    env.SSH_TTY === undefined &&
-    env.container === undefined
-  );
-}
-
-function resolveWindowsBrowserLaunch(
-  target: string,
-  command: string,
-  detached: boolean,
-): ProcessLaunch {
-  const encodedCommand = encodeUtf16LeBase64(
-    `$ProgressPreference = 'SilentlyContinue'; Start ${escapePowerShellStringLiteral(target)}`,
-  );
-  return {
-    command,
-    args: [...POWERSHELL_ARGUMENTS_PREFIX, encodedCommand],
-    options: {
-      detached,
-      shell: false,
-      stdin: "ignore",
-      stdout: "ignore",
-      stderr: "ignore",
-    },
-  };
-}
-
 function hasGraphicalLinuxSession(env: NodeJS.ProcessEnv): boolean {
   return [env.DISPLAY, env.WAYLAND_DISPLAY].some(
     (value) => value !== undefined && value.trim().length > 0,
@@ -235,12 +144,7 @@ function fileManagerCommandForPlatform(
   switch (platform) {
     case "darwin":
       return "open";
-    case "win32":
-      return "explorer";
     default:
-      if (shouldUseWindowsHostFromWsl(platform, env)) {
-        return env.WSL_DISTRO_NAME?.trim() ? "explorer.exe" : undefined;
-      }
       return hasGraphicalLinuxSession(env) ? "xdg-open" : undefined;
   }
 }
@@ -299,7 +203,6 @@ const isUsableFileManagerCommand = Effect.fn("externalLauncher.isUsableFileManag
   },
 );
 
-// WSL may lack Explorer on PATH or a distro name while WSLg still offers a Linux file manager.
 const resolveUsableFileManagerCommand = Effect.fn(
   "externalLauncher.resolveUsableFileManagerCommand",
 )(function* (
@@ -311,87 +214,18 @@ const resolveUsableFileManagerCommand = Effect.fn(
   FileSystem.FileSystem | Path.Path | ChildProcessSpawner.ChildProcessSpawner
 > {
   const command = fileManagerCommandForPlatform(platform, env);
-  if (command !== undefined && (yield* isUsableFileManagerCommand(command, env))) {
-    return command;
-  }
-  if (
-    shouldUseWindowsHostFromWsl(platform, env) &&
-    hasGraphicalLinuxSession(env) &&
-    (yield* isUsableFileManagerCommand("xdg-open", env))
-  ) {
-    return "xdg-open";
-  }
-  return undefined;
+  return command !== undefined && (yield* isUsableFileManagerCommand(command, env))
+    ? command
+    : undefined;
 });
 
-// Reveal uses PowerShell on Windows/WSL, so probe it separately from Explorer availability.
-// Linux relies on the file-manager gate's handler probe; WSL re-probes because the gate may use Explorer.
-const fileManagerRevealKindForPlatform = Effect.fn(
-  "externalLauncher.fileManagerRevealKindForPlatform",
-)(function* (
+// Linux relies on the file-manager gate's handler probe.
+function fileManagerRevealKindForPlatform(
   platform: NodeJS.Platform,
   env: NodeJS.ProcessEnv,
-): Effect.fn.Return<
-  FileManagerRevealKind | undefined,
-  never,
-  FileSystem.FileSystem | Path.Path | ChildProcessSpawner.ChildProcessSpawner
-> {
+): FileManagerRevealKind | undefined {
   if (platform === "darwin") return "finder";
-  if (platform === "win32") {
-    return (yield* isCommandAvailable(resolvePowerShellPath(env), { env }))
-      ? "file-explorer"
-      : undefined;
-  }
-  if (shouldUseWindowsHostFromWsl(platform, env)) {
-    if (
-      env.WSL_DISTRO_NAME?.trim() &&
-      (yield* isCommandAvailable("explorer.exe", { env })) &&
-      (yield* isCommandAvailable(WSL_POWERSHELL_COMMAND, { env }))
-    ) {
-      return "file-explorer";
-    }
-    return hasGraphicalLinuxSession(env) && (yield* isUsableFileManagerCommand("xdg-open", env))
-      ? "files"
-      : undefined;
-  }
   return hasGraphicalLinuxSession(env) ? "files" : undefined;
-});
-
-function resolveWslFileManagerPath(target: string, distroName: string): string {
-  const relativePath = target.replace(/^\/+/, "").replaceAll("/", "\\");
-  return `\\\\wsl.localhost\\${distroName}${relativePath.length > 0 ? `\\${relativePath}` : ""}`;
-}
-
-function buildBrowserLaunch(
-  target: string,
-  platform: NodeJS.Platform,
-  env: NodeJS.ProcessEnv = {},
-): ProcessLaunch {
-  if (platform === "darwin") {
-    return {
-      command: "open",
-      args: [target],
-      options: DETACHED_IGNORE_STDIO_OPTIONS,
-    };
-  }
-
-  if (platform === "win32") {
-    return resolveWindowsBrowserLaunch(
-      target,
-      resolvePowerShellPath(env),
-      WINDOWS_POWERSHELL_DETACHED,
-    );
-  }
-
-  if (shouldUseWindowsHostFromWsl(platform, env)) {
-    return resolveWindowsBrowserLaunch(target, resolveWslPowerShellPath(), true);
-  }
-
-  return {
-    command: "xdg-open",
-    args: [target],
-    options: DETACHED_IGNORE_STDIO_OPTIONS,
-  };
 }
 
 const buildAvailableEditors = Effect.fn("externalLauncher.buildAvailableEditors")(function* (
@@ -425,8 +259,11 @@ const resolveBrowserLaunch = Effect.fn("externalLauncher.resolveBrowserLaunch")(
   target: string,
 ) {
   const platform = yield* HostProcess.Platform;
-  const env = yield* readBrowserLaunchEnv;
-  return buildBrowserLaunch(target, platform, env);
+  return {
+    command: platform === "darwin" ? "open" : "xdg-open",
+    args: [target],
+    options: DETACHED_IGNORE_STDIO_OPTIONS,
+  } satisfies ProcessLaunch;
 });
 
 const resolveAvailableEditors = Effect.fn("externalLauncher.resolveAvailableEditors")(function* () {
@@ -438,8 +275,7 @@ const resolveAvailableEditors = Effect.fn("externalLauncher.resolveAvailableEdit
 const resolveFileManagerRevealKind = Effect.fn("externalLauncher.resolveFileManagerRevealKind")(
   function* () {
     const platform = yield* HostProcess.Platform;
-    const env = { ...(yield* readBrowserLaunchEnv), ...(yield* readCommandLookupEnv) };
-    return yield* fileManagerRevealKindForPlatform(platform, env);
+    return fileManagerRevealKindForPlatform(platform, yield* readBrowserLaunchEnv);
   },
 );
 
@@ -500,108 +336,14 @@ const resolveEditorLaunch = Effect.fn("resolveEditorLaunch")(function* (
     return yield* new ExternalLauncherUnsupportedEditorError({ editor: input.editor });
   }
 
-  if (input.reveal === true) {
-    return yield* resolveFileManagerRevealLaunch(input.cwd, platform, env, command);
+  if (input.reveal !== true) {
+    return { editor: editorDef.id, target: input.cwd, command, args: [input.cwd] };
   }
-
-  return {
-    editor: editorDef.id,
-    target: input.cwd,
-    command,
-    args:
-      command === "explorer.exe" && env.WSL_DISTRO_NAME !== undefined
-        ? [resolveWslFileManagerPath(input.cwd, env.WSL_DISTRO_NAME)]
-        : platform === "win32"
-          ? // Explorer interprets / as a switch and silently opens a fallback folder.
-            [normalizeWindowsFileManagerPath(input.cwd)]
-          : [input.cwd],
-  };
-});
-
-// A replacement manager registers a default Directory shell verb; stock Windows
-// uses "none". Explorer needs its /select argument passed verbatim through
-// PowerShell because Node's argument quoting changes how Explorer parses it.
-function buildFileManagerRevealPowerShellSource(target: string, parent: string): string {
-  const literal = escapePowerShellStringLiteral(target);
-  return `$ProgressPreference = 'SilentlyContinue'; $folderVerb = (Get-ItemProperty -LiteralPath 'Registry::HKEY_CLASSES_ROOT\\Directory\\shell' -ErrorAction SilentlyContinue).'(default)'; if ($folderVerb -and $folderVerb -ne 'none') { Invoke-Item -LiteralPath ${escapePowerShellStringLiteral(parent)} } else { Start-Process 'explorer.exe' -ArgumentList ('/select,"' + ${literal} + '"') }`;
-}
-
-function powerShellFileManagerLaunch(
-  target: string,
-  source: string,
-  powershellCommand: string,
-): EditorLaunch {
-  return {
-    editor: "file-manager",
-    target,
-    command: powershellCommand,
-    args: [...POWERSHELL_ARGUMENTS_PREFIX, encodeUtf16LeBase64(source)],
-  };
-}
-
-function normalizeWindowsFileManagerPath(target: string): string {
-  return target.replaceAll("/", "\\");
-}
-
-const resolveFileManagerRevealLaunch = Effect.fn("resolveFileManagerRevealLaunch")(function* (
-  target: string,
-  platform: NodeJS.Platform,
-  env: NodeJS.ProcessEnv,
-  command: string,
-): Effect.fn.Return<
-  EditorLaunch,
-  never,
-  FileSystem.FileSystem | Path.Path | ChildProcessSpawner.ChildProcessSpawner
-> {
   if (platform === "darwin") {
-    return { editor: "file-manager", target, command: "open", args: ["-R", target] };
+    return { editor: editorDef.id, target: input.cwd, command: "open", args: ["-R", input.cwd] };
   }
-
-  if (platform === "win32") {
-    const path = yield* Path.Path.pipe(Effect.provide(NodePath.layerWin32));
-    const windowsTarget = normalizeWindowsFileManagerPath(target);
-    return {
-      ...powerShellFileManagerLaunch(
-        target,
-        buildFileManagerRevealPowerShellSource(windowsTarget, path.dirname(windowsTarget)),
-        resolvePowerShellPath(env),
-      ),
-      detached: WINDOWS_POWERSHELL_DETACHED,
-    };
-  }
-
-  if (
-    command === "explorer.exe" &&
-    shouldUseWindowsHostFromWsl(platform, env) &&
-    env.WSL_DISTRO_NAME !== undefined
-  ) {
-    const explorerTarget = resolveWslFileManagerPath(target, env.WSL_DISTRO_NAME);
-    if (yield* isCommandAvailable(WSL_POWERSHELL_COMMAND, { env })) {
-      // WSL names may contain quotes that Explorer's /select cannot encode.
-      // Open the parent through the shell so replacement managers still apply.
-      const path = yield* Path.Path;
-      // .NET path parsing rejects characters that are legal in WSL filenames.
-      const parent = resolveWslFileManagerPath(path.dirname(target), env.WSL_DISTRO_NAME);
-      const source = explorerTarget.includes('"')
-        ? `Invoke-Item -LiteralPath ${escapePowerShellStringLiteral(parent)}`
-        : buildFileManagerRevealPowerShellSource(explorerTarget, parent);
-      return powerShellFileManagerLaunch(target, source, WSL_POWERSHELL_COMMAND);
-    }
-    if (hasGraphicalLinuxSession(env) && (yield* isUsableFileManagerCommand("xdg-open", env))) {
-      const path = yield* Path.Path;
-      return { editor: "file-manager", target, command: "xdg-open", args: [path.dirname(target)] };
-    }
-    const path = yield* Path.Path;
-    return {
-      editor: "file-manager",
-      target,
-      command: "explorer.exe",
-      args: [resolveWslFileManagerPath(path.dirname(target), env.WSL_DISTRO_NAME)],
-    };
-  }
-
   const path = yield* Path.Path;
-  return { editor: "file-manager", target, command, args: [path.dirname(target)] };
+  return { editor: editorDef.id, target: input.cwd, command, args: [path.dirname(input.cwd)] };
 });
 
 const tryRevealLinuxItem = Effect.fn("externalLauncher.tryRevealLinuxItem")(
@@ -766,15 +508,12 @@ const launchEditorProcess = Effect.fn("externalLauncher.launchEditorProcess")(fu
   }
 
   const spawnCommand = yield* resolveSpawnCommand(launch.command, launch.args, { env });
-  if (spawnCommand.shell && launch.args.some((arg) => WINDOWS_SHIM_UNSAFE_ARG_PATTERN.test(arg))) {
-    return yield* new ExternalLauncherUnsupportedTargetError({ editor: launch.editor });
-  }
   yield* launchAndUnref(
     {
       command: spawnCommand.command,
       args: spawnCommand.args,
       options: {
-        detached: launch.detached ?? true,
+        detached: true,
         shell: spawnCommand.shell,
         env: yield* readGraphicalSessionEnv(),
         stdin: "ignore",

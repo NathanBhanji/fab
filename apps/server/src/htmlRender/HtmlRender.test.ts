@@ -165,7 +165,7 @@ describe("HtmlRender", () => {
 
       const error = yield* htmlRender
         .prepare(
-          `<img src="${missing}"><img src='${folder}'><img src="C:\\nope\\shot.webp"><img src="${secret}"><img src="${report}"><img src="${config}"><img src="${stalling}"><img src="${unclosed}"><img src="${upper}"><img src="${longer}">`,
+          `<img src="${missing}"><img src='${folder}'><img src="${secret}"><img src="${report}"><img src="${config}"><img src="${stalling}"><img src="${unclosed}"><img src="${upper}"><img src="${longer}">`,
         )
         .pipe(Effect.flip);
 
@@ -173,7 +173,6 @@ describe("HtmlRender", () => {
       expect(error._tag === "HtmlRenderImagesNotFoundError" && error.paths).toEqual([
         missing,
         folder,
-        "C:\\nope\\shot.webp",
         secret,
         report,
         config,
@@ -290,50 +289,43 @@ describe("HtmlRender", () => {
     }),
   );
 
-  // Windows reports ENOENT asynchronously for this path instead of throwing ENOTDIR.
-  describe.skipIf(HostProcess.Platform.defaultValue() === "win32")(
-    "when the browser spawn throws synchronously",
-    () => {
-      it.live("reports a typed preview error", () =>
-        Effect.gen(function* () {
-          const fileSystem = yield* FileSystem.FileSystem;
-          const path = yield* Path.Path;
-          const file = yield* fileSystem.makeTempFileScoped({ prefix: "fab-browser-spawn-" });
-          const outcome = yield* HtmlRender.HtmlRender.use((htmlRender) =>
-            htmlRender.preview({ html: "<p>x</p>" }).pipe(Effect.flip),
-          ).pipe(
-            Effect.provide(layerHtmlRender(path.join(file, "chrome-headless-shell"))),
-            Effect.exit,
-          );
-          assert(Exit.isSuccess(outcome), "Expected a typed preview error.");
-          const error = outcome.value;
-          expect(error).toBeInstanceOf(HtmlRenderBrowserError);
-          expect(error.message).toBe(
-            "Headless Chrome could not render the page: the browser could not be started.",
-          );
-          expect(error).toMatchObject({ cause: { code: "ENOTDIR" } });
-        }).pipe(Effect.scoped, Effect.provide(NodeServices.layer)),
-      );
-    },
-  );
+  describe("when the browser spawn throws synchronously", () => {
+    it.live("reports a typed preview error", () =>
+      Effect.gen(function* () {
+        const fileSystem = yield* FileSystem.FileSystem;
+        const path = yield* Path.Path;
+        const file = yield* fileSystem.makeTempFileScoped({ prefix: "fab-browser-spawn-" });
+        const outcome = yield* HtmlRender.HtmlRender.use((htmlRender) =>
+          htmlRender.preview({ html: "<p>x</p>" }).pipe(Effect.flip),
+        ).pipe(
+          Effect.provide(layerHtmlRender(path.join(file, "chrome-headless-shell"))),
+          Effect.exit,
+        );
+        assert(Exit.isSuccess(outcome), "Expected a typed preview error.");
+        const error = outcome.value;
+        expect(error).toBeInstanceOf(HtmlRenderBrowserError);
+        expect(error.message).toBe(
+          "Headless Chrome could not render the page: the browser could not be started.",
+        );
+        expect(error).toMatchObject({ cause: { code: "ENOTDIR" } });
+      }).pipe(Effect.scoped, Effect.provide(NodeServices.layer)),
+    );
+  });
 
-  // The fake browser is a shebang script, which Windows cannot execute.
-  describe.skipIf(HostProcess.Platform.defaultValue() === "win32")(
-    "when the browser cannot be signalled",
-    () => {
-      // A browser Fab cannot signal, as under AppArmor in an LXC container, must still exit.
-      it.live("asks the browser to close when the preview finishes instead of signalling it", () =>
-        Effect.gen(function* () {
-          const fileSystem = yield* FileSystem.FileSystem;
-          const path = yield* Path.Path;
-          const directory = yield* fileSystem.makeTempDirectoryScoped({
-            prefix: "fab-fake-browser-",
-          });
-          const executable = path.join(directory, "chrome-headless-shell");
-          const exitRecord = path.join(directory, "exited");
-          yield* fileSystem.writeFileString(
-            executable,
-            `#!${process.execPath}
+  describe("when the browser cannot be signalled", () => {
+    // A browser Fab cannot signal, as under AppArmor in an LXC container, must still exit.
+    it.live("asks the browser to close when the preview finishes instead of signalling it", () =>
+      Effect.gen(function* () {
+        const fileSystem = yield* FileSystem.FileSystem;
+        const path = yield* Path.Path;
+        const directory = yield* fileSystem.makeTempDirectoryScoped({
+          prefix: "fab-fake-browser-",
+        });
+        const executable = path.join(directory, "chrome-headless-shell");
+        const exitRecord = path.join(directory, "exited");
+        yield* fileSystem.writeFileString(
+          executable,
+          `#!${process.execPath}
 const fs = require("node:fs");
 process.on("SIGTERM", () => {});
 const quit = () => { fs.writeFileSync(${JSON.stringify(exitRecord)}, "asked to close"); process.exit(0); };
@@ -360,50 +352,49 @@ fs.createReadStream(null, { fd: 3 }).on("end", quit).on("data", (chunk) => {
   }
 });
 `,
-            { mode: 0o755 },
-          );
+          { mode: 0o755 },
+        );
 
-          const preview = yield* HtmlRender.HtmlRender.use((htmlRender) =>
-            htmlRender.preview({ html: "<p>x</p>" }),
-          ).pipe(Effect.provide(layerHtmlRender(executable)));
-          const logged = preview.consoleMessages[0]?.text ?? "";
-          expect(logged.isWellFormed()).toBe(true);
-          expect(logged).toHaveLength(500);
+        const preview = yield* HtmlRender.HtmlRender.use((htmlRender) =>
+          htmlRender.preview({ html: "<p>x</p>" }),
+        ).pipe(Effect.provide(layerHtmlRender(executable)));
+        const logged = preview.consoleMessages[0]?.text ?? "";
+        expect(logged.isWellFormed()).toBe(true);
+        expect(logged).toHaveLength(500);
 
-          const exitedBy = yield* fileSystem.readFileString(exitRecord).pipe(Effect.option);
-          expect(Option.getOrElse(exitedBy, () => "killed by a signal")).toBe("asked to close");
-        }).pipe(Effect.scoped, Effect.provide(NodeServices.layer)),
-      );
+        const exitedBy = yield* fileSystem.readFileString(exitRecord).pipe(Effect.option);
+        expect(Option.getOrElse(exitedBy, () => "killed by a signal")).toBe("asked to close");
+      }).pipe(Effect.scoped, Effect.provide(NodeServices.layer)),
+    );
 
-      it.live("names this server's home in the browser setup command", () =>
-        Effect.gen(function* () {
-          const fileSystem = yield* FileSystem.FileSystem;
-          const path = yield* Path.Path;
-          const directory = yield* fileSystem.makeTempDirectoryScoped({
-            prefix: "fab-fake-browser-",
-          });
-          const executable = path.join(directory, "chrome-headless-shell");
-          yield* fileSystem.writeFileString(
-            executable,
-            `#!${process.execPath}\nprocess.stderr.write(${JSON.stringify(PreviewBrowserHost.NO_SANDBOX_SIGNATURE)});\nprocess.exit(1);\n`,
-            { mode: 0o755 },
-          );
+    it.live("names this server's home in the browser setup command", () =>
+      Effect.gen(function* () {
+        const fileSystem = yield* FileSystem.FileSystem;
+        const path = yield* Path.Path;
+        const directory = yield* fileSystem.makeTempDirectoryScoped({
+          prefix: "fab-fake-browser-",
+        });
+        const executable = path.join(directory, "chrome-headless-shell");
+        yield* fileSystem.writeFileString(
+          executable,
+          `#!${process.execPath}\nprocess.stderr.write(${JSON.stringify(PreviewBrowserHost.NO_SANDBOX_SIGNATURE)});\nprocess.exit(1);\n`,
+          { mode: 0o755 },
+        );
 
-          const { error, baseDir } = yield* Effect.gen(function* () {
-            const { baseDir } = yield* ServerConfig.ServerConfig;
-            const htmlRender = yield* HtmlRender.HtmlRender;
-            const error = yield* htmlRender.preview({ html: "<p>x</p>" }).pipe(Effect.flip);
-            return { error, baseDir };
-          }).pipe(
-            Effect.provide(layerHtmlRender(executable)),
-            Effect.provideService(HostProcess.UserId, 1000),
-          );
-          expect(error).toBeInstanceOf(PreviewBrowserHost.PreviewBrowserSandboxError);
-          expect(error.message).toContain(`browser setup --base-dir ${baseDir}`);
-        }).pipe(Effect.scoped, Effect.provide(NodeServices.layer)),
-      );
-    },
-  );
+        const { error, baseDir } = yield* Effect.gen(function* () {
+          const { baseDir } = yield* ServerConfig.ServerConfig;
+          const htmlRender = yield* HtmlRender.HtmlRender;
+          const error = yield* htmlRender.preview({ html: "<p>x</p>" }).pipe(Effect.flip);
+          return { error, baseDir };
+        }).pipe(
+          Effect.provide(layerHtmlRender(executable)),
+          Effect.provideService(HostProcess.UserId, 1000),
+        );
+        expect(error).toBeInstanceOf(PreviewBrowserHost.PreviewBrowserSandboxError);
+        expect(error.message).toContain(`browser setup --base-dir ${baseDir}`);
+      }).pipe(Effect.scoped, Effect.provide(NodeServices.layer)),
+    );
+  });
 
   it.live("matches preview media queries and text colors to the requested appearance", (ctx) =>
     Effect.gen(function* () {

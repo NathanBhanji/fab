@@ -24,7 +24,6 @@ import * as Scope from "effect/Scope";
 import * as Semaphore from "effect/Semaphore";
 import { FetchHttpClient, HttpClient } from "effect/http";
 
-import * as WindowsTcpListeners from "../process/windowsTcpListeners.ts";
 import * as ProcessRunner from "../processRunner.ts";
 
 export class PortDiscovery extends Context.Service<
@@ -76,12 +75,8 @@ const POLL_INTERVAL = Duration.seconds(3);
 const LSOF_TIMEOUT_MS = 5_000;
 const PROC_FD_WALK_LIMIT = 50_000;
 const SOCKET_OWNER_ATTEMPTS = 3;
-const WINDOWS_LISTENER_TIMEOUT_MS = 5_000;
 const WEB_PROBE_TIMEOUT = Duration.seconds(1);
 const WEB_PROBE_CACHE_TTL_MS = Duration.toMillis(Duration.seconds(15));
-/** Bounds how long a cached Windows image name can outlive its process if Windows reuses the PID. */
-const WINDOWS_PROCESS_NAME_TTL_MS = Duration.toMillis(Duration.seconds(60));
-const WINDOWS_PROCESS_NAME_CONCURRENCY = 4;
 const WEB_PROBE_CONCURRENCY = 16;
 const NAVIGATION_REDIRECT_STATUSES = new Set([301, 302, 303, 307, 308]);
 const PS_TIMEOUT_MS = 5_000;
@@ -274,38 +269,6 @@ const parsePortFromLsofName = (name: string): number | null => {
 const exitedWithError = (result: ProcessRunner.ProcessRunOutput): boolean =>
   result.code !== null && result.code !== 0;
 
-const parseTasklistProcessName = (raw: string, pid: number): string | null => {
-  for (const line of raw.split(/\r?\n/g)) {
-    const match = /^"([^"]*)","(\d+)"/.exec(line.trim());
-    if (match && Number(match[2]) === pid) return match[1]!.replace(/\.exe$/i, "") || null;
-  }
-  return null;
-};
-
-const discoveredWindowsListeners = (
-  listeners: ReadonlyArray<WindowsTcpListeners.WindowsTcpListener>,
-  owners: ReadonlyMap<number, ServerOwner>,
-): ReadonlyArray<DiscoveredLocalServer> => {
-  const seen = new Map<number, DiscoveredLocalServer>();
-  for (const { port, pid } of listeners) {
-    const owner = pid === null ? undefined : owners.get(pid);
-    const existing = seen.get(port);
-    if (existing) {
-      if (owner === undefined) seen.set(port, { ...existing, ...UNOWNED });
-      continue;
-    }
-    seen.set(port, {
-      host: "localhost",
-      port,
-      url: `http://localhost:${port}`,
-      processName: null,
-      pid,
-      ...(owner ?? UNOWNED),
-    });
-  }
-  return [...seen.values()].toSorted((left, right) => left.port - right.port);
-};
-
 const PROC_TCP_LISTEN = "0A";
 
 /** Each 32-bit word of the hex address is little-endian. */
@@ -465,9 +428,6 @@ export const make = Effect.gen(function* PortDiscoveryMake() {
   const webProbeCacheRef = yield* Ref.make<ReadonlyMap<string, WebProbeCacheEntry>>(new Map());
   const scanSemaphore = yield* Semaphore.make(1);
   const lsofMissingRef = yield* Ref.make(false);
-  const windowsProcessNamesRef = yield* Ref.make<
-    ReadonlyMap<number, { readonly name: string | null; readonly expiresAtMillis: number }>
-  >(new Map());
   const socketOwnersRef = yield* Ref.make<
     ReadonlyMap<string, { readonly pid: number; readonly processName: string | null }>
   >(new Map());
@@ -724,62 +684,12 @@ export const make = Effect.gen(function* PortDiscoveryMake() {
     return { discovered: servers.filter(isOwned), configured } satisfies WebProbeSnapshot;
   });
 
-  // tasklist costs 200-300ms per PID; query visible servers with bounded concurrency and cache names.
-  const withWindowsProcessNames = Effect.fn("PortDiscovery.withWindowsProcessNames")(function* (
-    snapshot: WebProbeSnapshot,
-  ) {
-    const servers = [...snapshot.discovered, ...snapshot.configured.values()];
-    const pids = new Set(servers.flatMap((server) => (server.pid === null ? [] : [server.pid])));
-    const nowMillis = yield* Clock.currentTimeMillis;
-    const cached = [...(yield* Ref.get(windowsProcessNamesRef))].filter(
-      ([pid, entry]) => pids.has(pid) && entry.expiresAtMillis > nowMillis,
-    );
-    const cachedPids = new Set(cached.map(([pid]) => pid));
-    const expiresAtMillis = nowMillis + WINDOWS_PROCESS_NAME_TTL_MS;
-    const fetched = yield* Effect.forEach(
-      [...pids].filter((pid) => !cachedPids.has(pid)),
-      (pid) =>
-        processRunner
-          .run({
-            command: "tasklist.exe",
-            args: ["/FO", "CSV", "/NH", "/FI", `PID eq ${pid}`],
-            timeout: Duration.millis(WINDOWS_LISTENER_TIMEOUT_MS),
-            maxOutputBytes: 64 * 1024,
-          })
-          .pipe(
-            Effect.map((result) =>
-              exitedWithError(result)
-                ? []
-                : [
-                    [
-                      pid,
-                      { name: parseTasklistProcessName(result.stdout, pid), expiresAtMillis },
-                    ] as const,
-                  ],
-            ),
-            Effect.orElseSucceed(() => []),
-          ),
-      { concurrency: WINDOWS_PROCESS_NAME_CONCURRENCY },
-    );
-    const names = new Map([...cached, ...fetched.flat()]);
-    yield* Ref.set(windowsProcessNamesRef, names);
-    const withName = (server: DiscoveredLocalServer): DiscoveredLocalServer =>
-      server.pid === null || server.processName !== null
-        ? server
-        : { ...server, processName: names.get(server.pid)?.name ?? null };
-    return {
-      discovered: snapshot.discovered.map(withName),
-      configured: new Map([...snapshot.configured].map(([key, server]) => [key, withName(server)])),
-    } satisfies WebProbeSnapshot;
-  });
-
-  const recoverProcessProbeFailure =
-    (probe: "lsof" | "windows-listeners") => (error: ProcessRunner.ProcessRunError) =>
-      Effect.logDebug("preview port process probe failed; probing configured URLs only", {
-        cause: error,
-        probe,
-        platform: hostPlatform,
-      }).pipe(Effect.as(null));
+  const recoverProcessProbeFailure = (probe: "lsof") => (error: ProcessRunner.ProcessRunError) =>
+    Effect.logDebug("preview port process probe failed; probing configured URLs only", {
+      cause: error,
+      probe,
+      platform: hostPlatform,
+    }).pipe(Effect.as(null));
 
   const scanUnlocked = Effect.fn("PortDiscovery.scanUnlocked")(function* (
     configuredUrls: ReadonlyArray<string>,
@@ -795,36 +705,14 @@ export const make = Effect.gen(function* PortDiscoveryMake() {
     // A server an agent started can outlive the agent, so listeners are read while the last scan
     // still found one.
     const agentsPossible =
-      hostPlatform !== "win32" &&
-      (runningAgents > 0 ||
-        agentScanPending ||
-        [...(yield* Ref.get(agentThreadsRef)).values()].some((threadId) => threadId !== null));
+      runningAgents > 0 ||
+      agentScanPending ||
+      [...(yield* Ref.get(agentThreadsRef)).values()].some((threadId) => threadId !== null);
     if (terminalOwners.size === 0 && configuredUrls.length === 0 && !agentsPossible) {
       return { discovered: [], configured: new Map() } satisfies WebProbeSnapshot;
     }
     const resolveOwners = (pids: ReadonlyArray<number>) =>
       agentsPossible ? withAgentOwners(terminalOwners, pids) : Effect.succeed(terminalOwners);
-    if (hostPlatform === "win32") {
-      const recoverWindowsProbeFailure = recoverProcessProbeFailure("windows-listeners");
-      const listeners = yield* WindowsTcpListeners.queryWindowsTcpListeners(
-        processRunner,
-        "netstat.exe",
-      ).pipe(
-        Effect.map((snapshot) =>
-          snapshot === null ? null : discoveredWindowsListeners(snapshot, terminalOwners),
-        ),
-        Effect.catchTags({
-          ProcessSpawnError: recoverWindowsProbeFailure,
-          ProcessStdinError: recoverWindowsProbeFailure,
-          ProcessOutputLimitError: recoverWindowsProbeFailure,
-          ProcessReadError: recoverWindowsProbeFailure,
-          ProcessTimeoutError: recoverWindowsProbeFailure,
-        }),
-      );
-      return yield* withWindowsProcessNames(
-        yield* probeWebServers(listeners ?? [], configuredUrls),
-      );
-    }
     const recoverLsofProbeFailure = recoverProcessProbeFailure("lsof");
     if (yield* Ref.get(lsofMissingRef)) {
       const fromProc = yield* scanProcListeners(resolveOwners);
@@ -1014,9 +902,6 @@ export const make = Effect.gen(function* PortDiscoveryMake() {
   const signalUntilStopped = Effect.fn("PortDiscovery.signalUntilStopped")(function* (
     input: PreviewStopLocalServerInput,
   ) {
-    if (hostPlatform === "win32") {
-      return yield* new PreviewStopLocalServerError({ reason: "unsupported" });
-    }
     // A socket can outlive its cached owner. Wait for any in-flight scan before invalidating
     // that owner, so the /proc fallback confirms who holds it before a signal is sent.
     yield* scanSemaphore.withPermits(1)(

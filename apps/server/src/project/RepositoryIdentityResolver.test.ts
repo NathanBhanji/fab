@@ -1,4 +1,4 @@
-// @effect-diagnostics nodeBuiltinImport:off - realpathSync.native resolves Windows 8.3 short names, which the Effect realPath does not.
+// @effect-diagnostics nodeBuiltinImport:off - realpathSync.native resolves temp-dir symlinks synchronously.
 import * as NodeFS from "node:fs";
 import * as NodeServices from "@effect/platform-node/NodeServices";
 import { expect, it } from "@effect/vitest";
@@ -8,9 +8,6 @@ import * as Path from "effect/Path";
 
 import * as ProcessRunner from "../processRunner.ts";
 import * as RepositoryIdentityResolver from "./RepositoryIdentityResolver.ts";
-
-const normalizePathSeparators = (value: string) => value.replaceAll("\\", "/");
-const normalizeResolvedPath = (value: string) => normalizePathSeparators(value);
 
 const git = (cwd: string, args: ReadonlyArray<string>) =>
   Effect.gen(function* () {
@@ -35,14 +32,14 @@ it.layer(NodeServices.layer)("RepositoryIdentityResolverLive", (it) => {
 
       const resolver = yield* RepositoryIdentityResolver.RepositoryIdentityResolver;
       const identity = yield* resolver.resolve(cwd);
-      // Native realpath matches git's long paths when Windows temp dirs use 8.3 names.
+      // Native realpath resolves temp-dir symlinks such as macOS /var.
       const resolvedIdentityRoot =
         identity?.rootPath === undefined ? "" : NodeFS.realpathSync.native(identity.rootPath);
       const resolvedCwd = NodeFS.realpathSync.native(cwd);
 
       expect(identity).not.toBeNull();
       expect(identity?.canonicalKey).toBe("github.com/nathanbhanji/fab");
-      expect(normalizeResolvedPath(resolvedIdentityRoot)).toBe(normalizeResolvedPath(resolvedCwd));
+      expect(resolvedIdentityRoot).toBe(resolvedCwd);
       expect(identity?.displayName).toBe("NathanBhanji/fab");
       expect(identity?.provider).toBe("github");
       expect(identity?.owner).toBe("NathanBhanji");
@@ -115,9 +112,7 @@ it.layer(NodeServices.layer)("RepositoryIdentityResolverLive", (it) => {
 
       expect(identity).not.toBeNull();
       expect(identity?.canonicalKey).toBe("github.com/nathanbhanji/fab");
-      expect(normalizeResolvedPath(resolvedIdentityRoot)).toBe(
-        normalizeResolvedPath(resolvedRepoRoot),
-      );
+      expect(resolvedIdentityRoot).toBe(resolvedRepoRoot);
     }).pipe(Effect.provide(RepositoryIdentityResolver.layer)),
   );
 
@@ -163,9 +158,7 @@ it.layer(NodeServices.layer)("RepositoryIdentityResolverLive", (it) => {
 
           expect(identity).not.toBeNull();
           expect(identity?.canonicalKey).toBe(checkoutIdentity?.canonicalKey);
-          expect(normalizeResolvedPath(resolvedIdentityRoot)).toBe(
-            normalizeResolvedPath(resolvedBareGitDir),
-          );
+          expect(resolvedIdentityRoot).toBe(resolvedBareGitDir);
         }
 
         yield* git(root, ["--git-dir", bareGitDir, "remote", "remove", "origin"]);

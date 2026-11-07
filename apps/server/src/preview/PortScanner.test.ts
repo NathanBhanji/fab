@@ -37,7 +37,7 @@ const processProbeFailure: ProcessRunner.ProcessRunner["Service"]["run"] = (inpu
         _tag: "NotFound",
         module: "ChildProcess",
         method: "spawn",
-        description: "PowerShell is not installed in the test environment",
+        description: "lsof is not installed in the test environment",
       }),
     }),
   );
@@ -500,61 +500,6 @@ effectIt.effect(
   },
 );
 
-effectIt.effect("ignores a partial Windows netstat snapshot when one query exits nonzero", () => {
-  let ipv6Fails = true;
-  const requests: string[] = [];
-  const fetchFn = ((input: Parameters<typeof globalThis.fetch>[0]) => {
-    requests.push(String(input));
-    return Promise.resolve(new Response("hello", { headers: { "content-type": "text/html" } }));
-  }) as typeof globalThis.fetch;
-  const layer = PortScanner.layer.pipe(
-    Layer.provide(
-      Layer.mergeAll(
-        layerNoProc,
-        Layer.succeed(ProcessRunner.ProcessRunner, {
-          run: (input) => {
-            if (input.command === "tasklist.exe") {
-              return Effect.succeed(
-                processOutput('"node.exe","1234","Console","1","50,000 K"\r\n'),
-              );
-            }
-            const isIpv6 = input.args.includes("tcpv6");
-            return Effect.succeed({
-              stdout: isIpv6
-                ? ""
-                : "  TCP    127.0.0.1:5173         0.0.0.0:0              LISTENING       1234\r\n",
-              stderr: "",
-              code: isIpv6 && ipv6Fails ? ChildProcessSpawner.ExitCode(1) : null,
-              timedOut: false,
-              stdoutTruncated: false,
-              stderrTruncated: false,
-              stdoutInvalidUtf8: false,
-              stderrInvalidUtf8: false,
-            });
-          },
-        }),
-        Layer.succeed(HostProcess.Platform, "win32"),
-        FetchHttpClient.layer.pipe(Layer.provide(Layer.succeed(FetchHttpClient.Fetch, fetchFn))),
-      ),
-    ),
-  );
-
-  return Effect.gen(function* () {
-    const scanner = yield* PortScanner.PortDiscovery;
-    yield* scanner.registerTerminalProcesses({
-      threadId: "scanner-thread",
-      terminalId: "scanner-terminal",
-      processIds: [1234],
-    });
-    expect(yield* scanner.scan()).toEqual([]);
-    ipv6Fails = false;
-    expect(yield* scanner.scan()).toMatchObject([
-      { port: 5173, pid: 1234, processName: "node", url: "http://localhost:5173" },
-    ]);
-    expect(requests).toEqual([]);
-  }).pipe(Effect.provide(layer));
-});
-
 effectIt.effect("rechecks the socket owner before stopping a Linux server without lsof", () => {
   let holder = "4242";
   const missing = FileSystem.makeNoop({});
@@ -608,7 +553,7 @@ effectIt.effect("rechecks the socket owner before stopping a Linux server withou
   }).pipe(Effect.provide(layer));
 });
 
-effectIt.effect.each(["linux", "darwin", "win32"] as const)(
+effectIt.effect.each(["linux", "darwin"] as const)(
   "reads no listeners on %s while FAB_PORT_DISCOVERY=0, and still probes configured URLs",
   (platform) => {
     const configuredUrl = `http://localhost:${LSOF_TEST_PORT}/docs`;
@@ -867,40 +812,38 @@ const isRunning = (pid: number): boolean => {
   }
 };
 
-effectIt.live.skipIf(HostProcess.Platform.defaultValue() === "win32")(
-  "stops an agent's server through its job's group, and only a listed server",
-  () =>
-    Effect.gen(function* () {
-      const scanner = yield* PortScanner.PortDiscovery;
-      yield* Effect.acquireRelease(Effect.sync(scanner.trackAgent), (release) =>
-        Effect.sync(release),
-      );
-      const job = yield* agentServer();
+effectIt.live("stops an agent's server through its job's group, and only a listed server", () =>
+  Effect.gen(function* () {
+    const scanner = yield* PortScanner.PortDiscovery;
+    yield* Effect.acquireRelease(Effect.sync(scanner.trackAgent), (release) =>
+      Effect.sync(release),
+    );
+    const job = yield* agentServer();
 
-      expect(yield* scanner.scan()).toEqual(
-        expect.arrayContaining([
-          expect.objectContaining({
-            pid: job.pid,
-            port: job.port,
-            agent: { threadId: "thread-live" },
-          }),
-        ]),
-      );
+    expect(yield* scanner.scan()).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          pid: job.pid,
+          port: job.port,
+          agent: { threadId: "thread-live" },
+        }),
+      ]),
+    );
 
-      const unlisted = yield* Effect.flip(scanner.stopServer({ pid: process.pid, port: job.port }));
-      expect(unlisted.reason).toBe("not-found");
+    const unlisted = yield* Effect.flip(scanner.stopServer({ pid: process.pid, port: job.port }));
+    expect(unlisted.reason).toBe("not-found");
 
-      yield* scanner.stopServer({ pid: job.pid, port: job.port });
-      // The shell waits on its job, so it exits once the job has.
-      yield* Effect.promise(() => job.exited);
-      expect(isRunning(job.pid)).toBe(false);
-    }).pipe(
-      Effect.scoped,
-      Effect.provide(
-        PortScanner.layer.pipe(
-          Layer.provide(ProcessRunner.layer),
-          Layer.provide(Layer.mergeAll(NodeServices.layer, FetchHttpClient.layer)),
-        ),
+    yield* scanner.stopServer({ pid: job.pid, port: job.port });
+    // The shell waits on its job, so it exits once the job has.
+    yield* Effect.promise(() => job.exited);
+    expect(isRunning(job.pid)).toBe(false);
+  }).pipe(
+    Effect.scoped,
+    Effect.provide(
+      PortScanner.layer.pipe(
+        Layer.provide(ProcessRunner.layer),
+        Layer.provide(Layer.mergeAll(NodeServices.layer, FetchHttpClient.layer)),
       ),
     ),
+  ),
 );

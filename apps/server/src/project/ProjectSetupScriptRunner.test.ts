@@ -116,7 +116,7 @@ describe("ProjectSetupScriptRunner", () => {
   it.effect("writes immediately when the spawned fallback is PowerShell", () =>
     Effect.gen(function* () {
       const { writes } = yield* setup({
-        shell: "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
+        shell: "/usr/local/bin/pwsh",
       });
       expect(yield* Queue.take(writes)).toContain("$global:LASTEXITCODE");
     }),

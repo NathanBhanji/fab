@@ -54,18 +54,13 @@ export class EnvironmentThemeService extends Context.Service<
 >()("fab/environmentTheme/EnvironmentThemeService") {}
 
 /** Validates and reads one handle; rejects symlinked files, allows symlinked directories.
- * Uses non-blocking opens against FIFOs; Windows lacks these flags and checks symlinks with lstat. */
+ * Uses non-blocking opens against FIFOs. */
 export const readThemeFileGuarded = (filePath: string, maxBytes: number): string | null => {
   let fd: number;
   try {
-    if (NodeFS.constants.O_NOFOLLOW === undefined && NodeFS.lstatSync(filePath).isSymbolicLink()) {
-      return null;
-    }
     fd = NodeFS.openSync(
       filePath,
-      NodeFS.constants.O_RDONLY |
-        (NodeFS.constants.O_NOFOLLOW ?? 0) |
-        (NodeFS.constants.O_NONBLOCK ?? 0),
+      NodeFS.constants.O_RDONLY | NodeFS.constants.O_NOFOLLOW | NodeFS.constants.O_NONBLOCK,
     );
   } catch {
     return null;

@@ -794,7 +794,6 @@ it.layer(
   // Answers process-table queries after `queryDuration`, honoring the caller's
   // timeout the way ProcessRunner's `timedOutResult` mode does.
   const slowProcessTable = (
-    platform: "linux" | "win32",
     queryDuration: Duration.Input,
     queries: Array<{ start: number; end?: number }>,
     started: ReadonlyArray<Deferred.Deferred<void>>,
@@ -810,11 +809,7 @@ it.layer(
         );
         query.end = yield* Clock.currentTimeMillis;
         return {
-          stdout: Option.isNone(completed)
-            ? ""
-            : platform === "win32"
-              ? "100|9000|node.exe\n"
-              : "  100  9000 node\n",
+          stdout: Option.isNone(completed) ? "" : "  100  9000 node\n",
           stderr: "",
           code: Option.isSome(completed) ? ChildProcessSpawner.ExitCode(0) : null,
           timedOut: Option.isNone(completed),
@@ -826,39 +821,33 @@ it.layer(
       }),
   });
 
-  const createFallbackManager = (
-    platform: "linux" | "win32",
-    runner: ProcessRunner.ProcessRunner["Service"],
-  ) =>
+  const createFallbackManager = (runner: ProcessRunner.ProcessRunner["Service"]) =>
     createManager(5, { subprocessPollIntervalMs: 1_000, processKillGraceMs: 0 }).pipe(
       Effect.provideService(ProcessRunner.ProcessRunner, runner),
-      Effect.provide(layerWithHostPlatform(platform)),
+      Effect.provide(layerWithHostPlatform("linux")),
     );
 
-  it.effect.each(["linux", "win32"] as const)(
-    "reports activity from a slow but successful %s process-table query",
-    (platform) =>
-      Effect.gen(function* () {
-        const started = yield* Deferred.make<void>();
-        const queries: Array<{ start: number; end?: number }> = [];
-        const { manager, getEvents } = yield* createFallbackManager(
-          platform,
-          slowProcessTable(platform, "5 seconds", queries, [started]),
-        );
+  it.effect("reports activity from a slow but successful process-table query", () =>
+    Effect.gen(function* () {
+      const started = yield* Deferred.make<void>();
+      const queries: Array<{ start: number; end?: number }> = [];
+      const { manager, getEvents } = yield* createFallbackManager(
+        slowProcessTable("5 seconds", queries, [started]),
+      );
 
-        yield* manager.open(openInput());
-        yield* TestClock.adjust("1 second");
-        yield* Deferred.await(started);
-        yield* TestClock.adjust("5 seconds");
+      yield* manager.open(openInput());
+      yield* TestClock.adjust("1 second");
+      yield* Deferred.await(started);
+      yield* TestClock.adjust("5 seconds");
 
-        expect(
-          (yield* getEvents).some(
-            (event) =>
-              event.type === "activity" && event.hasRunningSubprocess && event.label === "node",
-          ),
-        ).toBe(true);
-        yield* manager.close({ threadId: "thread-1" });
-      }).pipe(Effect.provide(TestClock.layer())),
+      expect(
+        (yield* getEvents).some(
+          (event) =>
+            event.type === "activity" && event.hasRunningSubprocess && event.label === "node",
+        ),
+      ).toBe(true);
+      yield* manager.close({ threadId: "thread-1" });
+    }).pipe(Effect.provide(TestClock.layer())),
   );
 
   it.effect("idles at least as long as a slow process-table query took before the next", () =>
@@ -866,8 +855,7 @@ it.layer(
       const started = yield* Deferred.make<void>();
       const queries: Array<{ start: number; end?: number }> = [];
       const { manager } = yield* createFallbackManager(
-        "linux",
-        slowProcessTable("linux", "5 seconds", queries, [started]),
+        slowProcessTable("5 seconds", queries, [started]),
       );
 
       yield* manager.open(openInput());
@@ -889,8 +877,7 @@ it.layer(
       const started = yield* Deferred.make<void>();
       const queries: Array<{ start: number; end?: number }> = [];
       const { manager } = yield* createFallbackManager(
-        "win32",
-        slowProcessTable("win32", "1 day", queries, [started]),
+        slowProcessTable("1 day", queries, [started]),
       );
 
       yield* manager.open(openInput());
@@ -906,37 +893,32 @@ it.layer(
     }).pipe(Effect.provide(TestClock.layer())),
   );
 
-  it.effect.each([
-    ["linux", 1_000],
-    ["win32", 1_500],
-  ] as const)(
-    "bounds closeIdle's %s query so other operations on the thread still run",
-    ([platform, budgetMs]) =>
-      Effect.gen(function* () {
-        const started = yield* Deferred.make<void>();
-        const queries: Array<{ start: number; end?: number }> = [];
-        const { manager, ptyAdapter } = yield* createFallbackManager(
-          platform,
-          slowProcessTable(platform, "1 day", queries, [started]),
-        );
-        yield* manager.open(openInput());
+  it.effect("bounds closeIdle's query so other operations on the thread still run", () =>
+    Effect.gen(function* () {
+      const budgetMs = 1_000;
+      const started = yield* Deferred.make<void>();
+      const queries: Array<{ start: number; end?: number }> = [];
+      const { manager, ptyAdapter } = yield* createFallbackManager(
+        slowProcessTable("1 day", queries, [started]),
+      );
+      yield* manager.open(openInput());
 
-        const closing = yield* manager
-          .closeIdle({ threadId: "thread-1" })
-          .pipe(Effect.forkChild({ startImmediately: true }));
-        yield* Deferred.await(started);
-        const resizing = yield* manager
-          .resize({ threadId: "thread-1", terminalId: DEFAULT_TERMINAL_ID, cols: 80, rows: 30 })
-          .pipe(Effect.forkChild({ startImmediately: true }));
-        yield* TestClock.adjust(Duration.millis(budgetMs));
+      const closing = yield* manager
+        .closeIdle({ threadId: "thread-1" })
+        .pipe(Effect.forkChild({ startImmediately: true }));
+      yield* Deferred.await(started);
+      const resizing = yield* manager
+        .resize({ threadId: "thread-1", terminalId: DEFAULT_TERMINAL_ID, cols: 80, rows: 30 })
+        .pipe(Effect.forkChild({ startImmediately: true }));
+      yield* TestClock.adjust(Duration.millis(budgetMs));
 
-        expect(closing.pollUnsafe()).toBeDefined();
-        expect(resizing.pollUnsafe()).toBeDefined();
-        expect(queries[0]!.end! - queries[0]!.start).toBe(budgetMs);
-        expect(ptyAdapter.processes[0]!.resizeCalls).toEqual([{ cols: 80, rows: 30 }]);
-        expect(ptyAdapter.processes[0]!.killed).toBe(false);
-        yield* manager.close({ threadId: "thread-1" });
-      }).pipe(Effect.provide(TestClock.layer())),
+      expect(closing.pollUnsafe()).toBeDefined();
+      expect(resizing.pollUnsafe()).toBeDefined();
+      expect(queries[0]!.end! - queries[0]!.start).toBe(budgetMs);
+      expect(ptyAdapter.processes[0]!.resizeCalls).toEqual([{ cols: 80, rows: 30 }]);
+      expect(ptyAdapter.processes[0]!.killed).toBe(false);
+      yield* manager.close({ threadId: "thread-1" });
+    }).pipe(Effect.provide(TestClock.layer())),
   );
 
   it.effect("keeps terminals that get input or output while closeIdle checks them", () =>
@@ -1520,11 +1502,8 @@ it.layer(
 
   it.effect("retries with fallback shells when preferred shell spawn fails", () =>
     Effect.gen(function* () {
-      const platform = yield* HostProcess.Platform;
-      const missingShell =
-        platform === "win32" ? "C:\\definitely\\missing-shell.exe" : "/definitely/missing-shell -l";
       const { manager, ptyAdapter } = yield* createManager(5, {
-        shellResolver: () => missingShell,
+        shellResolver: () => "/definitely/missing-shell -l",
       });
       ptyAdapter.spawnFailures.push(new Error("posix_spawnp failed."));
 
@@ -1532,26 +1511,12 @@ it.layer(
 
       assert.equal(snapshot.status, "running");
       expect(ptyAdapter.spawnInputs.length).toBeGreaterThanOrEqual(2);
-      expect(ptyAdapter.spawnInputs[0]?.shell).toBe(
-        platform === "win32" ? missingShell : "/definitely/missing-shell",
-      );
-
-      if (platform === "win32") {
-        expect(
-          ptyAdapter.spawnInputs.some(
-            (input) =>
-              input.shell === "pwsh.exe" ||
-              input.shell === "powershell.exe" ||
-              input.shell === "cmd.exe",
-          ),
-        ).toBe(true);
-      } else {
-        expect(
-          ptyAdapter.spawnInputs
-            .slice(1)
-            .some((input) => input.shell !== "/definitely/missing-shell"),
-        ).toBe(true);
-      }
+      expect(ptyAdapter.spawnInputs[0]?.shell).toBe("/definitely/missing-shell");
+      expect(
+        ptyAdapter.spawnInputs
+          .slice(1)
+          .some((input) => input.shell !== "/definitely/missing-shell"),
+      ).toBe(true);
     }),
   );
 
@@ -1610,160 +1575,35 @@ it.layer(
       }),
   );
 
-  it.effect("falls back to built-in PowerShell by absolute path on Windows", () =>
-    Effect.gen(function* () {
-      const ptyAdapter = new FakePtyAdapter();
-      const { manager } = yield* createManager(5, {
-        ptyAdapter,
-        shellResolver: () => "C:\\missing\\custom-shell.exe",
-        env: {
-          ComSpec: "C:\\Windows\\System32\\cmd.exe",
-          PATH: "C:\\Windows\\System32",
-          SystemRoot: "C:\\Windows",
-        },
-      }).pipe(Effect.provide(layerWithHostPlatform("win32")));
-      ptyAdapter.spawnFailures.push(
-        new Error("spawn custom-shell.exe ENOENT"),
-        new Error("spawn pwsh.exe ENOENT"),
-      );
-
-      yield* manager.open(openInput());
-
-      expect(ptyAdapter.spawnInputs.map((input) => input.shell)).toEqual([
-        "C:\\missing\\custom-shell.exe",
-        "pwsh.exe",
-        "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
-      ]);
-      expect(ptyAdapter.spawnInputs[1]?.args).toEqual(["-NoLogo"]);
-      expect(ptyAdapter.spawnInputs[2]?.args).toEqual(["-NoLogo"]);
-    }),
-  );
-
-  it.effect("closes an idle cmd fallback before rejecting its completion wrapper", () =>
-    Effect.gen(function* () {
-      const { manager, ptyAdapter, baseDir } = yield* createManager(5, {
-        env: { SystemRoot: "C:\\Windows" },
-        subprocessInspector: () =>
-          Effect.succeed({
-            hasRunningSubprocess: false,
-            childCommand: null,
-            processIds: [],
-          }),
-      }).pipe(Effect.provide(layerWithHostPlatform("win32")));
-      ptyAdapter.spawnFailures.push(
-        new Error("spawn pwsh ENOENT"),
-        new Error("spawn WindowsPowerShell ENOENT"),
-        new Error("spawn powershell ENOENT"),
-      );
-      const runner = yield* ProjectSetupScriptRunner.make.pipe(
-        Effect.provide(
-          Layer.mergeAll(
-            Layer.succeed(TerminalManager.TerminalManager, manager),
-            Layer.mock(ProjectService.ProjectService)({}),
-            Layer.mock(ProjectionStore.ProjectionStoreV2)({
-              getThreadShell: () => Effect.succeed(null),
-            }),
-            ServerSettings.layerTest(),
-          ),
-        ),
-      );
-      const error = yield* runner
-        .runForThread({
-          threadId: "thread-cmd-fallback",
-          worktreePath: baseDir,
-          project: {
-            id: ProjectId.make("project-cmd-fallback"),
-            workspaceRoot: baseDir,
-            scripts: [
-              {
-                id: "setup",
-                name: "Setup",
-                command: "echo setup-ready",
-                icon: "play",
-                runOnWorktreeCreate: true,
-              },
-            ],
-          },
-          observeCompletion: {},
-        })
-        .pipe(Effect.flip);
-
-      expect(error._tag).toBe("ProjectSetupScriptUnsupportedShellError");
-      expect(ptyAdapter.spawnInputs.at(-1)?.shell).toBe("C:\\Windows\\System32\\cmd.exe");
-      expect(ptyAdapter.processes[0]?.writes).toEqual([]);
-      expect(ptyAdapter.processes[0]?.killed).toBe(true);
-    }),
-  );
-
   it.effect("turns off fish terminal queries unless the user chose query-term", () =>
     Effect.gen(function* () {
-      for (const [platform, env, runtimeEnv, expected] of [
-        ["linux", {}, {}, { fish_features: "no-query-term" }],
+      for (const [env, runtimeEnv, expected] of [
+        [{}, {}, { fish_features: "no-query-term" }],
+        [{ fish_features: "qmark-noglob" }, {}, { fish_features: "qmark-noglob,no-query-term" }],
         [
-          "linux",
-          { fish_features: "qmark-noglob" },
-          {},
-          { fish_features: "qmark-noglob,no-query-term" },
-        ],
-        [
-          "linux",
           { fish_features: "qmark-noglob,query-term" },
           {},
           { fish_features: "qmark-noglob,query-term" },
         ],
         [
-          "linux",
           { fish_features: "qmark-noglob,no-query-term" },
           {},
           { fish_features: "qmark-noglob,no-query-term" },
         ],
         [
-          "linux",
           { fish_features: "query-term" },
           { fish_features: "qmark-noglob" },
           { fish_features: "qmark-noglob,no-query-term" },
         ],
-        [
-          "win32",
-          { FISH_FEATURES: "qmark-noglob" },
-          {},
-          { FISH_FEATURES: "qmark-noglob,no-query-term" },
-        ],
-        [
-          "win32",
-          { Fish_Features: "qmark-noglob,query-term" },
-          {},
-          { Fish_Features: "qmark-noglob,query-term" },
-        ],
-        [
-          "win32",
-          { FISH_FEATURES: "qmark-noglob,no-query-term" },
-          {},
-          { FISH_FEATURES: "qmark-noglob,no-query-term" },
-        ],
-        [
-          "win32",
-          { Fish_Features: "query-term" },
-          { fish_features: "qmark-noglob" },
-          { Fish_Features: "qmark-noglob,no-query-term" },
-        ],
-        [
-          "win32",
-          { FISH_FEATURES: "no-query-term" },
-          { fish_features: "qmark-noglob,query-term" },
-          { FISH_FEATURES: "qmark-noglob,query-term" },
-        ],
       ] as const) {
         const { manager, ptyAdapter } = yield* createManager(5, {
           env,
-        }).pipe(Effect.provide(layerWithHostPlatform(platform)));
+        }).pipe(Effect.provide(layerWithHostPlatform("linux")));
         yield* manager.open(openInput({ env: runtimeEnv }));
         const fishFeatures = Object.fromEntries(
-          Object.entries(ptyAdapter.spawnInputs[0]!.env).filter(
-            ([key]) => key.toLowerCase() === "fish_features",
-          ),
+          Object.entries(ptyAdapter.spawnInputs[0]!.env).filter(([key]) => key === "fish_features"),
         );
-        expect.soft(fishFeatures, JSON.stringify({ platform, env, runtimeEnv })).toEqual(expected);
+        expect.soft(fishFeatures, JSON.stringify({ env, runtimeEnv })).toEqual(expected);
       }
     }),
   );

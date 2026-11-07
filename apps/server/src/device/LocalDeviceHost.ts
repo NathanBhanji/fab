@@ -125,18 +125,14 @@ const androidSdk = Effect.gen(function* () {
   const fs = yield* FileSystem.FileSystem;
   const path = yield* Path.Path;
   const environment = yield* HostProcess.Environment;
-  const platform = yield* HostProcess.Platform;
-  const windows = platform === "win32";
-  const home = environment.HOME ?? environment.USERPROFILE ?? "";
+  const home = environment.HOME ?? "";
   const explicit = environment.ANDROID_HOME?.trim() || environment.ANDROID_SDK_ROOT?.trim();
   const exists = (file: string) => fs.exists(file).pipe(Effect.orElseSucceed(() => false));
-  const adbBinary = windows ? "adb.exe" : "adb";
-  const avdmanagerBinary = windows ? "avdmanager.bat" : "avdmanager";
+  const adbBinary = "adb";
+  const avdmanagerBinary = "avdmanager";
   const inspect = Effect.fnUntraced(function* (root: string) {
     const adb = yield* exists(path.join(root, "platform-tools", adbBinary));
-    const emulator = yield* exists(
-      path.join(root, "emulator", windows ? "emulator.exe" : "emulator"),
-    );
+    const emulator = yield* exists(path.join(root, "emulator", "emulator"));
     if (!explicit && !adb && !emulator) return null;
     const avdmanager = yield* exists(
       path.join(root, "cmdline-tools", "latest", "bin", avdmanagerBinary),
@@ -147,23 +143,15 @@ const androidSdk = Effect.gen(function* () {
   });
   const candidates = explicit
     ? [explicit]
-    : [
-        path.join(home, "Library", "Android", "sdk"),
-        path.join(home, "Android", "Sdk"),
-        path.join(
-          environment.LOCALAPPDATA ?? path.join(home, "AppData", "Local"),
-          "Android",
-          "Sdk",
-        ),
-      ];
+    : [path.join(home, "Library", "Android", "sdk"), path.join(home, "Android", "Sdk")];
   for (const root of candidates) {
     const sdk = yield* inspect(root);
     if (sdk) return sdk;
   }
   // PATH entries can be slow to stat (network shares), so only consult them after the standard locations miss.
   if (!explicit) {
-    const searchPath = environment.PATH ?? environment.Path ?? "";
-    for (const directory of searchPath.split(windows ? ";" : ":")) {
+    const searchPath = environment.PATH ?? "";
+    for (const directory of searchPath.split(":")) {
       if (!directory) continue;
       const adb = path.join(directory, adbBinary);
       if (!(yield* exists(adb))) continue;
@@ -178,7 +166,6 @@ const androidSdk = Effect.gen(function* () {
 const deviceHostEnvironment = (
   environment: NodeJS.ProcessEnv,
   sdkRoot: string | null,
-  hostPlatform: NodeJS.Platform,
   path: Path.Path,
 ): NodeJS.ProcessEnv => {
   return sdkRoot
@@ -188,8 +175,8 @@ const deviceHostEnvironment = (
         PATH: [
           path.join(sdkRoot, "platform-tools"),
           path.join(sdkRoot, "emulator"),
-          environment.PATH ?? environment.Path ?? "",
-        ].join(hostPlatform === "win32" ? ";" : ":"),
+          environment.PATH ?? "",
+        ].join(":"),
       }
     : environment;
 };
@@ -203,11 +190,7 @@ const hubEnvironment = Effect.fn("LocalDeviceHost.hubEnvironment")(function* (
   if (env.ANDROID_HOME) {
     const path = yield* Path.Path;
     const runner = yield* ProcessRunner.ProcessRunner;
-    const emulator = path.join(
-      env.ANDROID_HOME,
-      "emulator",
-      platform === "win32" ? "emulator.exe" : "emulator",
-    );
+    const emulator = path.join(env.ANDROID_HOME, "emulator", "emulator");
     const cameraArgs = yield* Effect.forEach(["front", "back"], (facing) =>
       runner
         .run({
@@ -266,7 +249,7 @@ export const make = Effect.fn("LocalDeviceHost.make")(function* () {
   const workingDirectory = yield* HostProcess.WorkingDirectory;
   const hostPlatform = yield* HostProcess.Platform;
   const sdk = yield* androidSdk;
-  const hostEnvironment = deviceHostEnvironment(environment, sdk.root, hostPlatform, path);
+  const hostEnvironment = deviceHostEnvironment(environment, sdk.root, path);
   const startLock = yield* Semaphore.make(1);
   const runningRef = yield* Ref.make<RunningHost | null>(null);
   const restartDelayRef = yield* Ref.make(0);
@@ -791,11 +774,7 @@ export const make = Effect.fn("LocalDeviceHost.make")(function* () {
       .run({
         command:
           command === "emulator" && sdk.root
-            ? path.join(
-                sdk.root,
-                "emulator",
-                hostPlatform === "win32" ? "emulator.exe" : "emulator",
-              )
+            ? path.join(sdk.root, "emulator", "emulator")
             : command,
         args,
         cwd: workingDirectory,

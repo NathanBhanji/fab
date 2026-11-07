@@ -880,21 +880,15 @@ export const makeVcsDriverShape = Effect.fn("makeGitVcsDriverShape")(function* (
 
   // Git defaults and macOS writeout-only can leave empty refs after crashes; flush before publication.
   // Set fsync first: Git 2.36 ignores unknown batch without resetting the method.
-  // Batch fully flushes refs and equals fsync on macOS HFS+/APFS and Windows NTFS/ReFS.
+  // Batch fully flushes refs and equals fsync on macOS HFS+/APFS.
   // Keep per-object fsync elsewhere; VcsProcess retries unsupported macOS full flushes with plain fsync.
   const durableWrite = [
     "-c",
     "core.fsync=objects,reference",
     "-c",
     "core.fsyncMethod=fsync",
-    ...(hostPlatform === "darwin" || hostPlatform === "win32"
-      ? ["-c", "core.fsyncMethod=batch"]
-      : []),
+    ...(hostPlatform === "darwin" ? ["-c", "core.fsyncMethod=batch"] : []),
   ] as const;
-
-  // Checkpoints must handle existing paths beyond Windows MAX_PATH, even when
-  // core.longpaths is disabled in the user's Git configuration.
-  const longPaths = hostPlatform === "win32" ? ["-c", "core.longpaths=true"] : [];
 
   const checkpoints: VcsDriver.VcsCheckpointOps = {
     captureCheckpoint: Effect.fn("GitVcsDriver.checkpoints.captureCheckpoint")(function* (input) {
@@ -1167,7 +1161,6 @@ export const makeVcsDriverShape = Effect.fn("makeGitVcsDriverShape")(function* (
             args: [
               ...indexConfig,
               ...durableWrite,
-              ...longPaths,
               // safecrlf=true refuses LF files under CRLF conversion; capture them as Git's default does.
               "-c",
               "core.safecrlf=false",
@@ -1189,15 +1182,7 @@ export const makeVcsDriverShape = Effect.fn("makeGitVcsDriverShape")(function* (
                 const untracked = yield* execute({
                   operation,
                   cwd: input.cwd,
-                  args: [
-                    ...longPaths,
-                    "ls-files",
-                    "--others",
-                    "--exclude-standard",
-                    "-z",
-                    "--",
-                    ".",
-                  ],
+                  args: ["ls-files", "--others", "--exclude-standard", "-z", "--", "."],
                   env: commitEnv,
                   maxOutputBytes: WORKSPACE_FILES_MAX_OUTPUT_BYTES,
                 });
@@ -1317,16 +1302,7 @@ export const makeVcsDriverShape = Effect.fn("makeGitVcsDriverShape")(function* (
         yield* execute({
           operation,
           cwd: input.cwd,
-          args: [
-            ...longPaths,
-            "restore",
-            "--source",
-            commitOid,
-            "--worktree",
-            "--staged",
-            "--",
-            ".",
-          ],
+          args: ["restore", "--source", commitOid, "--worktree", "--staged", "--", "."],
         });
       }
       // Restoring away the last tracked file can remove a nested workspace directory.
@@ -1346,7 +1322,7 @@ export const makeVcsDriverShape = Effect.fn("makeGitVcsDriverShape")(function* (
       const cleaned = yield* execute({
         operation,
         cwd: input.cwd,
-        args: [...longPaths, "clean", "-fd", "--", "."],
+        args: ["clean", "-fd", "--", "."],
         allowNonZeroExit: true,
       });
       if (cleaned.exitCode !== 0) {
@@ -1367,13 +1343,13 @@ export const makeVcsDriverShape = Effect.fn("makeGitVcsDriverShape")(function* (
             detail: cleaned.stderr.trim() || "Could not clean the checkpoint workspace.",
           });
       }
-      // On Windows the same clean can remove './' and exit 0.
+      // The clean can also remove './' and exit 0.
       yield* recreateWorkspace;
 
       yield* execute({
         operation,
         cwd: input.cwd,
-        args: [...longPaths, "reset", "--quiet", "--", "."],
+        args: ["reset", "--quiet", "--", "."],
       });
 
       return true;

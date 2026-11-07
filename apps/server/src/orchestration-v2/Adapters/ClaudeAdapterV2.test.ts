@@ -42,7 +42,6 @@ import {
   OrchestrationV2ProviderThread,
   ProjectId,
   ProviderInstanceId,
-  type ResolvedProviderInstanceEnvironment,
   ProviderDriverKind,
   type ProviderReplayTranscript,
   type ProviderApprovalDecision,
@@ -74,12 +73,10 @@ import { Tool } from "effect/ai";
 import { formatClaudeResumeCompactionQuestion } from "@fab/shared/claudeCompaction";
 import * as HostProcess from "@fab/shared/HostProcess";
 import { getModelSelectionStringOptionValue } from "@fab/shared/model";
-import { SpawnExecutableResolution } from "@fab/shared/shell";
 
 import * as PortScanner from "../../preview/PortScanner.ts";
 import { attachmentRelativePath } from "../../attachmentStore.ts";
 import { WorkflowAgentTranscriptReadObserver } from "../workflowAgentTranscript.ts";
-import * as ServerConfig from "../../config.ts";
 import * as McpProviderSession from "@fab/provider-core/server/mcpSession";
 import { FAB_DEVICE_TOOL_INSTRUCTIONS_WITH_TOOL_SEARCH } from "@fab/provider-core/server/orchestrationInstructions";
 import * as McpProviderSessions from "@fab/provider-core/server/McpProviderSessions";
@@ -90,7 +87,6 @@ import { ProjectToolkit } from "../../mcp/toolkits/project/tools.ts";
 import { WorktreeToolkit } from "../../mcp/toolkits/worktree/tools.ts";
 import { ThreadToolkit } from "../../mcp/toolkits/thread/tools.ts";
 import { OrchestratorToolkit } from "../../mcp/toolkits/orchestrator/tools.ts";
-import { ClaudeExecutableFileCheck } from "../../provider/Drivers/ClaudeExecutable.ts";
 import * as ProviderEventLoggers from "@fab/provider-core/server/ProviderEventLoggers";
 import * as ProviderAdapter from "@fab/provider-core/server/ProviderAdapter";
 import type * as ProviderContinuationRequests from "@fab/provider-core/server/ProviderContinuationRequests";
@@ -1309,102 +1305,6 @@ describe("ClaudeAdapterV2 MCP elicitation acceptance", () => {
       assert.isUndefined(ClaudeAdapterV2.claudeMcpElicitationAcceptance(request));
     }
   });
-});
-
-const captureSdkExecutablePaths = Effect.fn("captureSdkExecutablePaths")(function* (
-  binaryPath: string,
-  environment: ResolvedProviderInstanceEnvironment = [],
-) {
-  const executablePaths: Array<string | undefined> = [];
-  const taskToolEnvironment: Array<string | undefined> = [];
-  const adapter = yield* ClaudeAdapterV2.createClaudeAdapterV2(
-    {
-      instanceId: ClaudeAdapterV2.CLAUDE_DEFAULT_INSTANCE_ID,
-      displayName: undefined,
-      environment,
-      enabled: true,
-      config: { ...DEFAULT_CLAUDE_SETTINGS, binaryPath },
-    },
-    {},
-  ).pipe(
-    Effect.provide(
-      ServerConfig.layerTest(process.cwd(), {
-        prefix: "fab-claude-binary-path-",
-      }),
-    ),
-    Effect.provideService(ClaudeAdapterV2.ClaudeAgentSdkQueryRunner, {
-      allocateSessionId: Effect.succeed("native-thread-claude-binary-path"),
-      open: (input) =>
-        Effect.sync(() => {
-          executablePaths.push(input.options.pathToClaudeCodeExecutable);
-          taskToolEnvironment.push(input.options.env?.CLAUDE_CODE_ENABLE_TODO_TOOLS);
-          return {
-            messages: Stream.never,
-            offer: () => Effect.void,
-            setModel: () => Effect.void,
-            applyFlagSettings: () => Effect.void,
-            setPermissionMode: () => Effect.void,
-            backgroundTasks: () => Effect.succeed(false),
-            stopTask: () => Effect.void,
-            interrupt: Effect.void,
-            close: Effect.void,
-          };
-        }),
-      forkSession: () => Effect.die("unused"),
-      subagentLaunchToolUseId: () => Effect.succeed(null),
-      assertComplete: Effect.void,
-    }),
-  );
-  const threadId = ThreadId.make("thread-claude-binary-path");
-  const runtime = yield* adapter.openSession({
-    threadId,
-    providerSessionId: ProviderSessionId.make("provider-session-claude-binary-path"),
-    modelSelection: CLAUDE_TEST_MODEL_SELECTION,
-    runtimePolicy: CLAUDE_TEST_RUNTIME_POLICY,
-  });
-  const providerThread = yield* runtime.ensureThread({
-    threadId,
-    modelSelection: CLAUDE_TEST_MODEL_SELECTION,
-    runtimePolicy: CLAUDE_TEST_RUNTIME_POLICY,
-  });
-  yield* runtime.startTurn(
-    makeClaudeTestTurnInput({
-      threadId,
-      providerThread,
-      now: yield* DateTime.now,
-      attemptId: RunAttemptId.make("attempt-claude-binary-path"),
-      text: "hello",
-      attachments: [],
-    }),
-  );
-  return { executablePaths, taskToolEnvironment };
-});
-
-describe("ClaudeAdapterV2 executable path", () => {
-  it.effect("follows a bare claude on Windows to the npm package executable", () =>
-    Effect.scoped(
-      Effect.gen(function* () {
-        const npmDir = "C:\\Users\\dev\\AppData\\Roaming\\npm";
-        const packageExe = `${npmDir}\\node_modules\\@anthropic-ai\\claude-code\\bin\\claude.exe`;
-        const { executablePaths } = yield* captureSdkExecutablePaths("claude").pipe(
-          Effect.provideService(HostProcess.Platform, "win32"),
-          Effect.provideService(SpawnExecutableResolution, () => `${npmDir}\\claude.cmd`),
-          Effect.provideService(ClaudeExecutableFileCheck, (filePath) => filePath === packageExe),
-        );
-
-        assert.deepEqual(executablePaths, [packageExe]);
-      }),
-    ).pipe(
-      Effect.provide(
-        Layer.mergeAll(
-          IdAllocator.layer,
-          McpProviderSessions.layer,
-          NodeServices.layer,
-          NodeCrypto.layer,
-        ),
-      ),
-    ),
-  );
 });
 
 describe("ClaudeAdapterV2 resumeThread", () => {
@@ -5937,7 +5837,6 @@ describe("ClaudeAdapterV2 background wake turns", () => {
   it.effect("names an expired Claude login instead of the terminal API error", () =>
     Effect.gen(function* () {
       const configDir = "/synthetic/Claude config";
-      // The adapter resolves the cwd on the host, which adds a drive letter on Windows.
       const cwd = NodePath.resolve("/synthetic/project");
       const harness = yield* makeWakeHarnessWithOptions({
         environment: { CLAUDE_CONFIG_DIR: configDir },

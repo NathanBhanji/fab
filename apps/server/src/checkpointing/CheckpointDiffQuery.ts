@@ -26,7 +26,7 @@ import {
 import * as CheckpointStore from "./CheckpointStore.ts";
 import { isGitImport, parseTurnDiffFilesFromNumstat, type TurnDiffFileSummary } from "./Diffs.ts";
 
-// Windows limits a command line to 32,767 characters. Leave room for the rest of git's arguments.
+// Keep pathspec batches well below command-line limits, leaving room for git's other arguments.
 const MAX_PATHSPEC_CHARS = 24_000;
 const DIFF_TRUNCATED_MARKER = "\n\n[truncated]";
 

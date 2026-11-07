@@ -17,11 +17,7 @@ import * as NodeZlib from "node:zlib";
 
 import * as PreviewBrowser from "./PreviewBrowser.ts";
 
-// NTFS cannot enforce POSIX modes; choose the host platform.
-const hostPlatform: NodeJS.Platform =
-  HostProcess.Platform.defaultValue() === "win32" ? "win32" : "linux";
-const executableName =
-  hostPlatform === "win32" ? "chrome-headless-shell.exe" : "chrome-headless-shell";
+const executableName = "chrome-headless-shell";
 const ROOT = "chrome-headless-shell-fixture/";
 
 const makeZip = (
@@ -104,7 +100,7 @@ const makeHarness = Effect.fn("test.makePreviewBrowser")(function* (
         },
     ...(options.wait === undefined ? {} : { wait: options.wait }),
   }).pipe(
-    Effect.provideService(HostProcess.Platform, hostPlatform),
+    Effect.provideService(HostProcess.Platform, "linux"),
     Effect.provideService(HostProcess.Architecture, "x64"),
     Effect.provideService(
       HttpClient.HttpClient,
@@ -142,13 +138,11 @@ it.layer(Layer.mergeAll(NodeServices.layer, NodeCrypto.layer))("PreviewBrowser",
       const version = path.join(installRoot, current);
       expect(executable).toBe(path.join(version, executableName));
       expect(yield* fs.readFileString(path.join(version, "locales", "en-US.pak"))).toBe("strings");
-      if (hostPlatform !== "win32") {
-        const mode = (file: string) =>
-          fs.stat(path.join(version, file)).pipe(Effect.map((info) => info.mode & 0o777));
-        expect(yield* mode(executableName)).toBe(0o755);
-        expect(yield* mode("libEGL.so")).toBe(0o755);
-        expect(yield* mode(path.join("locales", "en-US.pak"))).toBe(0o644);
-      }
+      const mode = (file: string) =>
+        fs.stat(path.join(version, file)).pipe(Effect.map((info) => info.mode & 0o777));
+      expect(yield* mode(executableName)).toBe(0o755);
+      expect(yield* mode("libEGL.so")).toBe(0o755);
+      expect(yield* mode(path.join("locales", "en-US.pak"))).toBe(0o644);
       expect((yield* fs.readDirectory(installRoot)).toSorted()).toEqual(
         [".install-other", "0.10.0", current].toSorted(),
       );

@@ -1,7 +1,6 @@
 import * as NodeCrypto from "@effect/platform-node/NodeCrypto";
 import * as NodeServices from "@effect/platform-node/NodeServices";
 import { assert, it } from "@effect/vitest";
-import * as HostProcess from "@fab/shared/HostProcess";
 import {
   ProjectId,
   type OrchestrationV2ServerCommand,
@@ -366,10 +365,8 @@ it.effect("a file request moves its value to an owner-only file, once", () =>
           const file = yield* service.saveToFile({ threadId, turnItemId });
           assert.equal(yield* fs.readFileString(file), "cf_token'$(id)");
           assert.deepEqual(valuesOf(stored), []);
-          if ((yield* HostProcess.Platform) !== "win32") {
-            assert.equal((yield* fs.stat(file)).mode & 0o777, 0o600);
-            assert.equal((yield* fs.stat(path.dirname(file))).mode & 0o777, 0o700);
-          }
+          assert.equal((yield* fs.stat(file)).mode & 0o777, 0o600);
+          assert.equal((yield* fs.stat(path.dirname(file))).mode & 0o777, 0o700);
           // A retried request_secret gets the same file; the value is never a ref again.
           assert.equal(yield* service.saveToFile({ threadId, turnItemId }), file);
           const ref = SecretRef.make(`secret-ref:${path.basename(file)}`);

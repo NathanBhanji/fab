@@ -436,7 +436,7 @@ export function layer(input: {
   );
 }
 
-/** Uses canonical workspace paths, with turn/start in museWorkspaceRoot form (verbatim on Windows). */
+/** Uses canonical workspace paths, with turn/start in museWorkspaceRoot form. */
 export const materializeMuseReplayWorkspace = Effect.fn("materializeMuseReplayWorkspace")(
   function* (transcript: ProviderReplayTranscript, workspace: string) {
     const canonical = yield* FileSystem.FileSystem.pipe(

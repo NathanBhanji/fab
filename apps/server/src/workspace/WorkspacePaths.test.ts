@@ -5,8 +5,6 @@ import * as FileSystem from "effect/FileSystem";
 import * as Layer from "effect/Layer";
 import * as Path from "effect/Path";
 
-import * as HostProcess from "@fab/shared/HostProcess";
-
 import * as WorkspacePaths from "./WorkspacePaths.ts";
 
 const layerTest = Layer.empty.pipe(
@@ -61,24 +59,21 @@ it.layer(layerTest)("WorkspacePathsLive", (it) => {
       }),
     );
 
-    // On Windows `\` is a separator, so these names cannot exist there.
-    it.effect.skipIf(HostProcess.Platform.defaultValue() === "win32")(
-      "keeps a backslash in a name as part of the name",
-      () =>
-        Effect.gen(function* () {
-          const workspacePaths = yield* WorkspacePaths.WorkspacePaths;
-          const path = yield* Path.Path;
-          const cwd = yield* makeTempDir();
+    it.effect("keeps a backslash in a name as part of the name", () =>
+      Effect.gen(function* () {
+        const workspacePaths = yield* WorkspacePaths.WorkspacePaths;
+        const path = yield* Path.Path;
+        const cwd = yield* makeTempDir();
 
-          for (const relativePath of ["weird\\name.txt", "..\\..\\etc"]) {
-            expect(
-              yield* workspacePaths.resolveRelativePathWithinRoot({
-                workspaceRoot: cwd,
-                relativePath,
-              }),
-            ).toEqual({ absolutePath: path.join(cwd, relativePath), relativePath });
-          }
-        }),
+        for (const relativePath of ["weird\\name.txt", "..\\..\\etc"]) {
+          expect(
+            yield* workspacePaths.resolveRelativePathWithinRoot({
+              workspaceRoot: cwd,
+              relativePath,
+            }),
+          ).toEqual({ absolutePath: path.join(cwd, relativePath), relativePath });
+        }
+      }),
     );
   });
 });

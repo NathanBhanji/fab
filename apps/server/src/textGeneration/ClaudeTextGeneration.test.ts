@@ -1,7 +1,6 @@
 import * as NodeServices from "@effect/platform-node/NodeServices";
 import { it } from "@effect/vitest";
 import { ClaudeSettings, ProviderInstanceId } from "@fab/contracts";
-import * as HostProcess from "@fab/shared/HostProcess";
 import { createModelSelection } from "@fab/shared/model";
 import * as Effect from "effect/Effect";
 import * as FileSystem from "effect/FileSystem";
@@ -28,14 +27,10 @@ const layerClaudeTextGenerationTest = ServerConfig.ServerConfig.layerTest(proces
   prefix: "fab-claude-text-generation-test-",
 }).pipe(Layer.provideMerge(NodeServices.layer));
 
-// The stub behaviour lives in Node so the same implementation runs on Windows,
-// where a shebang file is not executable and would fall through to the real
-// Claude CLI on PATH; `writeFakeCli` picks the launcher shape per host.
 function makeFakeClaudeBinary(dir: string, lifecyclePort?: number) {
   return Effect.gen(function* () {
     const path = yield* Path.Path;
     const fs = yield* FileSystem.FileSystem;
-    const platform = yield* HostProcess.Platform;
     const binDir = path.join(dir, "bin");
     const fixturePath = yield* path.fromFileUrl(
       new URL("./testing/ClaudeTextGeneration.fixture.mjs", import.meta.url),
@@ -44,7 +39,6 @@ function makeFakeClaudeBinary(dir: string, lifecyclePort?: number) {
     writeFakeCli({
       directory: binDir,
       name: "claude",
-      platform,
       source:
         lifecyclePort === undefined
           ? source
@@ -74,7 +68,6 @@ function withFakeClaudeEnv<A, E, R>(
     const fs = yield* FileSystem.FileSystem;
     const tempDir = yield* fs.makeTempDirectoryScoped({ prefix: "fab-claude-text-" });
     const binDir = yield* makeFakeClaudeBinary(tempDir, input.lifecyclePort);
-    const pathDelimiter = (yield* HostProcess.isWindows) ? ";" : ":";
     const previousPath = process.env.PATH;
     const previousRejectsNoSessionPersistence =
       process.env.FAB_FAKE_CLAUDE_REJECTS_NO_SESSION_PERSISTENCE;
@@ -89,7 +82,7 @@ function withFakeClaudeEnv<A, E, R>(
 
     yield* Effect.acquireRelease(
       Effect.sync(() => {
-        process.env.PATH = `${binDir}${pathDelimiter}${previousPath ?? ""}`;
+        process.env.PATH = `${binDir}:${previousPath ?? ""}`;
         process.env.FAB_FAKE_CLAUDE_OUTPUT = input.output;
 
         if (input.rejectsNoSessionPersistence) {

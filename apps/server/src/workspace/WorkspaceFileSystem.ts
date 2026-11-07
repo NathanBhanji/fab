@@ -358,12 +358,9 @@ export const make = Effect.gen(function* () {
 
     return yield* Effect.acquireUseRelease(
       Effect.tryPromise({
-        // Non-blocking opens prevent FIFO hangs before stat rejects them; Windows lacks the flag.
+        // Non-blocking opens prevent FIFO hangs before stat rejects them.
         try: () =>
-          NodeFSP.open(
-            realTargetPath,
-            NodeFS.constants.O_RDONLY | (NodeFS.constants.O_NONBLOCK ?? 0),
-          ),
+          NodeFSP.open(realTargetPath, NodeFS.constants.O_RDONLY | NodeFS.constants.O_NONBLOCK),
         catch: (cause) =>
           new WorkspaceFileSystemOperationError({
             workspaceRoot: input.cwd,
@@ -564,14 +561,14 @@ export const make = Effect.gen(function* () {
       ),
     );
     yield* Effect.tryPromise({
-      // A symlink swapped in after the check is not followed. Windows lacks O_NOFOLLOW.
+      // A symlink swapped in after the check is not followed.
       try: () =>
         NodeFSP.writeFile(realTargetPath, input.contents, {
           flag:
             NodeFS.constants.O_WRONLY |
             NodeFS.constants.O_CREAT |
             NodeFS.constants.O_TRUNC |
-            (NodeFS.constants.O_NOFOLLOW ?? 0),
+            NodeFS.constants.O_NOFOLLOW,
         }),
       catch: (cause) =>
         new WorkspaceFileSystemOperationError({
