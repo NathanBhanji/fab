@@ -6,9 +6,9 @@ the corresponding preview within each theme. Appearance preferences are saved se
 device or browser.
 
 On web and desktop, use **Change theme** in the command palette to select a theme without leaving chat.
-Press **Cmd+Option+A** on macOS or **Ctrl+Alt+A** on Windows/Linux to open the theme picker directly.
+Press **Cmd+Option+A** on macOS or **Ctrl+Alt+A** on Linux to open the theme picker directly.
 Use **Change appearance** in the command palette to choose System, Light, or Dark independently of
-the theme. **Cmd+Option+Shift+A** on macOS or **Ctrl+Alt+Shift+A** on Windows/Linux cycles through
+the theme. **Cmd+Option+Shift+A** on macOS or **Ctrl+Alt+Shift+A** on Linux cycles through
 those modes. Customize these shortcuts under **Settings → Keybindings**.
 
 On mobile, open **Settings → Appearance**. Mobile has its own themes and text,

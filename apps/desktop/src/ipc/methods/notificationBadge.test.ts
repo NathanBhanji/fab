@@ -26,7 +26,7 @@ import * as ElectronApp from "../../electron/ElectronApp.ts";
 import * as DesktopIpc from "../DesktopIpc.ts";
 import { installNotificationBadge } from "./notificationBadge.ts";
 
-const badge = { count: 2, image: "data:image/png;base64,aGVsbG8=" };
+const badge = { count: 2 };
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -48,8 +48,6 @@ it.effect("validates IPC and clears on native focus, quit, and disposal", () =>
           { ...badge, count: -1 },
           { ...badge, count: 0.5 },
           { ...badge, count: Infinity },
-          { ...badge, image: "https://example.com/icon.png" },
-          { ...badge, image: `data:image/png;base64,${"a".repeat(16_384)}` },
         ]) {
           yield* Effect.promise(() => expect(handler(event, invalid)).rejects.toBeDefined());
         }
@@ -63,7 +61,7 @@ it.effect("validates IPC and clears on native focus, quit, and disposal", () =>
         yield* Effect.promise(() => Promise.resolve(handler(event, badge)));
         expect(native.setBadgeCount).toHaveBeenLastCalledWith(0);
         expect(native.webContents.send).toHaveBeenCalledTimes(2);
-        yield* Effect.promise(() => Promise.resolve(handler(event, { count: 0, image: null })));
+        yield* Effect.promise(() => Promise.resolve(handler(event, { count: 0 })));
         expect(native.webContents.send).toHaveBeenCalledTimes(2);
         native.getFocusedWindow.mockReturnValue(null);
         yield* Effect.promise(() => Promise.resolve(handler(event, badge)));

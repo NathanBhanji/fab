@@ -121,7 +121,6 @@ const environmentOptionOrder = Order.mapInput(
 );
 
 function platformFromOs(os: string | null | undefined): string {
-  if (os === "windows") return "Win32";
   if (os === "darwin") return "MacIntel";
   if (os === "linux") return "Linux";
   return "";

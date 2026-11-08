@@ -30,7 +30,7 @@ Fab has 3 key app surfaces: **web**, **desktop**, and **mobile**.
 
 **Mobile** is a React Native app for iOS. The mobile app allows for connecting to any Fab server to control work remotely.
 
-**Supported platforms** are macOS and Linux (Ubuntu) for desktop and server, and iPhone for mobile. Windows, WSL, and Android code inherited from T3 Code is unsupported: do not extend it, test it, or add new branches for it. Removing it is fine when you are already changing that code.
+**Supported platforms** are macOS and Linux (Ubuntu) for desktop and server, and iPhone for mobile. Windows, WSL, and Android code inherited from T3 Code is unsupported: do not extend it, test it, or add new branches for it. Removing it is fine when you are already changing that code. The Device panel's Android emulator support is supported developer tooling for building Android apps with an agent and stays; what is unsupported is running Fab itself on Android.
 
 ## A note from Theo
 
