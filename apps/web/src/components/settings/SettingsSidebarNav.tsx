@@ -1,12 +1,4 @@
-import {
-  lazy,
-  Suspense,
-  useEffect,
-  useRef,
-  useState,
-  type ComponentType,
-  type KeyboardEvent,
-} from "react";
+import { useEffect, useRef, useState, type ComponentType, type KeyboardEvent } from "react";
 import {
   ArchiveIcon,
   FlaskConicalIcon,
@@ -39,7 +31,6 @@ import { Button } from "../ui/button";
 import { Kbd } from "../ui/kbd";
 import {
   SidebarContent,
-  SidebarFooter,
   SidebarGroup,
   SidebarMenu,
   SidebarMenuButton,
@@ -71,17 +62,6 @@ const SnapShotIcon = createLucideIcon("snap-shot", [
   ["rect", { width: "10", height: "8", x: "7", y: "8", rx: "2", key: "window" }],
   ["circle", { cx: "12", cy: "12", r: "1.5", key: "lens" }],
 ]);
-
-const FabConnectSidebarSignIn = lazy(() =>
-  import("../clerk/FabConnectSidebarSignIn").then((module) => ({
-    default: module.FabConnectSidebarSignIn,
-  })),
-);
-const FabConnectSidebarAvatar = lazy(() =>
-  import("../clerk/FabConnectSidebarSignIn").then((module) => ({
-    default: module.FabConnectSidebarAvatar,
-  })),
-);
 
 const SETTINGS_SECTION_ICONS: Readonly<
   Record<SettingsPath, ComponentType<{ className?: string }>>
@@ -435,14 +415,6 @@ export function SettingsSidebarNav({ pathname }: { pathname: string }) {
           </div>
         </SidebarGroup>
       </SidebarContent>
-      <SidebarFooter className="max-md:hidden">
-        <Suspense fallback={null}>
-          <FabConnectSidebarSignIn />
-        </Suspense>
-        <Suspense fallback={null}>
-          <FabConnectSidebarAvatar />
-        </Suspense>
-      </SidebarFooter>
     </nav>
   );
 }

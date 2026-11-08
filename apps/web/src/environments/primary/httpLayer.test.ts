@@ -69,9 +69,9 @@ describe("primary environment HTTP layer", { concurrent: false }, () => {
     });
 
     return Effect.gen(function* () {
-      const requestFiber = yield* HttpClient.get(
-        "http://127.0.0.1:3773/api/connect/link-state",
-      ).pipe(Effect.forkChild);
+      const requestFiber = yield* HttpClient.get("http://127.0.0.1:3773/api/auth/session").pipe(
+        Effect.forkChild,
+      );
       yield* Effect.promise(() => requested.promise);
       expect(fetchMock).not.toHaveBeenCalled();
       bearerToken.resolve("desktop-bearer-token");

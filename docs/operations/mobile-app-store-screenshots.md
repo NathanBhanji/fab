@@ -70,10 +70,9 @@ The default matrix is:
 | `apple/iphone-duo-open/dark/fab/`   | iPhone Duo, unfolded landscape | 2853×2007         | App Store Connect iPhone Duo              |
 | `apple/ipad-13/dark/fab/`           | iPad Pro 13-inch (M5)          | 2752×2064         | App Store Connect iPad 13-inch, landscape |
 
-Each target captures thread, terminal, review, thread list, and environments, and every target except
-the iPad and Duo also captures agent activity. Each palette folder's five or six screenshots satisfy the configured Apple limit of 1–10.
-The two Duo folders each contain five scenes and upload to the same iPhone Duo slot (ten images
-total). They omit agent activity to stay within that shared limit. Duo capture requires
+Each target captures thread, terminal, review, thread list, and environments. Each palette folder's
+five screenshots satisfy the configured Apple limit of 1–10. The two Duo folders upload to the same
+iPhone Duo slot (ten images total). Duo capture requires
 an installed iOS runtime that supports iPhone Duo and `agent-device` on PATH, or
 `AGENT_DEVICE_PATH` pointing to its executable; it sets and verifies the
 simulator fold pose before launching the app.
@@ -81,20 +80,12 @@ simulator fold pose before launching the app.
 Every palette gets its own leaf folder so one upload slot never mixes themes and each folder keeps a
 store-legal screenshot count.
 
-The agent-activity scene shows what a user sees away from the app. The app stages a Live
-Activity for four seeded threads. The runner then locks the simulator and
-pushes the matching approval alert with `simctl push`. Locking
-the simulator and answering the notification permission prompt use
-[AXe](https://github.com/cameroncooke/AXe), so install it (`brew tap cameroncooke/axe && brew
-install axe`) or set `AXE_PATH` before capturing iOS. The iPad skips the scene because the lock
-screen does not follow the app's landscape self-rotation.
-
 The generated tree is deliberately aligned with the store upload fields:
 
     artifacts/app-store/screenshots/
     └── apple/
-        ├── iphone-6.9/dark/fab/{thread,terminal,review,threads,environments,agent-activity}.png
-        ├── iphone-6.5/dark/fab/{thread,terminal,review,threads,environments,agent-activity}.png
+        ├── iphone-6.9/dark/fab/{thread,terminal,review,threads,environments}.png
+        ├── iphone-6.5/dark/fab/{thread,terminal,review,threads,environments}.png
         ├── iphone-duo-closed/dark/fab/{thread,terminal,review,threads,environments}.png
         ├── iphone-duo-open/dark/fab/{thread,terminal,review,threads,environments}.png
         └── ipad-13/dark/fab/{thread,terminal,review,threads,environments}.png

@@ -1,7 +1,5 @@
 import { AuthEnvironmentMaintainScope } from "@fab/contracts";
 
-import { usePrimaryCloudLinkState } from "~/cloud/primaryCloudLinkState";
-import { hasCloudPublicConfig } from "~/cloud/publicConfig";
 import { isLocalEnvironmentDisabled } from "~/localEnvironment";
 import { useEnvironments, usePrimaryEnvironmentId } from "~/state/environments";
 import { usePeerLinkHosts } from "~/state/peerLinks";
@@ -40,24 +38,16 @@ export function useAvailableSettingsSearchItems(scopeSearch: SettingsScopeSearch
   const primaryEnvironmentId = usePrimaryEnvironmentId();
   const canMaintain = useEnvironmentScope(primaryEnvironmentId, AuthEnvironmentMaintainScope);
   const hasPeerLinkHost = usePeerLinkHosts().length > 0;
-  const cloudLinkState = usePrimaryCloudLinkState().data;
-  // Same fallback as the Connections row: older servers imply a tunnel from `linked`.
-  const managedTunnelActive =
-    cloudLinkState?.linkRevoked !== true &&
-    (cloudLinkState?.managedTunnelActive ?? cloudLinkState?.linked ?? false) === true;
   const localEnvironmentDisabled = isLocalEnvironmentDisabled() === true;
   const canManageLocalBackend = !localEnvironmentDisabled && canMaintain;
-  const cloudPublicConfig = hasCloudPublicConfig() === true;
 
   return filterAvailableSettingsSearchItems({
     localEnvironmentDisabled,
-    hasCloudPublicConfig: cloudPublicConfig,
     hasEnvironment,
     hasProviderSettingsEnvironment,
     hasMacProviderSettingsEnvironment,
     canManageLocalBackend,
     hasThreadAutoSettlement,
-    managedTunnelActive,
     hasPeerLinkHost,
   });
 }

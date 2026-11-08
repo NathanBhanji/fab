@@ -17,12 +17,6 @@ const runtimeVersionPolicy =
 const personalTeamBundleIdentifier = repoEnv.FAB_IOS_PERSONAL_TEAM_BUNDLE_ID?.trim();
 const IOS_BUNDLE_IDENTIFIER_PATTERN = /^[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)+$/;
 
-// Compiled into the native project. Without a relay, Observe's native side could dispatch to
-// Expo's own ingest before observe.ts turns it off; `.invalid` never resolves (RFC 6761).
-const observeEndpointUrl = repoEnv.FAB_RELAY_URL?.trim()
-  ? new URL("/v1/mobile/observe", repoEnv.FAB_RELAY_URL.trim()).toString()
-  : "https://observe.invalid";
-
 const fromRepoRoot = (relativePath: string) => `../../${relativePath}`;
 
 if (
@@ -58,21 +52,18 @@ const VARIANT_CONFIG = {
     appName: "Fab Dev",
     scheme: "fab-dev",
     iosBundleIdentifier: "dev.bhanji.fab.dev",
-    relyingParty: "clerk.fab.invalid",
     assets: DEVELOPMENT_ASSETS,
   },
   preview: {
     appName: "Fab Preview",
     scheme: "fab-preview",
     iosBundleIdentifier: "dev.bhanji.fab.preview",
-    relyingParty: "clerk.fab.invalid",
     assets: PREVIEW_ASSETS,
   },
   production: {
     appName: "Fab",
     scheme: "fab",
     iosBundleIdentifier: "dev.bhanji.fab",
-    relyingParty: "clerk.fab.invalid",
     assets: RELEASE_ASSETS,
   },
 } as const;
@@ -108,7 +99,6 @@ const widgetsPlugin: NonNullable<ExpoConfig["plugins"]>[number] = [
   {
     bundleIdentifier: `${iosBundleIdentifier}.widgets`,
     groupIdentifier: `group.${iosBundleIdentifier}`,
-    enablePushNotifications: true,
     // Frequent updates need the iOS entitlement to avoid early throttling.
     frequentUpdates: true,
     widgets: [
@@ -152,12 +142,6 @@ const widgetsPlugin: NonNullable<ExpoConfig["plugins"]>[number] = [
             "accessoryRectangular",
           ],
         },
-      },
-      {
-        name: "AgentActivity",
-        displayName: "Agent Activity",
-        description: "Shows the current state of active Fab agents.",
-        ios: { supportedFamilies: ["systemSmall", "systemMedium", "accessoryRectangular"] },
       },
     ],
   },
@@ -206,13 +190,9 @@ const config: ExpoConfig = {
     supportsTablet: true,
     requireFullScreen: process.env.FAB_SHOWCASE_CAPTURE_BUILD === "1",
     bundleIdentifier: iosBundleIdentifier,
-    // Avoid Personal Team fallback: it cannot sign App Groups, Apple sign-in or push entitlements.
+    // Avoid Personal Team fallback: it cannot sign App Groups.
     appleTeamId: "ARK85ZXQ4Z",
-    associatedDomains: [
-      `applinks:${variant.relyingParty}`,
-      `webcredentials:${variant.relyingParty}`,
-      `applinks:${HOSTED_APP_HOST}`,
-    ],
+    associatedDomains: [`applinks:${HOSTED_APP_HOST}`],
     entitlements: {
       "keychain-access-groups": [`$(AppIdentifierPrefix)${variant.iosBundleIdentifier}`],
     },
@@ -263,15 +243,6 @@ const config: ExpoConfig = {
     ...(isIosPersonalTeamBuild
       ? [sharingPlugin]
       : ["./plugins/withShareExtensionDisplayName.cjs", sharingPlugin]),
-    [
-      "expo-notifications",
-      {
-        mode: APP_VARIANT === "development" ? "development" : "production",
-      },
-    ],
-    // Gate Clerk here: withoutIosPersonalTeamCapabilities runs too early to strip its entitlement.
-    ["@clerk/expo", { theme: "./clerk-theme.json", appleSignIn: !isIosPersonalTeamBuild }],
-    "expo-web-browser",
     "expo-quick-actions",
     [
       "expo-audio",
@@ -315,11 +286,6 @@ const config: ExpoConfig = {
       {
         ios: {
           deploymentTarget: "18.0",
-          // AppCheckCore 11.3+ includes Swift and needs module maps for these Objective-C dependencies.
-          extraPods: [
-            { name: "GoogleUtilities", modular_headers: true },
-            { name: "RecaptchaInterop", modular_headers: true },
-          ],
         },
       },
     ],
@@ -333,25 +299,8 @@ const config: ExpoConfig = {
   extra: {
     appVariant: APP_VARIANT,
     iosPersonalTeamBuild: isIosPersonalTeamBuild,
-    relay: {
-      url: repoEnv.FAB_RELAY_URL ?? null,
-    },
-    clerk: {
-      publishableKey: repoEnv.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY ?? null,
-      jwtTemplate: repoEnv.EXPO_PUBLIC_CLERK_JWT_TEMPLATE ?? null,
-    },
-    // Clerk reads these exact names at prebuild. Omit unset values: manifest null becomes truthy {}.
-    EXPO_PUBLIC_CLERK_GOOGLE_WEB_CLIENT_ID: repoEnv.EXPO_PUBLIC_CLERK_GOOGLE_WEB_CLIENT_ID,
-    EXPO_PUBLIC_CLERK_GOOGLE_IOS_CLIENT_ID: repoEnv.EXPO_PUBLIC_CLERK_GOOGLE_IOS_CLIENT_ID,
-    EXPO_PUBLIC_CLERK_GOOGLE_IOS_URL_SCHEME: repoEnv.EXPO_PUBLIC_CLERK_GOOGLE_IOS_URL_SCHEME,
-    observability: {
-      tracesUrl: repoEnv.EXPO_PUBLIC_OTLP_TRACES_URL ?? "https://api.axiom.co/v1/traces",
-      tracesDataset: repoEnv.EXPO_PUBLIC_OTLP_TRACES_DATASET ?? null,
-      tracesToken: repoEnv.EXPO_PUBLIC_OTLP_TRACES_TOKEN ?? null,
-    },
     eas: {
       projectId: "d763fcb8-d37c-41ea-a773-b54a0ab4a454",
-      observe: { endpointUrl: observeEndpointUrl },
     },
   },
   owner: "pingdotgg",

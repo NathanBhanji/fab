@@ -2,8 +2,6 @@ import {
   BearerConnectionCredential,
   BearerConnectionProfile,
   BearerConnectionRegistration,
-  RelayConnectionRegistration,
-  RelayConnectionTarget,
   BearerConnectionTarget,
 } from "@fab/client-runtime/connection";
 import {
@@ -40,6 +38,7 @@ export class LegacyConnectionMigrationError extends Schema.TaggedError<LegacyCon
   },
 ) {}
 
+// Fab Connect connections are gone; their records have no credential to migrate.
 function isRelayManaged(connection: typeof LegacySavedRemoteConnection.Type): boolean {
   return connection.relayManaged === true || connection.authenticationMethod === "dpop";
 }
@@ -48,19 +47,11 @@ function migrateConnection(
   document: ConnectionCatalogDocument,
   connection: typeof LegacySavedRemoteConnection.Type,
 ): ConnectionCatalogDocument {
-  if (isRelayManaged(connection)) {
-    return registerConnectionInCatalog(
-      document,
-      new RelayConnectionRegistration({
-        target: new RelayConnectionTarget({
-          environmentId: connection.environmentId,
-          label: connection.environmentLabel,
-        }),
-      }),
-    );
-  }
-
-  if (connection.bearerToken === null || connection.bearerToken.trim() === "") {
+  if (
+    isRelayManaged(connection) ||
+    connection.bearerToken === null ||
+    connection.bearerToken.trim() === ""
+  ) {
     return document;
   }
 

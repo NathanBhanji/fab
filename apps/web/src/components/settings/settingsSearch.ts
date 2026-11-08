@@ -58,13 +58,11 @@ export interface SettingsSearchItem {
   readonly macOnly?: boolean;
   readonly releaseChannelOnly?: boolean;
   readonly secretsFeatureOnly?: boolean;
-  readonly cloudOnly?: boolean;
   readonly environmentOnly?: boolean;
   readonly providerSettingsOnly?: boolean;
   readonly macProviderSettingsOnly?: boolean;
   readonly localBackendManagementOnly?: boolean;
   readonly localEnvironmentOnly?: boolean;
-  readonly managedTunnelOnly?: boolean;
   readonly peerLinksOnly?: boolean;
   readonly secondary?: boolean;
   readonly requiresThreadAutoSettlement?: boolean;
@@ -72,13 +70,11 @@ export interface SettingsSearchItem {
 
 export interface SettingsSearchAvailability {
   readonly localEnvironmentDisabled?: boolean;
-  readonly hasCloudPublicConfig: boolean;
   readonly hasEnvironment: boolean;
   readonly hasProviderSettingsEnvironment: boolean;
   readonly hasMacProviderSettingsEnvironment: boolean;
   readonly canManageLocalBackend: boolean;
   readonly hasThreadAutoSettlement: boolean;
-  readonly managedTunnelActive?: boolean;
   readonly hasPeerLinkHost?: boolean;
 }
 
@@ -1083,35 +1079,6 @@ export const SETTINGS_SEARCH_ITEMS = [
     localBackendManagementOnly: true,
   },
   {
-    id: "fab-connect",
-    localEnvironmentOnly: true,
-    title: "Fab Connect",
-    to: "/settings/access",
-    targetId: "connections-environment",
-    searchTerms: ["managed tunnel cloud other devices remote tunnels limit t3 chat"],
-    desktopOnly: true,
-    cloudOnly: true,
-  },
-  {
-    id: "hold-webhooks-while-offline",
-    localEnvironmentOnly: true,
-    title: "Hold webhooks while offline",
-    to: "/settings/access",
-    targetId: "connections-environment",
-    searchTerms: ["webhook automations offline queue mailbox fab connect"],
-    cloudOnly: true,
-    managedTunnelOnly: true,
-  },
-  {
-    id: "publish-agent-activity",
-    localEnvironmentOnly: true,
-    title: "Publish agent activity",
-    to: "/settings/access",
-    targetId: "connections-environment",
-    searchTerms: ["mobile push notifications live activities cloud tunnel"],
-    cloudOnly: true,
-  },
-  {
     id: "connections-environment",
     title: "This machine",
     to: "/settings/access",
@@ -1131,7 +1098,7 @@ export const SETTINGS_SEARCH_ITEMS = [
     id: "remote-environments",
     title: "Environments",
     to: "/settings/connections",
-    searchTerms: ["add pair backend host code ssh config agent tunnel saved fab connect"],
+    searchTerms: ["add pair backend host code ssh config agent tunnel saved"],
   },
   {
     id: "load-balancing",
@@ -1314,14 +1281,12 @@ export function filterAvailableSettingsSearchItems(
   const items: ReadonlyArray<SettingsSearchItem> = SETTINGS_SEARCH_ITEMS;
   return items.filter(
     (item) =>
-      (!item.cloudOnly || availability.hasCloudPublicConfig) &&
       (!item.environmentOnly || availability.hasEnvironment) &&
       (!item.providerSettingsOnly || availability.hasProviderSettingsEnvironment) &&
       (!item.macProviderSettingsOnly || availability.hasMacProviderSettingsEnvironment) &&
       (!item.localBackendManagementOnly || availability.canManageLocalBackend) &&
       (!item.localEnvironmentOnly || !availability.localEnvironmentDisabled) &&
       (!item.requiresThreadAutoSettlement || availability.hasThreadAutoSettlement) &&
-      (!item.managedTunnelOnly || availability.managedTunnelActive === true) &&
       (!item.peerLinksOnly || availability.hasPeerLinkHost === true),
   );
 }
