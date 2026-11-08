@@ -7,7 +7,7 @@ import type { ProjectScopedServerSettingKey, ServerSettings } from "./settings.t
 
 export const FAB_PROJECT_FILE_NAME = "fab.json";
 
-export const FAB_PROJECT_FILE_SCHEMA_URL = "https://fab.invalid/schema/fab.json";
+const FAB_PROJECT_FILE_SCHEMA_URL = "https://fab.invalid/schema/fab.json";
 
 const FAB_PROJECT_FILE_PATH_MAX_LENGTH = 512;
 const FAB_PROJECT_FILE_MAX_SCRIPTS = 50;
