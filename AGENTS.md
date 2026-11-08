@@ -2,37 +2,33 @@
 
 Fab is a minimal GUI for coding agents. A Node WebSocket server wraps provider CLIs and agents (Codex, Claude Code, Cursor, Grok, OpenCode, Antigravity, Kiro) and serves web, desktop, and mobile clients.
 
-You can think of Fab as an open source "bring-your-own-subscription" alternative to apps like Claude Desktop, Codex App, Cursor Glass and Conductor.
+You can think of Fab as a "bring-your-own-subscription" alternative to apps like Claude Desktop, Codex App, Cursor Glass and Conductor.
 
-## What makes Fab special?
+Fab is Nathan's personal fork. The repository is public only for the licence and CI: there are no outside users, contributors, releases, website or hosted services. Do not add or preserve public-facing machinery such as store listings, legal pages, marketing, telemetry backends or contribution processes.
 
-We have over 500,000 users who love Fab. It's important we maintain the things they love as we continue to iterate on the product. Here's a brief list of the things we can never compromise on.
+## What we never compromise on
 
-### 1. Open at the core
-
-Fab is truly open. We share our roadmap, we share how we think about things, and of course we share all our code. A large number of our users run forks. We work in the open, and should strive to stay that way.
-
-### 2. Performance without compromise
+### 1. Performance without compromise
 
 Lots of apps have gotten bogged down with bad tech decisions and "slop". We have not, and we're proud of the performance of Fab. We regularly audit for performance regressions, often caused by sending too much data over websockets, css animations causing gpu spikes, lists being hard to render, and more. Make sure all changes are considerate of performance impact.
 
-### 3. Remote ready
+### 2. Remote ready
 
 The architecture of Fab's websocket layer (npx fab) enables a lot of awesome remote features. These have become core to the product. Whether users are connecting directly over their local network, using Tailscale, reaching a machine over SSH, or linking environments together, we need to make sure new features are properly supported.
 
-### 4. Multi-surface
+### 3. Multi-surface
 
 Fab has 3 key app surfaces: **web**, **desktop**, and **mobile**.
 
-**Web** is kind of two surfaces, as we have the public facing "app.fab.invalid" as well as locally hosting the web app through the `npx fab` command. Both need to be supported by all new features where reasonable.
+**Web** is the web app the server hosts itself (`npx fab`, or `vp run dev` from source), reached locally or over LAN/Tailscale.
 
-**Desktop** is the main surface most users install first. It's a full Electron app that bundles the server runner as well. The desktop app can also be used as the host server, allowing remote connections from app.fab.invalid or the mobile app.
+**Desktop** is a full Electron app that bundles the server runner as well. The desktop app can also be used as the host server, allowing remote connections from a browser or the mobile app.
 
 **Mobile** is a React Native app for iOS. The mobile app allows for connecting to any Fab server to control work remotely.
 
 **Supported platforms** are macOS and Linux (Ubuntu) for desktop and server, and iPhone for mobile. Windows, WSL, and Android code inherited from T3 Code is unsupported: do not extend it, test it, or add new branches for it. Removing it is fine when you are already changing that code. The Device panel's Android emulator support is supported developer tooling for building Android apps with an agent and stays; what is unsupported is running Fab itself on Android.
 
-## A note from Theo
+## Principles
 
 I like ambitious ideas, simple systems, and software that feels obvious. Do not preserve complexity just because it already exists. Do not introduce machinery because it looks architecturally impressive. Understand the real constraint, then fight for the smallest model that makes the correct behavior unsurprising.
 
