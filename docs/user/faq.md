@@ -25,11 +25,7 @@ Yes.
 
 ## How much does Fab cost?
 
-Nothing. There's no way to pay us to use Fab. You bring your own sub. It is free and open source (MIT). You still pay your provider like you already do. Fab Connect is free too, for now. Every account can connect up to 3 machines running Fab. Phones and browsers that connect to them do not count. Need more? Link a paid T3 Chat account. [More machines](#can-i-connect-more-than-3-machines-with-fab-connect) We don't want to charge for this, but if the bill gets unacceptable we may have to change course. If you hit limits or have issues, you can always fork it, self host, or use Tailscale. [Install](./install.md)
-
-## Can I connect more than 3 machines with Fab Connect?
-
-Yes. Link your T3 Chat account and Fab Connect raises your limit: up to 10 machines with T3 Chat Pro, or 100 with Premier. Open your account menu in Fab, go to **T3 Chat**, and select **Link T3 Chat**. Sign in to T3 Chat and approve. The free T3 Chat plan keeps the normal limit of 3. [More machines with T3 Chat](./remote-access.md#more-machines-with-t3-chat)
+Nothing. There's no way to pay us to use Fab. You bring your own sub. It is free and open source (MIT). You still pay your provider like you already do. [Install](./install.md)
 
 ## Why is my Claude 5-hour limit draining so fast?
 
@@ -37,15 +33,11 @@ Fab drives Claude through Anthropic's Agent SDK. I confirmed it's a real bug on 
 
 ## How do I use Fab remotely?
 
-Your agents run wherever Fab runs: your desktop, a server, a VPS. You connect to it from anywhere. I do this constantly. Less than 5% of my prompts run on my laptop. Run `npx fab up` on that machine and you get really good remote support. Fab Connect is the easy path. LAN pairing and Tailscale work too, and [app.fab.invalid](https://app.fab.invalid) is the web client. [Remote access](./remote-access.md)
+Your agents run wherever Fab runs: your desktop, a server, a VPS. You connect to it from anywhere. I do this constantly. Less than 5% of my prompts run on my laptop. Run `npx fab up` on that machine and you get really good remote support over Tailscale or your local network, and [app.fab.invalid](https://app.fab.invalid) is the web client. [Remote access](./remote-access.md)
 
 ## How do I use Fab on my phone?
 
-Get the [iPhone app](https://apps.apple.com/us/app/fab-remote-claude-more/id6787819824), then connect it to your computer with Fab Connect or a pairing link. The phone is a remote. Your computer does the work and needs to stay on. [Mobile setup](./install.md#mobile-app) · [Remote access](./remote-access.md)
-
-## Why does Fab Connect keep disconnecting?
-
-Fab Connect is our built-in alternative to Tailscale for remote connections. If it keeps dropping, open **Settings > Environments**, find the machine, and select **Details**. The first part marked as failed is the cause. I will not be disappointed if you set up Tailscale as a fallback (I do this personally). [Fab Connect troubleshooting](./fab-connect-troubleshooting.md)
+Get the [iPhone app](https://apps.apple.com/us/app/fab-remote-claude-more/id6787819824), then connect it to your computer with a pairing link over Tailscale or your local network. The phone is a remote. Your computer does the work and needs to stay on. [Mobile setup](./install.md#mobile-app) · [Remote access](./remote-access.md)
 
 ## Will I get banned for using my subscription?
 
@@ -69,7 +61,7 @@ No. Fab is a serious developer tool. Locally runnable models are not capable of 
 
 ## Does my code go to Fab servers?
 
-No. Your code and prompts go from your machine to your provider (Anthropic, OpenAI, etc.), not to us. With Fab Connect, traffic rides a Cloudflare tunnel (`cloudflared` on your machine). Our relay sets up the link. It does not proxy your HTTP or WebSocket sessions. Fab does send basic product usage events (provider, model, token totals, that kind of thing). No prompts, no file contents. That is the same on Tailscale, LAN, or Fab Connect. Set `FAB_TELEMETRY_ENABLED=false` if you want it off. [Product usage data](./telemetry.md)
+No. Your code and prompts go from your machine to your provider (Anthropic, OpenAI, etc.), not to us. Fab does send basic product usage events (provider, model, token totals, that kind of thing). No prompts, no file contents. That is the same on Tailscale or LAN. Set `FAB_TELEMETRY_ENABLED=false` if you want it off. [Product usage data](./telemetry.md)
 
 ## Worktrees are eating my disk. How do I clean them up?
 

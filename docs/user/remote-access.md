@@ -1,64 +1,38 @@
 # Remote access
 
 Connect a phone, browser, or another desktop app to Fab running on a different
-machine. That machine must stay running and reachable while you work.
+machine. That machine must stay running and reachable while you work. Use
+Tailscale to reach it from anywhere, pair over your local network, or let the
+desktop app manage an SSH connection.
 
-## Fab Connect
+## Tailscale HTTPS
 
-Fab Connect makes an environment available to your other devices without setting
-up router forwarding. In the desktop app on the host, open **Settings →
-Sharing & access**, sign in, and enable **Fab Connect** for that environment.
+Tailscale is the simplest way to reach a machine from anywhere. Join both devices
+to the same tailnet. In the desktop app, enable **Tailscale
+HTTPS** in **Settings → Sharing & access**. Turn it off there to remove that route.
 
-For a command-line host, run:
+To start a command-line server with Tailscale HTTPS:
 
 ```bash
-fab up
+fab serve --tailscale-serve
 ```
 
-It asks how your other devices reach the machine: Fab Connect, the local network,
-or both. Choose Fab Connect and follow the sign-in instructions. On Linux and
-macOS, it then runs Fab as a [background service](./background-service.md).
-`fab connect` is the same as `fab up --connect`. Run `fab up` again to change your
-choice, and `fab status` to see it.
+For an already-running server:
 
-Saving your sign-in alone does not start a server or make the machine reachable.
+```bash
+fab pair --tailscale
+```
 
-On your other device, sign in to the same Fab Connect account and choose the
-environment. On the app.fab.invalid home page with no computer added yet, signing
-in adds compatible computers linked to your account. Over SSH, the CLI prints a
-browser link and a short code. Open the link on any device, confirm the code
-matches, and approve. The CLI continues on its own, so you do not need to forward
-an OAuth callback port.
+The pairing link uses an address such as `https://machine.tailnet.ts.net/`.
+The mapping created by `pair --tailscale` persists across restarts. Remove its
+default-port mapping with:
 
-Fab Connect renews access credentials when needed without disconnecting a healthy
-connection. Pull request diffs and provider settings keep working after the
-previous credential expires. A failed renewal affects that request; it does not
-disconnect an otherwise healthy conversation.
+```bash
+tailscale serve --https=443 --set-path=/ off
+```
 
-### Scripts and agents
-
-`fab up` asks nothing when you name a choice: `--connect`, `--lan`, or their
-`--no-` forms. Choices you do not name keep their settings, and `--yes` takes
-the defaults. Without a terminal:
-
-- Fab Connect sign-in prints a URL and a code. Approve it on any device.
-- A needed restart runs without asking, and stops running agent turns.
-- With nothing set up and no choice named, `fab up` stops and names the flags.
-
-`fab status --json` prints the settings. `fab up --help` lists every flag with
-examples.
-
-### More machines with T3 Chat
-
-Each Fab Connect account can link up to 3 machines. Phones and browsers do not
-count. A paid T3 Chat plan raises the limit to 10 machines with Pro, or 100 with
-Premier.
-
-To link T3 Chat, open your account menu on the web or desktop app, go to
-**T3 Chat**, and select **Link T3 Chat**. Sign in to T3 Chat in the window that
-opens and approve. The new limit applies the next time you add a machine. If you
-cancel or downgrade T3 Chat, machines you already linked stay linked, but you
-cannot add more until you are under the limit again.
+If that port is already in use, choose another with
+`--tailscale-serve-port`. See `fab pair --help` for other pairing options.
 
 ## Pair over a LAN or private network
 
@@ -68,15 +42,27 @@ On a desktop host, open **Settings → Sharing & access**, enable **Network acce
 then create a pairing link using an address the other device can reach. Changing
 network access restarts the desktop app. You can turn it off in the same place.
 
-For a command-line host, choose the local network in `fab up`, or run:
+For a command-line host, run:
 
 ```bash
-fab up --lan
+fab up
 ```
 
-For a server in a terminal, run `fab serve --lan`. Either way, Fab then
-accepts connections from your local network and tailnet, so a pairing code is
-all that keeps other devices on them out.
+It asks whether other devices may reach the machine over your local network and
+tailnet. On Linux and macOS, it then runs Fab as a
+[background service](./background-service.md). Run `fab up` again to change your
+choice, and `fab status` to see it. For a server in a terminal, run
+`fab serve --lan`. Either way, Fab then accepts connections from your local
+network and tailnet, so a pairing code is all that keeps other devices on them
+out.
+
+### Scripts and agents
+
+`fab up` asks nothing when you name the choice with `--lan` or `--no-lan`, and
+`--yes` takes the default. Without a terminal, a needed restart runs without
+asking and stops running agent turns, and with nothing set up and no choice
+named, `fab up` stops and names the flags. `fab status --json` prints the
+settings. `fab up --help` lists every flag with examples.
 
 If a server is already running, generate a fresh link without restarting it:
 
@@ -102,18 +88,18 @@ another link to share.
 ### Reach one machine several ways
 
 A machine can have more than one route: LAN, Tailscale, another VPN, a public
-URL, SSH, or Fab Connect. Tailscale shares its `100.64.0.0/10` address range with
+URL, or SSH. Tailscale shares its `100.64.0.0/10` address range with
 other VPNs such as Cloudflare WARP, so an address in that range shows as VPN
 unless the machine confirms it is on Tailscale. To add a route, choose **Add
-route** in the machine's route list, or next to it in the Fab Connect list.
+route** in the machine's route list.
 A pairing link for a saved machine is refused when it comes from an address
 that machine does not have yet; add that address with **Add route** instead.
 Pairing again over an address the machine already has still works. A new route
 is placed by speed, in that order, and you can reorder routes at any time.
 
-While connected through Fab Connect or a paired address, Fab also learns the
-machine's current LAN and Tailscale addresses and adds them as routes, so
-pairing once through Fab Connect is enough to use the LAN at home. When the
+While connected through a paired address, Fab also learns the machine's
+current LAN and Tailscale addresses and adds them as routes, so pairing once
+over Tailscale is enough to use the LAN at home. When the
 machine's LAN address changes, for example after it joins another Wi-Fi network,
 the learned route follows it. The machine must allow network access for its LAN
 address to be learned: **Network access** in the desktop app, or the
@@ -131,15 +117,13 @@ return to the app, and every minute, and moves back as soon as one works.
 On web and desktop, select the route count under the machine's name in
 **Settings → Environments** to see its routes. Drag a route to change the order,
 or remove it. On mobile, open the machine under **Settings → Environments** and
-choose **Edit**. Signing out of Fab Connect removes only that route; a machine
-you can still reach another way stays saved.
+choose **Edit**.
 
 Open **Permissions** next to **Routes** in web or desktop, or **Your permissions**
 in the mobile route details, to see what your current connection can do on that
 environment. For a remote environment, this is in its route details. Permissions
 shown there apply only to the route marked **In use**; other routes are not
-checked. Direct pairing and Fab Connect have separate sessions and may grant
-different permissions.
+checked.
 
 ### Balance new threads across machines
 
@@ -158,34 +142,6 @@ a specific machine to override it. Choosing a branch or worktree also keeps the 
 on that machine. Existing threads stay where they started. If resource checks are
 unavailable or all eligible machines are full, choose a machine manually to continue.
 Mobile keeps its manual environment selection.
-
-### Tailscale HTTPS
-
-Join both devices to the same tailnet. In the desktop app, enable **Tailscale
-HTTPS** in **Settings → Sharing & access**. Turn it off there to remove that route.
-
-To start a command-line server with Tailscale HTTPS:
-
-```bash
-fab serve --tailscale-serve
-```
-
-For an already-running server:
-
-```bash
-fab pair --tailscale
-```
-
-The pairing link uses an address such as `https://machine.tailnet.ts.net/`.
-The mapping created by `pair --tailscale` persists across restarts. Remove its
-default-port mapping with:
-
-```bash
-tailscale serve --https=443 --set-path=/ off
-```
-
-If that port is already in use, choose another with
-`--tailscale-serve-port`. See `fab pair --help` for other pairing options.
 
 ### Hosted web app
 
@@ -325,7 +281,7 @@ off, its result arrives once it is back on.
 
 On the machine you will work from, open **Settings → Environments → Linked environments**,
 choose **Link**, and pick the other machine or enter its address. The list
-holds the machines this app knows and those on your Fab Connect account. If this
+holds the machines this app knows. If this
 app is connected to that machine with a session that manages access there, it
 makes the pairing code itself; otherwise paste one from that machine's
 **Settings → Sharing & access**. From a terminal, use
@@ -367,13 +323,13 @@ expires.
 To choose a token's permissions, pass `--scope` once for each scope you want:
 
 ```sh
-npx fab pair --scope orchestration:read --scope relay:read
+npx fab pair --scope orchestration:read --scope filesystem:read
 ```
 
 The selected scopes replace the default permissions. The same option works with
 `npx fab auth pairing create` and `npx fab auth session issue`; each command's
 `--help` lists the available scopes. Without `--scope`, pairing tokens and issued
-bearer sessions get every permission, including managing access and Fab Connect.
+bearer sessions get every permission, including managing access.
 A terminal or a full-access agent on the host can reach those as well, so a
 client that should not manage access also needs to go without `terminal:operate`
 and `orchestration:operate`.
@@ -395,8 +351,8 @@ worktrees. It does not restrict what a task does. Starting a task in a new
 worktree still creates that branch and worktree with `orchestration:operate`,
 and the agent it runs can use Git however the environment allows.
 
-Settings changes, provider management, environment maintenance, access
-management, and Fab Connect management can each be granted separately. New
+Settings changes, provider management, environment maintenance, and access
+management can each be granted separately. New
 pairings without `--scope` include all of them. Existing clients keep the
 permissions they paired with and can stay connected after an update, but newly
 separated features may require pairing again with the permissions they need.
@@ -407,42 +363,8 @@ link to change a client's permissions.
 local changes. Add `filesystem:write` to allow editing files or saving plans to
 the workspace. These scopes control direct file access from the client.
 
-To remove an environment from Fab Connect, open your account menu's **Fab Connect**
-page, or **Settings → Fab Connect** on mobile, and choose **Deregister**. This
-revokes its cloud access and frees its host space even when the environment is
-offline or has been wiped. When Fab Connect rejects a host's link, the host
-shows that it was removed from Fab Connect. To link it again, turn on
-**Fab Connect** in **Settings → Sharing & access** on a desktop host, or run
-`fab connect link` on a command-line host and then restart Fab there. A
-command-line host that released its tunnel when it last stopped may link itself
-again on its next start; run `fab connect unlink` on that host to keep it off.
-Removing an environment from a device's connection settings only forgets it on
-that device and doesn't change your Fab Connect account. A device keeps a saved
-environment after it's deregistered until you remove it from that device.
-
-When idle tunnel cleanup is enabled, Fab Connect removes a linked environment's
-tunnel after it stays offline for several minutes. The environment stays linked
-and keeps the same address. When the host starts again or wakes, Fab Connect
-creates a replacement tunnel on its own. You do not need to pair again. Cleanup
-usually runs five to ten minutes after the tunnel goes down.
-
-Fab Connect also removes the tunnel of an environment running an older version of
-Fab once it has been offline for seven days. That environment shows a message
-asking you to update. Start Fab on that computer and update it to the latest
-version; it reconnects at the same address without pairing again.
-
-On a command-line host, `fab connect unlink` disables exposure while retaining
-your login; `fab connect logout` also clears that login. Background-service
-[removal](./background-service.md#manage-the-service) is separate.
-
 Treat pairing URLs and authorization codes as passwords. Do not include them in
 screenshots, logs, or bug reports.
-
-## Fab Connect troubleshooting
-
-When a Fab Connect connection fails, see
-[Fab Connect troubleshooting](./fab-connect-troubleshooting.md). It explains each
-error, where the problem is, and how to fix it.
 
 ## Using the Desktop App as a Remote Only
 
@@ -450,7 +372,7 @@ If a computer should only drive work running elsewhere, turn off its local envir
 desktop app, open **Settings → Environments** and switch off **Local
 environment**. Fab restarts without a local server: no local agents or terminals run, and
 other devices can no longer connect to this computer. Your projects,
-history, and saved connections are kept, and you keep working through pairing, Fab Connect, or SSH.
+history, and saved connections are kept, and you keep working through pairing or SSH.
 
 Switch **Local environment** back on in the same place to restart with your previous local
 settings.

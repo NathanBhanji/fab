@@ -315,8 +315,7 @@ For a cross-architecture or universal build, add the requested Rust targets:
 rustup target add aarch64-apple-darwin x86_64-apple-darwin
 ```
 
-### Signing and passkeys
+### Signing
 
 Add `--signed` after configuring the platform credentials in the
-[release runbook](./release.md). macOS passkeys need a signed, provisioned app; follow the
-[Connect setup](./connect-setup.md#desktop-passkeys) for local signing and renderer HMR.
+[release runbook](./release.md).

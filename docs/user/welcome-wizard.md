@@ -3,10 +3,8 @@
 Fab shows a setup flow when you open a new installation. Existing
 workspaces skip this flow.
 
-The hosted app at app.fab.invalid does not open setup. With no computer connected,
-it asks you to sign in to Fab Connect, then to run `npx fab connect` on your
-computer. From home, it adds compatible computers linked to your account and
-opens the app.
+The hosted app at app.fab.invalid does not open setup. Pair a computer from
+there with a pairing link instead; see [remote access](./remote-access.md).
 
 Close setup while no import is running to go straight to the app. You can connect
 computers and agents later from Settings, or open `/welcome` to run setup again.
@@ -21,10 +19,6 @@ browser.
 
 You can add more computers before continuing:
 
-- **Fab Connect** connects computers that are signed in to your account.
-  [Install the CLI](./install.md#command-line) and run `fab connect` on each
-  computer you want to add, then start Fab or run `fab serve` so the
-  computer stays available.
 - **Add a computer** connects directly to a server on your network or tailnet.
   Start the server with `fab serve`, then run `fab pair --tailscale` and paste
   the pairing link. You can also run `fab serve --host <address>` and use
@@ -33,8 +27,7 @@ You can add more computers before continuing:
 A computer marked **Client not supported** runs a Fab version that cannot
 talk to this app. The message under its name says which side to update.
 
-Saved computers and computers discovered through Fab Connect are selected by
-default. Uncheck any you do not want to set up; this does not disconnect them.
+Saved computers are selected by default. Uncheck any you do not want to set up; this does not disconnect them.
 Continue when your selected computers are connected. Setup checks
 agents across the selected computers, then offers project import grouped by computer.
 

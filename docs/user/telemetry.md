@@ -2,7 +2,7 @@
 
 The Fab server sends product usage events to Fab's own endpoint at `ingest.fab.invalid`,
 associated with a hashed account or installation identifier. To count how many installations one person
-uses, the server also sends hashed account identifiers: your Fab Connect account, your OpenAI and
+uses, the server also sends hashed account identifiers: your OpenAI and
 Claude accounts when you are signed in, and a random identifier for each device that connects. The endpoint keeps a copy of each
 event and forwards events to PostHog. Events include the provider, model, reasoning effort,
 permission mode, turn and request results, duration, release channel, and token counts when
@@ -12,28 +12,15 @@ are sent only when they appear in a provider's public model list.
 Events do not include prompts, responses, file contents, authentication tokens, conversation IDs,
 raw provider events, or child-agent output.
 
-Fab also sends relay connection traces to Axiom to diagnose Fab Connect connectivity.
-
-To disable product events and relay tracing, set `FAB_TELEMETRY_ENABLED=false` in the server's
-environment before starting it. Relay tracing also stops when `FAB_OTEL_SDK_DISABLED` or
-`OTEL_SDK_DISABLED` turns OpenTelemetry export off. The web app in a browser, including one the
+To disable product events, set `FAB_TELEMETRY_ENABLED=false` in the server's
+environment before starting it. The web app in a browser, including one the
 `fab` CLI opens, does not read these variables.
 
-An administrator can turn product events and relay tracing off for every user on a machine with
+An administrator can turn product events off for every user on a machine with
 a [managed policy](./managed-policy.md#other-capabilities).
 
 The desktop app reads `FAB_TELEMETRY_ENABLED` from your shell profile (for example `~/.zshrc`) on macOS and
 Linux, so export it there and restart the app.
-
-## Mobile app crash reports
-
-When the iPhone app crashes or hits an error, it sends a report to Fab: the error
-message, the stack trace, the app version, and the device model and OS version. Each launch also
-sends startup timings, and every report carries a random ID for the install. Reports go through
-the Fab Connect relay to Axiom. They do not include your threads, prompts, or connection details,
-but an error message can quote a value the app was handling.
-
-To stop sending them, turn off **Send crash reports** in **Settings > About Fab > Diagnostics**.
 
 ## Export diagnostics to your own receiver
 
