@@ -59,6 +59,13 @@
       // CLI archive and desktop sidecar stage them from this manifest.
       "ignoreDependencies": ["@effect/platform-node-shared", "@fab/web", "@napi-rs/keyring"],
     },
+    "packages/contracts": {
+      // Only the removed Fab Connect clients used these. The server-side removal deletes them.
+      "ignoreIssues": {
+        "src/relay.ts": ["exports"],
+        "src/environmentHttp.ts": ["exports"],
+      },
+    },
     "apps/desktop": {
       // Electron loads these bundles by filename rather than importing them.
       "entry": [

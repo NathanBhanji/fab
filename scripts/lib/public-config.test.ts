@@ -19,35 +19,17 @@ describe("loadRepoEnv", () => {
     const repoRoot = makeTemporaryDirectory();
     NodeFS.writeFileSync(
       NodePath.join(repoRoot, ".env"),
-      "FAB_CLERK_PUBLISHABLE_KEY=pk_root\nFAB_CLERK_JWT_TEMPLATE=template_root\nFAB_CLERK_CLI_OAUTH_CLIENT_ID=oauth_root\nFAB_RELAY_URL=https://root.example.test\n",
+      "FAB_DEV_AUTH_TOKEN=root\nFAB_ROOT_ONLY=root\n",
     );
-    NodeFS.writeFileSync(
-      NodePath.join(repoRoot, ".env.local"),
-      "FAB_CLERK_PUBLISHABLE_KEY=pk_local\nFAB_CLERK_JWT_TEMPLATE=template_local\nFAB_CLERK_CLI_OAUTH_CLIENT_ID=oauth_local\nFAB_RELAY_URL=https://local.example.test\n",
-    );
+    NodeFS.writeFileSync(NodePath.join(repoRoot, ".env.local"), "FAB_DEV_AUTH_TOKEN=local\n");
 
-    expect(loadRepoEnv({ baseEnv: {}, repoRoot }).FAB_RELAY_URL).toBe("https://local.example.test");
-    expect(
-      loadRepoEnv({
-        baseEnv: {
-          FAB_CLERK_PUBLISHABLE_KEY: "pk_ci",
-          FAB_CLERK_JWT_TEMPLATE: "template_ci",
-          FAB_CLERK_CLI_OAUTH_CLIENT_ID: "oauth_ci",
-          FAB_RELAY_URL: "https://ci.example.test",
-        },
-        repoRoot,
-      }),
-    ).toMatchObject({
-      FAB_CLERK_PUBLISHABLE_KEY: "pk_ci",
-      FAB_CLERK_CLI_OAUTH_CLIENT_ID: "oauth_ci",
-      VITE_CLERK_PUBLISHABLE_KEY: "pk_ci",
-      EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY: "pk_ci",
-      FAB_CLERK_JWT_TEMPLATE: "template_ci",
-      VITE_CLERK_JWT_TEMPLATE: "template_ci",
-      EXPO_PUBLIC_CLERK_JWT_TEMPLATE: "template_ci",
-      FAB_RELAY_URL: "https://ci.example.test",
-      VITE_FAB_RELAY_URL: "https://ci.example.test",
+    expect(loadRepoEnv({ baseEnv: {}, repoRoot })).toMatchObject({
+      FAB_DEV_AUTH_TOKEN: "local",
+      FAB_ROOT_ONLY: "root",
     });
+    expect(
+      loadRepoEnv({ baseEnv: { FAB_DEV_AUTH_TOKEN: "ci" }, repoRoot }).FAB_DEV_AUTH_TOKEN,
+    ).toBe("ci");
   });
 });
 

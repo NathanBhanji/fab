@@ -6,7 +6,7 @@ describe("React Native HTTP responses", () => {
     const response = new Response("Registration rejected", { status: 400 });
     Object.defineProperty(response.headers, "getSetCookie", { value: undefined });
     const result = HttpClientResponse.fromWeb(
-      HttpClientRequest.post("https://relay.example.test/v1/mobile/devices"),
+      HttpClientRequest.post("https://host.example.test/api/devices"),
       response,
     );
     expect(result.cookies).toEqual(Cookies.empty);

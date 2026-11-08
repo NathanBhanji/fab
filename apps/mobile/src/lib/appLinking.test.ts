@@ -13,7 +13,7 @@ describe("shouldHandleAppLink", () => {
   it.each(["fab://", "fab:///", "fab-dev://", "fab-preview://"])(
     "ignores scheme-only URL %s",
     (url) => {
-      expect(shouldHandleAppLink(url, true)).toBe(false);
+      expect(shouldHandleAppLink(url)).toBe(false);
     },
   );
 
@@ -23,39 +23,15 @@ describe("shouldHandleAppLink", () => {
     "fab-dev://settings/usage?tab=limits",
     "https://app.fab.invalid/threads/env/thread?prompt=Fix%20expo-development-client%20and%20fab://expo-sharing",
   ])("handles path-bearing URL %s", (url) => {
-    expect(shouldHandleAppLink(url, true)).toBe(true);
+    expect(shouldHandleAppLink(url)).toBe(true);
   });
 
   it.each(["fab://expo-development-client/?url=x", "fab://expo-sharing/anything"])(
     "ignores lifecycle URL %s",
     (url) => {
-      expect(shouldHandleAppLink(url, true)).toBe(false);
+      expect(shouldHandleAppLink(url)).toBe(false);
     },
   );
-});
-
-describe("cloud-only deep links", () => {
-  it.each([
-    "fab://connect-onboarding",
-    "fab-dev://connect-onboarding/?source=x",
-    "fab://settings/waitlist",
-    "fab://settings/auth",
-    "exp://192.168.1.2:8081/--/settings/auth",
-  ])("ignores %s without cloud config", (url) => {
-    expect(shouldHandleAppLink(url, false)).toBe(false);
-    expect(shouldHandleAppLink(url, true)).toBe(true);
-  });
-
-  it.each([
-    "fab://settings",
-    "fab://settings/authors",
-    "fab://pair?next=settings/auth",
-    "fab://threads/env/thread/files/scripts/connect-onboarding",
-    "fab://new/draft/files/settings/auth",
-    "exp://192.168.1.2:8081/--/threads/env/thread/files/settings/waitlist",
-  ])("still handles %s without cloud config", (url) => {
-    expect(shouldHandleAppLink(url, false)).toBe(true);
-  });
 });
 
 describe("draft deep links", () => {

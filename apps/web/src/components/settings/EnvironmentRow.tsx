@@ -37,7 +37,6 @@ export function environmentTransportLabel(
       ? connectionRouteLabel(routes[0]!)
       : `via ${connectionRouteLabel(active)}`;
   }
-  if (environment.relayManaged) return "Fab Connect";
   if (isDesktopLocalConnectionTarget(entry.target)) return "Local backend";
   if (
     entry.target._tag === "SshConnectionTarget" &&

@@ -37,7 +37,6 @@ describe("shouldBundleCliDependency", () => {
       "@yuuang/ffi-rs-darwin-arm64",
       "@ff-labs/fff-node",
       "@napi-rs/keyring",
-      "@clerk/electron-passkeys",
       "node-addon-api",
     ]) {
       assert.strictEqual(shouldBundleCliDependency(id), false, id);

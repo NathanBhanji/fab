@@ -281,7 +281,7 @@ Required secrets used by the workflow:
 - `APPLE_API_KEY`
 - `APPLE_API_KEY_ID`
 - `APPLE_API_ISSUER`
-- `MACOS_PROVISIONING_PROFILE` (base64-encoded provisioning profile with Associated Domains)
+- `MACOS_PROVISIONING_PROFILE` (base64-encoded provisioning profile)
 
 Required repository variables:
 
@@ -291,9 +291,9 @@ Checklist:
 
 1. Apple Developer account access:
    - Team has rights to create Developer ID certificates.
-2. Create an explicit App ID for `dev.bhanji.fab` and enable Associated Domains.
+2. Create an explicit App ID for `dev.bhanji.fab`.
 3. Create a `Developer ID Application` certificate and a compatible provisioning profile for that
-   App ID with Associated Domains enabled.
+   App ID.
 4. Export the certificate + private key as `.p12` from Keychain.
 5. Base64-encode the `.p12` and store as `CSC_LINK`.
 6. Base64-encode the provisioning profile and store it as `MACOS_PROVISIONING_PROFILE`.
@@ -304,8 +304,7 @@ Checklist:
    - `APPLE_API_KEY`: contents of the downloaded `.p8`
    - `APPLE_API_KEY_ID`: Key ID
    - `APPLE_API_ISSUER`: Issuer ID
-10. Re-run a tag release and confirm macOS artifacts are signed/notarized and contain the expected
-    `com.apple.developer.associated-domains` entitlement.
+10. Re-run a tag release and confirm macOS artifacts are signed and notarized.
 
 Notes:
 
@@ -313,7 +312,7 @@ Notes:
 - The workflow writes it to a temporary `AuthKey_<id>.p8` file at runtime.
 - The workflow decodes `MACOS_PROVISIONING_PROFILE`, validates it with `security cms`, and passes it
   to the desktop packager.
-- In-app browser passkeys depend on the same profile. The packager adds each entitlement only when
+- In-app browser passkeys depend on this profile. The packager adds each entitlement only when
   the profile grants it, because macOS will not launch an app that claims more than its profile
   allows. The build log reports which ones it enabled.
   - `keychain-access-groups` (`<TEAM_ID>.dev.bhanji.fab.webauthn`) enables Touch ID passkeys.
@@ -344,8 +343,7 @@ Notes:
 
 - macOS build unsigned when expected signed:
   - Check all Apple secrets plus `APPLE_TEAM_ID` are populated and non-empty.
-  - Confirm the provisioning profile belongs to `APPLE_TEAM_ID.dev.bhanji.fab` and includes
-    Associated Domains.
+  - Confirm the provisioning profile belongs to `APPLE_TEAM_ID.dev.bhanji.fab`.
 - Build fails with signing error:
   - Retry with secrets removed to confirm unsigned path still works.
   - Re-check the certificate, provisioning profile, and App Store Connect API key values.

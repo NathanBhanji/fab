@@ -1,6 +1,6 @@
 import {
+  BearerConnectionTarget,
   PrimaryConnectionTarget,
-  RelayConnectionTarget,
   SshConnectionTarget,
 } from "@fab/client-runtime/connection";
 import { buildRemoteOpenUrl, EnvironmentId } from "@fab/contracts";
@@ -112,9 +112,13 @@ describe("resolveRemoteOpenState", () => {
     );
   });
 
-  it("uses the advertised login username in editor links over a relay", () => {
+  it("uses the advertised login username in editor links over a paired connection", () => {
     const state = resolveRemoteOpenState({
-      target: new RelayConnectionTarget({ environmentId, label: "server" }),
+      target: new BearerConnectionTarget({
+        environmentId,
+        label: "server",
+        connectionId: "paired",
+      }),
       sshTarget: null,
       isDesktopRenderer: false,
       remoteOpenTargets: [
@@ -132,7 +136,11 @@ describe("resolveRemoteOpenState", () => {
     for (const remoteOpenTargets of [[], undefined] as const) {
       expect(
         resolveRemoteOpenState({
-          target: new RelayConnectionTarget({ environmentId, label: "sol" }),
+          target: new BearerConnectionTarget({
+            environmentId,
+            label: "sol",
+            connectionId: "paired",
+          }),
           sshTarget: null,
           isDesktopRenderer: false,
           remoteOpenTargets,

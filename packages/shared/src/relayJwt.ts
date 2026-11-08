@@ -1,4 +1,4 @@
-import { decodeJwt, importPKCS8, importSPKI, jwtVerify, SignJWT, type JWTPayload } from "jose";
+import { importPKCS8, importSPKI, jwtVerify, SignJWT, type JWTPayload } from "jose";
 import * as DateTime from "effect/DateTime";
 import * as Effect from "effect/Effect";
 import * as Predicate from "effect/Predicate";
@@ -41,10 +41,6 @@ export class RelayJwtError extends Schema.TaggedError<RelayJwtError>()("RelayJwt
 
 export function normalizeRelayIssuer(value: string): string {
   return value.trim().replace(/\/+$/gu, "");
-}
-
-export function decodeRelayJwt(token: string): JWTPayload {
-  return decodeJwt(token);
 }
 
 function normalizePem(value: string): string {
