@@ -58,6 +58,4 @@ source alone does not explain. Most code changes do not need an internal documen
 ### Runbooks
 
 - [Development and local builds](./operations/development.md)
-- [Release](./operations/release.md)
 - [Observability](./operations/observability.md)
-- [Mobile app store screenshots](./operations/mobile-app-store-screenshots.md)

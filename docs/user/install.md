@@ -3,6 +3,15 @@
 Fab runs coding agents on your computer and lets you control them from its
 desktop, web, or mobile app. Set up the machine where the agents will work first.
 
+Fab has no published releases. Build it from a clone of the repository with
+[`vp`](https://viteplus.dev/guide/), which provides the Node version it needs:
+
+```bash
+curl -fsSL https://vite.plus | bash
+git clone https://github.com/nathanbhanji/fab
+cd fab && vp i
+```
+
 ## Requirements
 
 You need an installed, authenticated provider before starting a thread. You can
@@ -10,14 +19,15 @@ launch Fab and configure providers afterwards.
 
 ## Command line
 
+Build the server and run it from the clone:
+
 ```bash
-curl -fsSL https://fab.invalid/install.sh | sh
+vp run build:desktop
+node apps/server/dist/bin.mjs
 ```
 
-This installs the `fab` binary to `~/.local/bin`. If your shell reports `command not found`
-afterwards, that directory is not on your `PATH` yet; the installer prints the
-line to add. Set `FAB_CHANNEL=nightly` to install the nightly train, or
-`FAB_VERSION` to pin an exact version.
+To get a `fab` command on your `PATH`, install it from the desktop app (see
+[The `fab` command](#the-fab-command)).
 
 | Task                                             | Command                                                                  |
 | ------------------------------------------------ | ------------------------------------------------------------------------ |
@@ -25,7 +35,6 @@ line to add. Set `FAB_CHANNEL=nightly` to install the nightly train, or
 | Start the server without a browser               | `fab serve`                                                              |
 | Use it from your other devices                   | `fab up` ([details](./remote-access.md))                                 |
 | Keep it running in the background (macOS, Linux) | `fab service install` ([details](./background-service.md))               |
-| Move to the newest release                       | `fab update`                                                             |
 | Reclaim database space                           | `fab doctor` ([details](./background-service.md#reclaim-database-space)) |
 | Remove it again                                  | `fab uninstall`                                                          |
 
@@ -37,70 +46,26 @@ If `fab` or `fab start` reports an already running server, connect to that serve
 instead. Stop it before starting a replacement, or use a different `--base-dir`
 for an independent server.
 
-To try Fab once without installing it, run `npx fab@latest` instead (needs
-Node.js for `npx`).
-
-### Intel Macs
-
-There is no `fab` executable for Intel Macs (the desktop app is available). To
-run a server there, build it from source with `vp`, which provides the Node version it needs
-([Install vp](https://github.com/nathanbhanji/fab#install-vp)):
-
-```bash
-git clone https://github.com/nathanbhanji/fab
-cd fab && vp i && vp run build:desktop
-node apps/server/dist/bin.mjs
-```
-
-`fab update` and the background service do not apply to a server run this way;
-update it with `git pull` and a rebuild.
+To update a server run from the clone, `git pull` and rebuild.
 
 ## Desktop app
 
-Download a release from [GitHub Releases](https://github.com/nathanbhanji/fab/releases),
-or use a package manager:
+Build an unsigned app for this machine. It is written to `release/`:
 
-| Platform           | Install                                                   |
-| ------------------ | --------------------------------------------------------- |
-| macOS              | `brew install --cask fab`                                 |
-| Debian, Ubuntu     | `sudo apt install ./Fab-*.deb`                            |
-| Arch Linux         | `yay -S fab-bin`                                          |
-| Arch Linux nightly | `yay -S fab-nightly-bin`                                  |
-| Nix                | `nix profile add github:NixOS/nixpkgs/nixos-unstable#fab` |
-
-The `.deb` updates itself like the other desktop builds. It asks for your
-password to install each update. If your desktop has no password prompt, the
-update fails. Download the new `.deb` and install it the same way.
-
-### Nix (nixpkgs)
-
-Fab is maintained in [nixpkgs](https://github.com/NixOS/nixpkgs/tree/nixos-unstable/pkgs/by-name/fab/fab).
-The command above installs from `nixos-unstable` and requires Nix 2.30 or later with
-`nix-command` and `flakes` enabled. Launch the desktop app with `fab-desktop`;
-the package also includes the `fab` command.
-
-On NixOS, you can instead add the package to your system configuration, using
-a nixpkgs revision that includes `fab`:
-
-```nix
-environment.systemPackages = [ pkgs.fab ];
+```bash
+vp run dist:desktop:dmg     # macOS
+vp run dist:desktop:linux   # Linux AppImage
 ```
 
-Apply the change with `sudo nixos-rebuild switch`. For Home Manager, add
-`pkgs.fab` to `home.packages` and run `home-manager switch`.
-
-Update a profile installation with `nix profile upgrade fab`. For NixOS or
-Home Manager, update your configuration's nixpkgs input or channel and rebuild.
-Nix manages both the desktop app and the bundled
-`fab` command; use Nix to update them instead of the in-app updater or `fab update`.
+The [development runbook](../operations/development.md#desktop-artifacts) lists the
+build prerequisites and signing options.
 
 ### The `fab` command
 
 The desktop app includes the `fab` command-line tool. To run it from any
 terminal, open **Settings → About** and choose **Install** next to
 **fab command**. It adds a `fab` link to a folder on your `PATH`. Open a new
-terminal afterwards. **Remove** takes it off again. If you already have `fab`
-from npm, it stays as it is.
+terminal afterwards. **Remove** takes it off again.
 
 ### Open a project from a terminal
 
@@ -117,20 +82,15 @@ command cannot reach the app, start or update the desktop app and try again.
 
 ## Mobile app
 
-Install Fab on iPhone from the
-[App Store](https://apps.apple.com/us/app/fab-remote-claude-more/id6787819824).
-The phone connects to a server on another machine. Follow
+Install the iPhone development client on a booted simulator:
+
+```bash
+vp run mobile:install ios
+```
+
+The [mobile README](../../apps/mobile/README.md) covers physical devices, Metro, and
+native builds. The phone connects to a server on another machine. Follow
 [remote access](./remote-access.md) to pair it over Tailscale or your local network.
-
-Store links and QR codes are also available in **Settings → About → Mobile app**
-on web and desktop. The App Store app works with both stable and Nightly servers. TestFlight
-test builds are optional and invite-only.
-
-If the app crashes during launch, open Settings → Diagnostics on the next launch
-that succeeds. It lists startup crashes from the last 7 days with the error and
-component stack that store crash reports leave out. Copy the report and paste it
-into a GitHub issue. Error messages can quote values from the app, so read it over
-before sharing.
 
 ## Providers
 
