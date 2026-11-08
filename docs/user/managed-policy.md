@@ -136,7 +136,6 @@ A few settings need care:
   "limits": {
     "maxRuntimeMode": "auto-accept-edits",
     "clients": ["desktop"],
-    "connect": false,
     "webhookTasks": false,
     "browserCookieImport": false,
     "telemetry": false,
@@ -182,7 +181,7 @@ Fab can place under the limit. Users still choose which ACP Registry agent runs;
 The limit decides which modes Fab asks the provider for. It is not a sandbox; see
 [What a policy does not cover](#what-a-policy-does-not-cover).
 
-### Clients and Fab Connect
+### Clients
 
 `clients` lists how the server may run:
 
@@ -198,8 +197,7 @@ Without `remote`, the server listens only on a loopback address, creates no pair
 signs out devices that paired earlier. It does not start with a host other than a loopback
 address or `localhost`. The [background service](./background-service.md) listens on private
 networks by default, so set `FAB_HOST=127.0.0.1` in its `service.env`. The desktop app starts
-with network access and Tailscale Serve off, whatever the user chose. That also turns off
-Fab Connect. To keep other remote access but turn off Fab Connect alone, set `"connect": false`.
+with network access and Tailscale Serve off, whatever the user chose.
 
 When it starts, the server also turns off each Tailscale Serve route, HTTPS or TCP, that forwards
 to it, such as one `fab pair --tailscale` set up, and leaves other routes alone. It does not start
@@ -218,9 +216,8 @@ so restart Fab after that.
   but do not run, and cannot be turned back on. Users can still edit or delete them.
 - `browserCookieImport: false`: users cannot import cookies from another browser into Fab's
   browser.
-- `telemetry: false`: the server and desktop app send no [product usage data](./telemetry.md) or
-  relay connection traces. A policy cannot turn them on. A browser that opens the server, such as
-  app.fab.invalid, still sends its own relay traces.
+- `telemetry: false`: the server and desktop app send no [product usage data](./telemetry.md). A
+  policy cannot turn it on.
 
 ### Providers
 

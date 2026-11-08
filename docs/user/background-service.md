@@ -44,14 +44,14 @@ under Fab home. Pass `--yes` from a script.
 
 ## Local network access
 
-A new service answers only on this machine. Other devices reach it through
-Fab Connect, or directly once you choose the local network in `fab up` (or run
-`fab up --lan`, which sets `FAB_LAN=true` in `service.env`). It then listens on
-your local network and Tailscale addresses, so the desktop and mobile apps on
-the same network connect directly instead of through Fab Connect. It still does
-not answer on public addresses. Anyone on the same network can reach the port,
-so a pairing code is all that keeps them out. The hosted web app at app.fab.invalid
-stays on Fab Connect, because browsers block plain HTTP from an HTTPS page.
+A new service answers only on this machine. Other devices reach it once you
+choose the local network in `fab up` (or run `fab up --lan`, which sets
+`FAB_LAN=true` in `service.env`). It then listens on your local network and
+Tailscale addresses, so the desktop and mobile apps on the same network connect
+directly. It still does not answer on public addresses. Anyone on the same
+network can reach the port, so a pairing code is all that keeps them out. The
+hosted web app at app.fab.invalid needs an HTTPS address such as Tailscale Serve,
+because browsers block plain HTTP from an HTTPS page.
 
 A service installed before `FAB_LAN` existed keeps listening on the local
 network. `fab status` says so, and `fab up --no-lan` turns it off. Any
@@ -91,9 +91,6 @@ macOS starts the service when you log in and stops it when you log out. Keep the
 Mac logged in and awake for unattended remote access. Installing over SSH while
 nobody is logged in at the Mac's screen can fail at the final start step; the
 service is still installed and will start at the next login.
-
-`fab up` installs the service when you set up Fab Connect, but the two are managed
-separately. Signing out of Fab Connect does not stop or uninstall the service.
 
 ## Keep the server responsive when agents use all memory
 
@@ -149,9 +146,6 @@ longer starts at login. If agent work cannot access Desktop, Documents, or
 Downloads, it may need Full Disk Access for the `fab` executable listed in
 `ProgramArguments` in
 `~/Library/LaunchAgents/dev.bhanji.fab.service.plist`.
-
-For failures after signing in to Fab Connect, see
-[connection troubleshooting](./fab-connect-troubleshooting.md).
 
 ## Reclaim database space
 

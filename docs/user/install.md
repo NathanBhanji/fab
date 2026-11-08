@@ -120,7 +120,7 @@ command cannot reach the app, start or update the desktop app and try again.
 Install Fab on iPhone from the
 [App Store](https://apps.apple.com/us/app/fab-remote-claude-more/id6787819824).
 The phone connects to a server on another machine. Follow
-[remote access](./remote-access.md) to link it through Fab Connect or a pairing URL.
+[remote access](./remote-access.md) to pair it over Tailscale or your local network.
 
 Store links and QR codes are also available in **Settings → About → Mobile app**
 on web and desktop. The App Store app works with both stable and Nightly servers. TestFlight

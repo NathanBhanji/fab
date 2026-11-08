@@ -9,9 +9,8 @@ history. The app pairs with every server through its normal connection flow and 
 opens the production Home, Thread, ThreadTerminal, ThreadReview, and SettingsEnvironments routes.
 
 No screenshot-specific screen recreates application UI. `EXPO_PUBLIC_SHOWCASE=1` only enables the
-non-rendering pairing/readiness coordinator, disables terminal autofocus so captures do not contain
-the software keyboard, and supplies deterministic Fab Connect discovery rows to the real
-Environments screen. The local environment cards always come from real paired servers.
+non-rendering pairing/readiness coordinator, and disables terminal autofocus so captures do not contain
+the software keyboard. The environment cards always come from real paired servers.
 
 ## Capture the default matrix
 
@@ -82,8 +81,8 @@ simulator fold pose before launching the app.
 Every palette gets its own leaf folder so one upload slot never mixes themes and each folder keeps a
 store-legal screenshot count.
 
-The agent-activity scene shows what a user sees away from the app. The app stages the same Live
-Activity the relay would publish for four seeded threads. The runner then locks the simulator and
+The agent-activity scene shows what a user sees away from the app. The app stages a Live
+Activity for four seeded threads. The runner then locks the simulator and
 pushes the matching approval alert with `simctl push`. Locking
 the simulator and answering the notification permission prompt use
 [AXe](https://github.com/cameroncooke/AXe), so install it (`brew tap cameroncooke/axe && brew

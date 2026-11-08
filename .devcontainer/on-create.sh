@@ -31,8 +31,8 @@ Fab devcontainer
 
   vp run dev            start server + web, then open the pairing URL it
                         prints (the bare forwarded port will not authenticate)
-  cp .env.example .env  optional: enable Fab Connect cloud features
-                        (public identifiers, not secrets)
+  cp .env.example .env  optional: public build configuration
+                        (identifiers, not secrets)
 
 Details: docs/internals/devcontainer.md
 EOF
