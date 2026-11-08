@@ -11,7 +11,7 @@ import * as CliError from "effect/cli/CliError";
 import * as SecureRandom from "effect/crypto/SecureRandom";
 
 import * as ManagedPolicy from "../policy/ManagedPolicy.ts";
-import { macosProfile, windowsAdml, windowsAdmx } from "../policy/policyTemplates.ts";
+import { macosProfile } from "../policy/policyTemplates.ts";
 import { isProcessAlive, readPersistedServerRuntimeState } from "../serverRuntimeState.ts";
 import { projectLocationFlags, resolveCliAuthConfig } from "./config.ts";
 
@@ -115,16 +115,14 @@ const SAMPLE_POLICY: ManagedPolicyDocument = {
 
 const templatesCommand = Command.make("templates", {
   directory: Argument.String("directory").pipe(
-    Argument.withDescription("Directory to write the templates to."),
+    Argument.withDescription("Directory to write the profile to."),
   ),
   policy: Flag.String("policy").pipe(
     Flag.withDescription("Policy file to put in the macOS profile. Default: a small sample."),
     Flag.optional,
   ),
 }).pipe(
-  Command.withDescription(
-    "Write the Windows Group Policy template and a macOS configuration profile.",
-  ),
+  Command.withDescription("Write a macOS configuration profile."),
   Command.withHandler(
     Effect.fn("cli.policy.templates")(function* ({ directory, policy }) {
       const fs = yield* FileSystem.FileSystem;
@@ -148,16 +146,10 @@ const templatesCommand = Command.make("templates", {
       if (profile._tag === "Invalid") {
         return yield* new CliError.UserError({ cause: document, userMessage: profile.reason });
       }
-      const files = [
-        [path.join(directory, "windows", "fab.admx"), windowsAdmx()],
-        [path.join(directory, "windows", "en-US", "fab.adml"), windowsAdml()],
-        [path.join(directory, "macos", "fab.mobileconfig"), profile.profile],
-      ] as const;
-      for (const [file, contents] of files) {
-        yield* fs.makeDirectory(path.dirname(file), { recursive: true });
-        yield* fs.writeFileString(file, contents);
-        yield* Console.log(file);
-      }
+      const file = path.join(directory, "macos", "fab.mobileconfig");
+      yield* fs.makeDirectory(path.dirname(file), { recursive: true });
+      yield* fs.writeFileString(file, profile.profile);
+      yield* Console.log(file);
     }),
   ),
 );

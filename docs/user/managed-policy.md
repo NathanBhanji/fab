@@ -46,11 +46,10 @@ Every user on the machine can read the policy, so do not put credentials in it.
 
 Use one of these per machine:
 
-| OS      | Native policy                                                                                 | Policy file                                    |
-| ------- | --------------------------------------------------------------------------------------------- | ---------------------------------------------- |
-| macOS   | Configuration profile for `dev.bhanji.fab`                                                    | `/Library/Application Support/Fab/policy.json` |
-| Windows | Group Policy template, or a `Policy` JSON value (both under `HKLM\SOFTWARE\Policies\Fab\Fab`) | `C:\Program Files\Fab\policy.json`             |
-| Linux   |                                                                                               | `/etc/fab/policy.json`                         |
+| OS    | Native policy                              | Policy file                                    |
+| ----- | ------------------------------------------ | ---------------------------------------------- |
+| macOS | Configuration profile for `dev.bhanji.fab` | `/Library/Application Support/Fab/policy.json` |
+| Linux |                                            | `/etc/fab/policy.json`                         |
 
 Fab does not merge sources. If a machine has both a native policy and a policy file, Fab
 refuses to start until you remove one.
@@ -68,29 +67,6 @@ become arrays. To make the payload from a policy file you checked, run
 a device profile, since Fab ignores user profiles, and deploy only one profile for this domain.
 A profile cannot hold `null`, so use a policy file if a setting's value must be `null`.
 
-**Windows Group Policy.** Run `fab policy templates <directory>` and copy
-`windows/fab.admx` and `windows/en-US/fab.adml` into your `PolicyDefinitions` folder or
-central store, or import them into Intune. The policies appear under Computer Configuration >
-Administrative Templates > Fab. Set **Organization** whenever you set any other Fab policy.
-Locks and provider fields go in the two JSON policies, as the same objects a policy file would hold.
-Machines pick up a change at the next Group Policy refresh; run `gpupdate /target:computer /force`
-to apply it now, then restart Fab.
-Setting **Allow Fab Connect**, **Allow webhook tasks**, **Allow importing browser cookies**, or
-**Allow usage data** to **Disabled** turns that feature off. Setting any other Fab policy to
-**Disabled** restricts nothing, the same as **Not Configured**.
-
-**Windows registry value.** Instead of the template, set the `Policy` value (`REG_SZ`) to the whole policy as one line of JSON,
-from Group Policy Preferences or an Intune script. Fab reads it through the Windows registry
-API, so it works where registry tools such as `reg.exe` are blocked for users. Use one or the other:
-Fab refuses to start when the key holds both a `Policy` value and the template's settings. In
-PowerShell, as an administrator:
-
-```powershell
-$json = (Get-Content -Raw -Encoding UTF8 policy.json) -replace '\r?\n\s*', ''
-New-Item -Path HKLM:\SOFTWARE\Policies\Fab\Fab -Force | Out-Null
-Set-ItemProperty -Path HKLM:\SOFTWARE\Policies\Fab\Fab -Name Policy -Value $json -Type String
-```
-
 ## Check what the server loaded
 
 Run `fab policy show` as the user who runs Fab. It prints the installed policy and its
@@ -106,9 +82,7 @@ reopen the desktop app, or run `fab service restart` for the
 [background service](./background-service.md). Reconnecting a phone or browser does not reload the
 policy.
 
-To remove a policy, delete the file, remove the profile, set the Group Policy settings to
-**Not Configured**, or delete the registry value, then restart
-the server. Users get back the settings they had chosen, since Fab never writes policy values
+To remove a policy, delete the file or remove the profile, then restart the server. Users get back the settings they had chosen, since Fab never writes policy values
 into them.
 
 ## When Fab refuses to start
@@ -118,11 +92,9 @@ policy it cannot read or parse, a setting it does not know, a value of the wrong
 version does not support, or a machine with both a native policy and a file. The error names where
 the policy came from and what is wrong.
 
-`fab policy check` catches the same problems in a JSON file. For a profile or registry value, check
-the JSON before you convert it. For the Group Policy template, check a complete policy file that
-holds the same settings, then paste its `settings` and `limits.providers.instances` objects into the
-two JSON policies. A policy written for a newer version can use keys an older one
-cannot enforce, so upgrade Fab before you deploy a policy that uses them.
+`fab policy check` catches the same problems in a JSON file. For a profile, check the JSON before
+you convert it. A policy written for a newer version can use keys an older one cannot enforce, so
+upgrade Fab before you deploy a policy that uses them.
 
 ## Settings
 
@@ -274,7 +246,7 @@ starts the binary you set.
   machines that get Fab through device management.
 - `feedUrl`: Fab updates from your own mirror instead of GitHub: the desktop app, `fab update`,
   and updates started from another device. Publish only the versions you have approved, laid out
-  as on a GitHub release. The release's update files (`latest.yml`, `latest-mac.yml`,
+  as on a GitHub release. The release's update files (`latest-mac.yml`,
   `latest-linux.yml`, `latest-linux-arm64.yml`, and their `nightly` versions if you allow nightly)
   and the desktop installers they list go at the URL's root. The release's `fab-*` archives and
   `SHA256SUMS` go under `v<version>/`. A `fab` run through `npx` comes from npm, so pin it with your
