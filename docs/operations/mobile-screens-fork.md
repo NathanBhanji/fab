@@ -24,5 +24,5 @@ Changes to native source also require rebuilding and testing the native client.
 
 The same iOS binary supports iPhone, iPad, and Duo. UIKit hinge updates enable
 phone workspace columns at runtime; regular phones retain portrait rotation.
-Use the normal EAS build profiles and update channels. Duo support requires a
-binary built with the iOS 27.1 SDK; an OTA cannot add the native APIs.
+Duo support requires a binary built with the iOS 27.1 SDK; a JavaScript update
+cannot add the native APIs.

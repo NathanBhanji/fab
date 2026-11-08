@@ -37,7 +37,7 @@ Your agents run wherever Fab runs: your desktop, a server, a VPS. You connect to
 
 ## How do I use Fab on my phone?
 
-Get the [iPhone app](https://apps.apple.com/us/app/fab-remote-claude-more/id6787819824), then connect it to your computer with a pairing link over Tailscale or your local network. The phone is a remote. Your computer does the work and needs to stay on. [Mobile setup](./install.md#mobile-app) · [Remote access](./remote-access.md)
+Install the iPhone app from source, then connect it to your computer with a pairing link over Tailscale or your local network. The phone is a remote. Your computer does the work and needs to stay on. [Mobile setup](./install.md#mobile-app) · [Remote access](./remote-access.md)
 
 ## Will I get banned for using my subscription?
 
@@ -73,7 +73,7 @@ On iPhone, yes. You need iOS 26 or later. Tap the mic in the composer, talk, che
 
 ## Does it work on Windows, Mac, and Linux?
 
-Mac and Linux, yes. Desktop app, CLI, the works. Windows is not supported. One catch: there is no `fab` binary for Intel Macs, so use the desktop app there. [Install](./install.md)
+Mac and Linux, yes. Desktop app, CLI, the works. Windows is not supported. [Install](./install.md)
 
 ## Why is my provider not showing up?
 

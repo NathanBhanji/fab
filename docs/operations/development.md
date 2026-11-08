@@ -317,5 +317,13 @@ rustup target add aarch64-apple-darwin x86_64-apple-darwin
 
 ### Signing
 
-Add `--signed` after configuring the platform credentials in the
-[release runbook](./release.md).
+Unsigned builds run fine on the machine that built them. Add `--signed` to sign a macOS build
+with electron-builder's usual credentials: a Developer ID Application certificate from the
+keychain or `CSC_LINK` and `CSC_KEY_PASSWORD`, plus `APPLE_API_KEY`, `APPLE_API_KEY_ID`, and
+`APPLE_API_ISSUER` to notarize.
+
+A signed macOS build also needs `FAB_APPLE_TEAM_ID` and `FAB_MACOS_PROVISIONING_PROFILE` (a path
+to a profile for `dev.bhanji.fab`) in the environment or the repository `.env`, or it fails. In-app
+browser passkeys depend on that profile: the packager adds the `keychain-access-groups` and
+`com.apple.developer.web-browser.public-key-credential` entitlements only when the profile grants
+them, because macOS will not launch an app that claims more than its profile allows.
