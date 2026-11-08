@@ -36,7 +36,7 @@ describe("workspace tab selections", () => {
   });
 
   it("doesn't remember pages a Settings row doesn't open", () => {
-    for (const name of ["SettingsEnvironmentNew", "SettingsProjectOverview", "SettingsLegal"]) {
+    for (const name of ["SettingsEnvironmentNew", "SettingsProjectOverview"]) {
       expect(workspaceSelectionsIn([home, settings, { key: name, name }], {}).settings).toBe(
         undefined,
       );
@@ -177,10 +177,5 @@ describe("Settings links", () => {
       "SettingsAppearance",
     ]);
     expect(restoreSettingsLinkState(bare, undefined)).toBe(bare);
-  });
-
-  it("opens a modal Settings link over the workspace", () => {
-    const state = { routes: [{ name: "Home" }, { name: "SettingsLegal" }] };
-    expect(restoreSettingsLinkState(state, "SettingsAppearance")).toBe(state);
   });
 });
