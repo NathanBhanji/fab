@@ -27,8 +27,6 @@ const EXTRA_OWNERS = [
   [/^native\/browser-secret\//, ["@fab/desktop"]],
   [/^native\/kde-snap-shot\//, ["@fab/desktop"]],
   [/^native\/libghostty-vt\//, ["@fab/web"]],
-  // apps/server/src/cloud/ConnectReachability.test.ts checks the guide's headings.
-  [/^docs\/user\/fab-connect-troubleshooting\.md$/, ["fab"]],
 ];
 const RUST = /^native\/(resource-monitor|kde-snap-shot|hyprland-snap-shot)\//;
 

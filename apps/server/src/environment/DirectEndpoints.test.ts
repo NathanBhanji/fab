@@ -184,6 +184,29 @@ describe("resolveBoundEndpoints", () => {
   });
 });
 
+describe("shareableBaseUrl", () => {
+  const lan = { kind: "lan", httpBaseUrl: "http://192.168.1.10:3773/" } as const;
+  const tailnet = { kind: "tailnet", httpBaseUrl: "http://100.64.1.2:3773/" } as const;
+  const served = { kind: "tailnet", httpBaseUrl: "https://bb-1.tail1234.ts.net/" } as const;
+
+  it.each([
+    {
+      label: "Tailscale Serve over every direct address",
+      endpoints: [lan, tailnet, served],
+      expected: served.httpBaseUrl,
+    },
+    {
+      label: "a tailnet address over a LAN one",
+      endpoints: [lan, tailnet],
+      expected: tailnet.httpBaseUrl,
+    },
+    { label: "a LAN address when it is the only one", endpoints: [lan], expected: lan.httpBaseUrl },
+    { label: "nothing when no other machine can reach this one", endpoints: [], expected: null },
+  ])("picks $label", ({ endpoints, expected }) => {
+    expect(DirectEndpoints.shareableBaseUrl(endpoints)).toBe(expected);
+  });
+});
+
 const TAILSCALE_STATUS_JSON = JSON.stringify({
   Self: { DNSName: "bb-1.tail1234.ts.net.", TailscaleIPs: ["100.64.1.2"] },
 });

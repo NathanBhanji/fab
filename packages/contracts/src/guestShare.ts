@@ -11,7 +11,7 @@ import {
 } from "./baseSchemas.ts";
 
 /**
- * A guest share lets one unauthenticated browser watch a thread over Fab Connect and propose
+ * A guest share lets one unauthenticated browser watch a thread and propose
  * messages the owner must send or dismiss. The thread projection holds this public state; the
  * credentials are derived from the share id with a server key and never stored.
  */
@@ -42,7 +42,7 @@ export type ThreadGuestMessage = typeof ThreadGuestMessage.Type;
 
 export const ThreadGuestShare = Schema.Struct({
   id: GuestShareId,
-  /** The Fab Connect tunnel hostname the link points at. Guest routes require it to still serve. */
+  /** The host, and port when not the default, the link points at. */
   host: TrimmedNonEmptyString,
   createdAt: IsoDateTime,
   expiresAt: IsoDateTime,
@@ -66,7 +66,8 @@ export type GuestShareCreateResult = typeof GuestShareCreateResult.Type;
 
 const GUEST_SHARE_CREATE_MESSAGES = {
   disabled: "Guest links are off. Turn them on in Settings > Labs.",
-  connect_unavailable: "Guest links need a running Fab Connect tunnel.",
+  unreachable:
+    "Guest links need an address other devices can reach. Turn on Tailscale HTTPS or network access for this machine.",
   thread_unavailable: "This thread cannot be shared.",
   read_failed: "Failed to read the shared thread.",
   changed: "The guest link changed while it was being created.",
@@ -77,7 +78,7 @@ export class GuestShareCreateError extends Schema.TaggedError<GuestShareCreateEr
   {
     reason: Schema.Literals([
       "disabled",
-      "connect_unavailable",
+      "unreachable",
       "thread_unavailable",
       "read_failed",
       "changed",

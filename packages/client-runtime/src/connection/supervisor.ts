@@ -12,7 +12,6 @@ import * as Ref from "effect/Ref";
 import * as Scope from "effect/Scope";
 import * as Stream from "effect/Stream";
 import * as SubscriptionRef from "effect/SubscriptionRef";
-import * as Tracer from "effect/Tracer";
 
 import type { ConnectionCatalogEntry, ConnectionRoute } from "./catalog.ts";
 import * as Connectivity from "./connectivity.ts";
@@ -79,20 +78,12 @@ type SupervisorSignal =
   | { readonly _tag: "Wakeup"; readonly reason: ConnectionWakeups.ConnectionWakeup }
   | { readonly _tag: "BetterRouteAvailable"; readonly routeId: string };
 
-interface PendingRetryTrace {
-  readonly previousAttempt: Tracer.Span;
-  readonly failureCount: number;
-  readonly delayMs: number;
-  readonly reason: ConnectionAttemptError["reason"];
-}
-
 type ConnectedLease = ConnectionDriver.EnvironmentConnectionLease & {
   readonly activeRoute: ConnectionRoute | undefined;
 };
 
-interface TracedAttemptFailure {
+interface AttemptFailure {
   readonly error: ConnectionAttemptError;
-  readonly attemptSpan: Option.Option<Tracer.Span>;
 }
 
 type AttemptOutcome =
@@ -106,19 +97,13 @@ type AttemptOutcome =
       readonly _tag: "Failure";
       readonly established: boolean;
       readonly stable: boolean;
-      readonly failure: TracedAttemptFailure;
+      readonly failure: AttemptFailure;
     };
 
 type EstablishmentEvent =
   | {
       readonly _tag: "Completed";
-      readonly exit: Exit.Exit<
-        {
-          readonly attemptSpan: Option.Option<Tracer.Span>;
-          readonly lease: ConnectionDriver.EnvironmentConnectionLease;
-        },
-        TracedAttemptFailure
-      >;
+      readonly exit: Exit.Exit<ConnectionDriver.EnvironmentConnectionLease, AttemptFailure>;
     }
   | { readonly _tag: "Interrupted"; readonly resetRetry: boolean }
   | { readonly _tag: "TimedOut" };
@@ -220,7 +205,7 @@ function connectingState(
 
 function failureFromExit<A>(
   target: ConnectionTarget,
-  exit: Exit.Exit<A, TracedAttemptFailure>,
+  exit: Exit.Exit<A, AttemptFailure>,
   established: boolean,
   stable: boolean,
 ): AttemptOutcome {
@@ -245,7 +230,6 @@ function failureFromExit<A>(
         reason: "transport",
         detail: `${target.label} connection failed unexpectedly.`,
       }),
-      attemptSpan: Option.none(),
     },
   };
 }
@@ -456,25 +440,6 @@ export const make = Effect.fn("EnvironmentSupervisor.make")(function* (
         ? Ref.update(synchronizedRoutes, (count) => count + 1)
         : Effect.void
       ).pipe(Effect.andThen(reportProgress(attempt, generation, lastFailure, progress))),
-    );
-  });
-
-  const establishTracedConnection = Effect.fnUntraced(function* (
-    attempt: number,
-    generation: number,
-    lastFailure: ConnectionAttemptError | null,
-    pendingRetry: Option.Option<PendingRetryTrace>,
-    synchronizedRoutes: Ref.Ref<number>,
-  ) {
-    return yield* establishConnection(attempt, generation, lastFailure, synchronizedRoutes).pipe(
-      Effect.map((lease) => ({
-        attemptSpan: Option.none<Tracer.Span>(),
-        lease,
-      })),
-      Effect.mapError((error): TracedAttemptFailure => ({
-        error,
-        attemptSpan: Option.none(),
-      })),
     );
   });
 
@@ -742,7 +707,6 @@ export const make = Effect.fn("EnvironmentSupervisor.make")(function* (
     attempt: number,
     generation: number,
     lastFailure: ConnectionAttemptError | null,
-    pendingRetry: Option.Option<PendingRetryTrace>,
     ignoreOffline: boolean,
   ) {
     const switchingTo = yield* Ref.get(preferredRouteId);
@@ -750,12 +714,8 @@ export const make = Effect.fn("EnvironmentSupervisor.make")(function* (
     const synchronizedRoutes = yield* Ref.make(0);
     const establishment = yield* Effect.raceAllFirst([
       exitUnlessInterrupted(
-        establishTracedConnection(
-          attempt,
-          generation,
-          lastFailure,
-          pendingRetry,
-          synchronizedRoutes,
+        establishConnection(attempt, generation, lastFailure, synchronizedRoutes).pipe(
+          Effect.mapError((error): AttemptFailure => ({ error })),
         ),
       ).pipe(
         Effect.map((exit): EstablishmentEvent => ({
@@ -807,7 +767,6 @@ export const make = Effect.fn("EnvironmentSupervisor.make")(function* (
             reason: "timeout",
             detail: setupTimeoutDetail,
           }),
-          attemptSpan: Option.none(),
         },
       } satisfies AttemptOutcome;
     }
@@ -830,9 +789,9 @@ export const make = Effect.fn("EnvironmentSupervisor.make")(function* (
       return outcome;
     }
 
-    const active = establishment.exit.value;
+    const lease = establishment.exit.value;
     if (Option.isSome(switchingTo)) {
-      const landed = connectionRouteId(active.lease.prepared.target);
+      const landed = connectionRouteId(lease.prepared.target);
       if (landed !== switchingTo.value) {
         const until =
           (yield* Clock.monotonicTimeNanos) + BigInt(BETTER_ROUTE_COOLDOWN_MS) * 1_000_000n;
@@ -852,10 +811,9 @@ export const make = Effect.fn("EnvironmentSupervisor.make")(function* (
     }
 
     const connectedLease: ConnectedLease = {
-      ...active.lease,
+      ...lease,
       activeRoute: (yield* currentRoutes).find(
-        (route) =>
-          connectionRouteId(route.target) === connectionRouteId(active.lease.prepared.target),
+        (route) => connectionRouteId(route.target) === connectionRouteId(lease.prepared.target),
       ),
     };
     const connectedAt = yield* Clock.currentTimeMillis;
@@ -876,17 +834,9 @@ export const make = Effect.fn("EnvironmentSupervisor.make")(function* (
     });
 
     const connectedExit = yield* Effect.raceFirst(
-      connectedLease.session.closed.pipe(
-        Effect.mapError((error): TracedAttemptFailure => ({
-          error,
-          attemptSpan: active.attemptSpan,
-        })),
-      ),
+      connectedLease.session.closed.pipe(Effect.mapError((error): AttemptFailure => ({ error }))),
       monitorConnectedLease(connectedLease).pipe(
-        Effect.mapError((error): TracedAttemptFailure => ({
-          error,
-          attemptSpan: active.attemptSpan,
-        })),
+        Effect.mapError((error): AttemptFailure => ({ error })),
       ),
     ).pipe(exitUnlessInterrupted);
     const connectedForMs = (yield* Clock.currentTimeMillis) - connectedAt;
@@ -956,10 +906,8 @@ export const make = Effect.fn("EnvironmentSupervisor.make")(function* (
     let failureCount = 0;
     let generation = 0;
     let latestFailure: ConnectionAttemptError | null = null;
-    let pendingRetry = Option.none<PendingRetryTrace>();
     const resetRetryLadder = () => {
       failureCount = 0;
-      pendingRetry = Option.none();
     };
     let replacing = false;
 
@@ -967,7 +915,6 @@ export const make = Effect.fn("EnvironmentSupervisor.make")(function* (
       if (yield* Ref.getAndSet(resetRetryState, false)) {
         failureCount = 0;
         latestFailure = null;
-        pendingRetry = Option.none();
       }
       const currentIntent = yield* Ref.get(intent);
       if (!currentIntent.desired) {
@@ -991,7 +938,7 @@ export const make = Effect.fn("EnvironmentSupervisor.make")(function* (
       const attempt = failureCount + 1;
       const nextGeneration = generation + 1;
       const outcome: AttemptOutcome = yield* Effect.scoped(
-        runAttempt(attempt, nextGeneration, latestFailure, pendingRetry, replacing),
+        runAttempt(attempt, nextGeneration, latestFailure, replacing),
       );
       replacing = false;
       const failedProbe = yield* Ref.getAndSet(probeUnanswered, false);
@@ -1014,7 +961,6 @@ export const make = Effect.fn("EnvironmentSupervisor.make")(function* (
         continue;
       }
 
-      const attemptSpan: Option.Option<Tracer.Span> = outcome.failure.attemptSpan;
       const error: ConnectionAttemptError = outcome.failure.error;
       if (!outcome.established) {
         latestFailure = error;
@@ -1046,12 +992,6 @@ export const make = Effect.fn("EnvironmentSupervisor.make")(function* (
 
       failureCount += 1;
       const delayMs = retryDelayMs(failureCount - 1, yield* Random.next);
-      pendingRetry = Option.map(attemptSpan, (previousAttempt) => ({
-        previousAttempt,
-        failureCount,
-        delayMs,
-        reason: error.reason,
-      }));
       const failedIntent = yield* Ref.get(intent);
       yield* setState({
         desired: failedIntent.desired,

@@ -98,10 +98,11 @@ Leaving an edited form asks before discarding unsaved changes.
 
 In **Settings → Scheduled tasks**, choose **On webhook**
 as a task's schedule to run it whenever another service calls its URL, such as
-GitHub on a new pull request or a CI job that failed. The sender must be able
-to reach the environment's own address, such as over
-[Tailscale](remote-access.md); after you save the task, copy its URL from the
-editor.
+GitHub on a new pull request or a CI job that failed. The URL uses the
+environment's own address: its [Tailscale HTTPS](remote-access.md#tailscale-https)
+address when it has one, otherwise its tailnet or local network address. The
+sender must be able to reach that address. After you save the task, copy its
+URL from the editor.
 **Rotate** replaces the URL and the old one stops working.
 
 The prompt decides what the agent sees. Placeholders pull values out of the

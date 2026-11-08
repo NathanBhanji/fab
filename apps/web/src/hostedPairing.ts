@@ -1,4 +1,4 @@
-import { DEFAULT_HOSTED_APP_URL } from "@fab/shared/connectAuth";
+import { DEFAULT_HOSTED_APP_URL } from "@fab/shared/hostedApp";
 
 import { getPairingTokenFromUrl, setPairingTokenOnUrl } from "@fab/shared/remote";
 

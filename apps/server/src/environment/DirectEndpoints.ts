@@ -82,6 +82,18 @@ export function resolveBoundEndpoints(input: {
 }
 
 /**
+ * The address to hand to someone on another machine, such as in a guest link or webhook URL:
+ * Tailscale Serve's HTTPS URL, then a tailnet address, then a LAN one.
+ */
+export function shareableBaseUrl(endpoints: ReadonlyArray<ServerDirectEndpoint>): string | null {
+  const preferred =
+    endpoints.find((endpoint) => endpoint.httpBaseUrl.startsWith("https:")) ??
+    endpoints.find((endpoint) => endpoint.kind === "tailnet") ??
+    endpoints[0];
+  return preferred?.httpBaseUrl ?? null;
+}
+
+/**
  * AWS, GCP, Azure, DigitalOcean, Hetzner, Linode, Vultr, and Oracle all serve
  * instance metadata at this address. A plain TCP connect skips HTTP proxies,
  * which would otherwise answer for a machine that is not in a cloud.

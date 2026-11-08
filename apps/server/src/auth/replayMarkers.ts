@@ -7,17 +7,13 @@ import * as Option from "effect/Option";
 import * as Path from "effect/Path";
 import * as Schedule from "effect/Schedule";
 
-import { CLOUD_REPLAY_MARKER_PREFIXES } from "../cloud/CloudLink.ts";
 import * as ServerConfig from "../config.ts";
 import { forkParked } from "../serverActivation.ts";
 import { DPOP_REPLAY_MARKER_PREFIX } from "./dpop.ts";
 
-const REPLAY_MARKER_PREFIXES = [DPOP_REPLAY_MARKER_PREFIX, ...CLOUD_REPLAY_MARKER_PREFIXES];
-
 /**
- * A marker only matters while its proof can pass the time check (about 10 minutes
- * for DPoP, 7 for cloud proofs). After that, the time check rejects a replay by
- * itself.
+ * A marker only matters while its proof can pass the time check (about 10 minutes).
+ * After that, the time check rejects a replay by itself.
  */
 export const REPLAY_MARKER_MAX_AGE = Duration.days(1);
 
@@ -28,8 +24,7 @@ export const pruneExpiredReplayMarkers = Effect.fn("replayMarkers.pruneExpired")
   const { secretsDir } = yield* ServerConfig.ServerConfig;
   const cutoff = (yield* Clock.currentTimeMillis) - Duration.toMillis(REPLAY_MARKER_MAX_AGE);
   const markers = (yield* fileSystem.readDirectory(secretsDir)).filter(
-    (name) =>
-      name.endsWith(".bin") && REPLAY_MARKER_PREFIXES.some((prefix) => name.startsWith(prefix)),
+    (name) => name.endsWith(".bin") && name.startsWith(DPOP_REPLAY_MARKER_PREFIX),
   );
   const [removed, failures] = yield* Effect.partition(markers, (name) => {
     const markerPath = path.join(secretsDir, name);

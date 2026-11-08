@@ -59,7 +59,6 @@ const contextInput = {
     logsDir: "/home/u/.fab/userdata/logs",
     serviceLogPath: "/home/u/.fab/userdata/logs/boot-service.log",
     desktopBackendLogGlob: "/home/u/.fab/userdata/logs/server-child*.log*",
-    relayClientLogPath: "/home/u/.fab/userdata/logs/relay-client.ndjson",
     serverTracePath: "/home/u/.fab/userdata/logs/server.trace.ndjson",
     providerEventLogPath: "/home/u/.fab/userdata/logs/provider/events.log",
     terminalLogsDir: "/home/u/.fab/userdata/logs/terminals",
