@@ -385,25 +385,8 @@ describe("OtelEnvironment", () => {
   });
 });
 
-describe("isRelayTracingEnabled", () => {
-  it("defaults on and respects the FAB SDK override of the standard kill switch", () => {
-    assert.isTrue(OtelEnvironment.isRelayTracingEnabled({}));
-    assert.isFalse(OtelEnvironment.isRelayTracingEnabled({ OTEL_SDK_DISABLED: "true" }));
-    assert.isTrue(
-      OtelEnvironment.isRelayTracingEnabled({
-        OTEL_SDK_DISABLED: "true",
-        FAB_OTEL_SDK_DISABLED: "false",
-      }),
-    );
-    assert.isFalse(
-      OtelEnvironment.isRelayTracingEnabled({
-        OTEL_SDK_DISABLED: "false",
-        FAB_OTEL_SDK_DISABLED: "true",
-      }),
-    );
-  });
-
-  it.effect("product opt-out beats SDK enable without disabling user-configured tracing", () =>
+describe("FAB_TELEMETRY_ENABLED", () => {
+  it.effect("product opt-out does not disable user-configured tracing", () =>
     Effect.gen(function* () {
       const env = {
         FAB_TELEMETRY_ENABLED: "false",
@@ -411,8 +394,6 @@ describe("isRelayTracingEnabled", () => {
         OTEL_SDK_DISABLED: "true",
         OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: "https://user.example.test/v1/traces",
       };
-      assert.isFalse(OtelEnvironment.isRelayTracingEnabled(env));
-
       const otel = yield* load(env);
       assert.isFalse(otel.disabled);
       assert.deepStrictEqual(

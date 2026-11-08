@@ -413,7 +413,7 @@ export const resolveServerConfig = Effect.fn("config.resolveServerConfig")(funct
     Option.fromUndefinedOr(bootstrap?.host),
   );
   // Private networks only, so clients learn a LAN address and prefer it over
-  // Fab Connect. `fab service install` writes FAB_LAN=false for a new
+  // a slower route. `fab service install` writes FAB_LAN=false for a new
   // service; one installed before FAB_LAN existed keeps listening.
   const lan = resolveOptionPrecedence(normalizedFlags.lan, Option.fromUndefinedOr(env.lan));
   const privateNetworkOnly =

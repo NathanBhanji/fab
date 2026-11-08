@@ -72,24 +72,25 @@ function GuestLinksRow() {
   const updateSettings = useUpdateScopedSettings();
   const scope = useOptionalSettingsScope();
   const primaryPolicy = usePrimaryManagedPolicy();
-  // Guests arrive through Fab Connect, so a policy that turns Connect off turns this off too.
-  const connectDenial = firstManagedDenial(
+  // Guests connect from other devices, so a policy that refuses remote clients turns this off too.
+  const remoteDenial = firstManagedDenial(
     scope
       ? scope.connectedEnvironments.map((environment) => environment.serverConfig?.managedPolicy)
       : [primaryPolicy],
-    (policy) => managedCapabilityDenial(policy, "connect"),
+    (policy) => managedCapabilityDenial(policy, "remoteClients"),
   );
   return (
     <SettingsRow
       serverScoped
       {...searchableSetting("guest-links")}
       settingKeys={["guestSharingEnabled"]}
-      // Turning guest links off still works without Fab Connect.
-      managed={settings.guestSharingEnabled ? undefined : connectDenial}
+      // Turning guest links off still works under the policy.
+      managed={settings.guestSharingEnabled ? undefined : remoteDenial}
       description={
         <>
           Share a thread with a guest who watches it live in their browser and sends messages you
-          approve. Needs Fab Connect: sign in and link this machine in{" "}
+          approve. The guest's browser must reach this machine, so turn on Tailscale HTTPS or
+          network access in{" "}
           <Link to="/settings/access" className="underline underline-offset-2">
             Sharing & access
           </Link>

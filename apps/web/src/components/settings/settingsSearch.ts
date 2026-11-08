@@ -463,7 +463,7 @@ export const SETTINGS_SEARCH_ITEMS = [
     title: "Guest links",
     to: "/settings/labs",
     scope: "environment",
-    searchTerms: ["beta share guest invite link teammate watch fab connect tunnel"],
+    searchTerms: ["beta share guest invite link teammate watch"],
   },
   {
     id: "linked-environments-beta",

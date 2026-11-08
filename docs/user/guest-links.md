@@ -7,10 +7,12 @@ until you send or dismiss it.
 ## Share a thread
 
 Guest links are a beta. Turn on **Settings → Labs → Guest links** for the machine that runs the
-thread. The guest's browser must be able to reach that machine, for example over your local network
-or [Tailscale](./remote-access.md), and the machine must stay online while the guest uses it.
-While the setting is off, every guest link on that machine stops working; links that have not
-expired work again when you turn it back on.
+thread. The guest's browser must be able to reach that machine, and the machine must stay online
+while the guest uses it. The link uses the machine's
+[Tailscale HTTPS](./remote-access.md#tailscale-https) address when it has one, otherwise its
+tailnet or local network address. With none of these, Fab can't create a link. While the setting is
+off, every guest link on that machine stops working; links that have not expired work again when you
+turn it back on.
 
 1. Right-click the thread in the sidebar and choose **Share with guest**. It is also in the thread
    menu and the command palette.

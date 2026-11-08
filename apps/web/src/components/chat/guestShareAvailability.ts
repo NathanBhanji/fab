@@ -7,7 +7,7 @@ import { serverEnvironment } from "~/state/server";
 /**
  * Whether this environment offers "Share with guest": the user may create links there, and its
  * Guest links beta is on (Settings > Labs). The server refuses links while the beta is off.
- * Guests arrive through Fab Connect, so a policy that turns Connect off hides sharing too.
+ * Guests connect from other devices, so a policy that refuses remote clients hides sharing too.
  */
 export const canShareWithGuestAtom = Atom.family((environmentId: EnvironmentId) =>
   Atom.make((get) => {
@@ -15,7 +15,7 @@ export const canShareWithGuestAtom = Atom.family((environmentId: EnvironmentId) 
     return (
       get(serverEnvironment.createGuestShare.permissionAtom(environmentId)) &&
       serverConfig?.settings.guestSharingEnabled === true &&
-      managedCapabilityDenial(serverConfig.managedPolicy, "connect") === undefined
+      managedCapabilityDenial(serverConfig.managedPolicy, "remoteClients") === undefined
     );
   }).pipe(Atom.withLabel(`guest-share:available:${environmentId}`)),
 );

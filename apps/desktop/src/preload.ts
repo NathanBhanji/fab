@@ -77,8 +77,6 @@ contextBridge.exposeInMainWorld("desktopBridge", {
     }
     return result as ReturnType<DesktopBridge["getAppBranding"]>;
   },
-  // Still declared by DesktopBridge; nothing on desktop sends relay traces any more.
-  getRelayTelemetryEnabled: () => false,
   getPathForFile: (file: File) => webUtils.getPathForFile(file),
   getClientPlatform: () => clientPlatform,
   setNotificationBadge: (badge) =>

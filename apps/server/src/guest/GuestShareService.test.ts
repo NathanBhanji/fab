@@ -14,6 +14,7 @@ import {
   ProviderDriverKind,
   ProviderInstanceId,
   RunId,
+  type ServerDirectEndpoint,
   ThreadId,
   TurnItemId,
 } from "@fab/contracts";
@@ -38,7 +39,7 @@ import {
   sweepStalePendingAttachments,
 } from "../attachmentStore.ts";
 import * as ServerSecretStore from "../auth/ServerSecretStore.ts";
-import { CloudManagedEndpointRuntime } from "../cloud/ManagedEndpointRuntime.ts";
+import * as DirectEndpoints from "../environment/DirectEndpoints.ts";
 import * as ServerConfig from "../config.ts";
 import * as SqlitePersistence from "../persistence/Sqlite.ts";
 import { CodexProviderCapabilitiesV2 } from "../orchestration-v2/Adapters/CodexAdapterV2.ts";
@@ -76,14 +77,11 @@ const layerOrchestration = Layer.mergeAll(
   ),
 );
 
-// The Connect hostname the fake tunnel reports. Tests set it to null to simulate an unlink.
-const hostname = Ref.makeUnsafe<string | null>("env.fab.test");
-const layerConnect = Layer.mock(CloudManagedEndpointRuntime)({
-  inspectConnector: Effect.map(Ref.get(hostname), (value) => ({
-    readyConnections: 1,
-    hostname: value,
-    protocol: "http2",
-  })),
+const SERVED = { kind: "tailnet", httpBaseUrl: "https://env.fab.test/" } as const;
+// The addresses other machines reach this one on. Tests change them to move or drop the link's.
+const endpoints = Ref.makeUnsafe<ReadonlyArray<ServerDirectEndpoint>>([SERVED]);
+const layerEndpoints = Layer.mock(DirectEndpoints.DirectEndpoints)({
+  resolve: () => Ref.get(endpoints),
 });
 const layerProviders = Layer.mock(ProviderRegistry.ProviderRegistry)({
   getProviders: Effect.succeed([]),
@@ -142,7 +140,7 @@ const layerTest = GuestShareService.layer.pipe(
   ),
   Layer.provide(layerProviders),
   Layer.provideMerge(ServerSettings.layerTest({ guestSharingEnabled: true })),
-  Layer.provide(layerConnect),
+  Layer.provide(layerEndpoints),
   Layer.provideMerge(layerAnalytics),
   Layer.provide(ServerSecretStore.layer),
   Layer.provideMerge(layerConfig),
@@ -152,7 +150,7 @@ const layerTest = GuestShareService.layer.pipe(
 const threadId = ThreadId.make("thread:guest-share-service");
 
 const shareThreadFor = Effect.fn(function* (threadId: ThreadId) {
-  yield* Ref.set(hostname, "env.fab.test");
+  yield* Ref.set(endpoints, [SERVED]);
   const orchestrator = yield* Orchestrator.OrchestratorV2;
   yield* orchestrator.dispatch({
     type: "thread.create",
@@ -301,39 +299,16 @@ it.effect("redeems only a short invite whose signature and share id are both cur
   }).pipe(Effect.provide(layerTest)),
 );
 
-it.effect("refuses guest requests once Fab Connect no longer serves the link's host", () =>
+it.effect("links to a LAN address when that is all, and refuses a link nothing can reach", () =>
   Effect.gen(function* () {
-    const { guestShares, credential } = yield* shareThread;
-    const { token: session } = yield* guestShares.redeem({ credential, name: "Sam" });
-    const { id: shareId } = (yield* Orchestrator.OrchestratorV2.use((orchestrator) =>
-      orchestrator.getThreadRecords(threadId, []),
-    )).thread.guestShare!;
-    yield* Ref.set(hostname, null);
-    const submitted = yield* Effect.exit(
-      guestShares.submit(session, { shareId, text: "Hello" }, []),
-    );
-    assert.isTrue(Exit.isFailure(submitted));
-  }).pipe(Effect.provide(layerTest)),
-);
-
-it.effect("closes an open guest stream when Fab Connect stops serving the link's host", () =>
-  Effect.gen(function* () {
-    const { guestShares, credential } = yield* shareThread;
-    const { token: session } = yield* guestShares.redeem({ credential, name: "Sam" });
-    const collecting = yield* Stream.runCollect(yield* guestShares.stream(session)).pipe(
-      Effect.forkChild,
-    );
-    yield* Ref.set(hostname, null);
-    yield* TestClock.adjust("30 seconds");
-    // No `ended`: the browser reconnects, and the host check refuses it while Connect is gone.
-    const received = Array.from(yield* Fiber.join(collecting));
-    assert.deepEqual(
-      received.map((event) => (event.type === "thread" ? event.item.kind : event.type)),
-      ["view", "snapshot"],
-    );
-    assert.isTrue(Exit.isFailure(yield* Effect.exit(guestShares.stream(session))));
-    yield* Ref.set(hostname, "env.fab.test");
-    assert.isTrue(Exit.isSuccess(yield* Effect.exit(guestShares.stream(session))));
+    const { guestShares } = yield* shareThread;
+    yield* Ref.set(endpoints, [{ kind: "lan", httpBaseUrl: "http://192.168.1.10:3773/" }]);
+    const { url, share } = yield* guestShares.create({ threadId });
+    assert.isTrue(url.startsWith("http://192.168.1.10:3773/guest#"));
+    assert.equal(share.host, "192.168.1.10:3773");
+    yield* Ref.set(endpoints, []);
+    const error = yield* Effect.flip(guestShares.create({ threadId }));
+    assert.equal(error.reason, "unreachable");
   }).pipe(Effect.provide(layerTest)),
 );
 

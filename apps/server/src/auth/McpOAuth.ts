@@ -17,7 +17,7 @@ import {
   mcpClientScopes,
   type RuntimeMode,
 } from "@fab/contracts";
-import { DEFAULT_HOSTED_APP_URL } from "@fab/shared/connectAuth";
+import { DEFAULT_HOSTED_APP_URL } from "@fab/shared/hostedApp";
 import { encodeOAuthScope } from "@fab/shared/oauthScope";
 import * as Clock from "effect/Clock";
 import * as Context from "effect/Context";
@@ -31,7 +31,7 @@ import * as Ref from "effect/Ref";
 import * as Schema from "effect/Schema";
 import { HttpServerRequest } from "effect/http";
 
-import { hostedAppUrlConfig } from "../cloud/publicConfig.ts";
+import { hostedAppUrlConfig } from "../hostedAppUrl.ts";
 import * as ServerEnvironment from "../environment/ServerEnvironment.ts";
 import * as ServerSettings from "../serverSettings.ts";
 import * as McpHttpServer from "../mcp/McpHttpServer.ts";

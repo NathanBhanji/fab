@@ -8,7 +8,6 @@ import { ChildProcessSpawner } from "effect/process";
 
 import {
   ensureTailscaleServe,
-  parseTailscaleExitNode,
   parseTailscaleServeRoutesTo,
   parseTailscaleSshEnabled,
   parseTailscaleStatus,
@@ -192,30 +191,6 @@ describe("tailscale", () => {
         tailnetIpv4Addresses: ["100.100.100.100"],
         httpsServeEnabled: null,
       });
-    }),
-  );
-
-  it.effect("names the exit node in use", () =>
-    Effect.gen(function* () {
-      const inUse = yield* parseTailscaleExitNode(
-        JSON.stringify({
-          ExitNodeStatus: { ID: "nX", Online: true, TailscaleIPs: ["100.101.102.103/32"] },
-          Peer: {
-            "nodekey:a": { HostName: "laptop", DNSName: "laptop.tail.ts.net.", ExitNode: false },
-            "nodekey:b": {
-              HostName: "raspberrypi",
-              DNSName: "home-pi.tail.ts.net.",
-              ExitNode: true,
-            },
-          },
-        }),
-      );
-      assert.deepEqual(inUse, { name: "home-pi", online: true });
-
-      const unnamed = yield* parseTailscaleExitNode(`{"ExitNodeStatus":{"Online":false}}`);
-      assert.deepEqual(unnamed, { name: null, online: false });
-
-      assert.equal(yield* parseTailscaleExitNode(tailscaleStatusJson), null);
     }),
   );
 
