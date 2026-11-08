@@ -18,17 +18,6 @@ export interface SshPasswordRequest {
   readonly attempt: number;
 }
 
-interface SshAskpassFile {
-  readonly path: string;
-  readonly contents: string;
-  readonly mode?: number;
-}
-
-export interface SshAskpassHelperDescriptor {
-  readonly launcherPath: string;
-  readonly files: ReadonlyArray<SshAskpassFile>;
-}
-
 export interface SshAuthOptions {
   readonly authSecret?: string | null;
   readonly batchMode?: "yes" | "no";
@@ -65,15 +54,6 @@ export interface SshChildEnvironmentOptions {
 
 const SSH_ASKPASS_DIR_NAME = "fab-ssh-askpass";
 
-function joinSshAskpassPath(
-  directory: string,
-  fileName: string,
-  platform: NodeJS.Platform,
-): string {
-  const trimmed = directory.replace(/[\\/]+$/u, "");
-  return platform === "win32" ? `${trimmed}\\${fileName}` : `${trimmed}/${fileName}`;
-}
-
 const ASKPASS_POSIX_SCRIPT = `#!/bin/sh
 # Invoked by ssh via SSH_ASKPASS when Fab re-runs ssh with a cached password
 # from the renderer's in-app prompt. We never expose a native dialog here - if
@@ -86,82 +66,22 @@ printf 'Fab ssh-askpass invoked without FAB_SSH_AUTH_SECRET.\\n' >&2
 exit 1
 `;
 
-const ASKPASS_WINDOWS_LAUNCHER_SCRIPT = `@echo off\r
-powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0ssh-askpass.ps1" %*\r
-`;
-
-const ASKPASS_WINDOWS_SCRIPT = `# Invoked by ssh via SSH_ASKPASS (through ssh-askpass.cmd) when Fab re-runs\r
-# ssh with a cached password from the renderer's in-app prompt. We never expose\r
-# a native dialog here - if FAB_SSH_AUTH_SECRET is missing, that's a caller bug\r
-# and we fail loudly.\r
-if ($null -ne $env:FAB_SSH_AUTH_SECRET) {\r
-  [Console]::Out.WriteLine($env:FAB_SSH_AUTH_SECRET)\r
-  exit 0\r
-}\r
-[Console]::Error.WriteLine("Fab ssh-askpass invoked without FAB_SSH_AUTH_SECRET.")\r
-exit 1\r
-`;
-
-const buildSshAskpassHelperDescriptor = Effect.fn("ssh/auth.buildSshAskpassHelperDescriptor")(
-  function* (input: {
-    readonly directory: string;
-  }): Effect.fn.Return<SshAskpassHelperDescriptor, never, Path.Path> {
-    const platform = yield* HostProcess.Platform;
-    const path = yield* Path.Path;
-    const directory = input.directory;
-
-    if (platform === "win32") {
-      const powershellPath = joinSshAskpassPath(directory, "ssh-askpass.ps1", platform);
-      return {
-        launcherPath: joinSshAskpassPath(directory, "ssh-askpass.cmd", platform),
-        files: [
-          {
-            path: joinSshAskpassPath(directory, "ssh-askpass.cmd", platform),
-            contents: ASKPASS_WINDOWS_LAUNCHER_SCRIPT,
-          },
-          {
-            path: powershellPath,
-            contents: ASKPASS_WINDOWS_SCRIPT,
-          },
-        ],
-      };
-    }
-
-    return {
-      launcherPath: path.join(directory, "ssh-askpass.sh"),
-      files: [
-        {
-          path: path.join(directory, "ssh-askpass.sh"),
-          contents: ASKPASS_POSIX_SCRIPT,
-          mode: 0o700,
-        },
-      ],
-    };
-  },
-);
-
 const ensureSshAskpassHelpers = Effect.fn("ssh/auth.ensureSshAskpassHelpers")(function* (input: {
   readonly directory: string;
 }): Effect.fn.Return<string, PlatformError.PlatformError, FileSystem.FileSystem | Path.Path> {
   const fs = yield* FileSystem.FileSystem;
   const path = yield* Path.Path;
-  const descriptor = yield* buildSshAskpassHelperDescriptor(input);
-  const platform = yield* HostProcess.Platform;
+  const scriptPath = path.join(input.directory, "ssh-askpass.sh");
 
-  yield* fs.makeDirectory(path.dirname(descriptor.launcherPath), { recursive: true });
-
-  for (const file of descriptor.files) {
-    const existing = yield* fs.exists(file.path);
-    const current = existing ? yield* fs.readFileString(file.path) : null;
-    if (current !== file.contents) {
-      yield* fs.writeFileString(file.path, file.contents);
-    }
-    if (file.mode !== undefined && platform !== "win32") {
-      yield* fs.chmod(file.path, file.mode);
-    }
+  yield* fs.makeDirectory(input.directory, { recursive: true });
+  const existing = yield* fs.exists(scriptPath);
+  const current = existing ? yield* fs.readFileString(scriptPath) : null;
+  if (current !== ASKPASS_POSIX_SCRIPT) {
+    yield* fs.writeFileString(scriptPath, ASKPASS_POSIX_SCRIPT);
   }
+  yield* fs.chmod(scriptPath, 0o700);
 
-  return descriptor.launcherPath;
+  return scriptPath;
 });
 
 // Keep setup serialized through cancellation so writes finish before another command uses the helper.
@@ -213,7 +133,6 @@ export const buildSshChildEnvironment = Effect.fn("ssh/auth.buildSshChildEnviron
     return baseEnv;
   }
 
-  const platform = yield* HostProcess.Platform;
   const hostDisplay = input.baseEnv
     ? input.baseEnv.DISPLAY
     : yield* Config.String("DISPLAY").pipe(
@@ -231,7 +150,7 @@ export const buildSshChildEnvironment = Effect.fn("ssh/auth.buildSshChildEnviron
     SSH_ASKPASS: sshAskpass,
     SSH_ASKPASS_REQUIRE: "force",
     ...(input.authSecret === undefined ? {} : { FAB_SSH_AUTH_SECRET: input.authSecret ?? "" }),
-    ...(platform === "win32" || baseEnv.DISPLAY || hostDisplay ? {} : { DISPLAY: "fab" }),
+    ...(baseEnv.DISPLAY || hostDisplay ? {} : { DISPLAY: "fab" }),
   };
 });
 

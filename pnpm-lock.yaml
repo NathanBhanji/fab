@@ -1967,9 +1967,6 @@ importers:
       '@fab/provider-core':
         specifier: workspace:*
         version: link:../provider-core
-      '@fab/shared':
-        specifier: workspace:*
-        version: link:../shared
       effect:
         specifier: 4.1.2
         version: 4.1.2

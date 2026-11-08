@@ -1,4 +1,3 @@
-import * as HostProcess from "@fab/shared/HostProcess";
 import { normalizeHostname } from "@fab/shared/hostClassification";
 import * as Duration from "effect/Duration";
 import * as Effect from "effect/Effect";
@@ -10,10 +9,9 @@ import { ChildProcess, ChildProcessSpawner } from "effect/process";
 
 export const DEFAULT_TAILSCALE_SERVE_PORT = 443;
 /**
- * Bounds `tailscale status` and `tailscale debug prefs`. Allows the 1.8-2.6 s
- * `tailscale status` has been measured at when Fab spawns it on Windows.
- * A CLI that never answers takes longer than this to fail, because the kill
- * that follows the timeout also takes time (`taskkill` on Windows).
+ * Bounds `tailscale status` and `tailscale debug prefs`. A CLI that never
+ * answers takes longer than this to fail, because the kill that follows the
+ * timeout also takes time.
  */
 const TAILSCALE_STATUS_TIMEOUT = Duration.millis(3_500);
 /**
@@ -26,11 +24,10 @@ const TAILSCALE_KILL_GRACE = Duration.millis(500);
 const TAILSCALE_SERVE_TIMEOUT = Duration.seconds(10);
 const TAILSCALE_PROBE_TIMEOUT = Duration.millis(2_500);
 
-const tailscaleCommandForPlatform = (platform: NodeJS.Platform): "tailscale" | "tailscale.exe" =>
-  platform === "win32" ? "tailscale.exe" : "tailscale";
+const TAILSCALE_EXECUTABLE = "tailscale" as const;
 
 const TailscaleCommandContext = {
-  executable: Schema.Literals(["tailscale", "tailscale.exe"]),
+  executable: Schema.Literal(TAILSCALE_EXECUTABLE),
   subcommand: Schema.Literals(["status", "serve", "debug"]),
   argumentCount: Schema.Number,
 };
@@ -54,10 +51,9 @@ const STDERR_DIAGNOSTIC_PATTERNS: ReadonlyArray<
 > = [
   [/handler does not exist/i, "no-existing-handler"],
   [/not logged in|logged out|needs? login/i, "not-logged-in"],
-  // Only answers that confirm no daemon; a dial can also fail for want of permission. Windows
-  // reports a missing service as its pipe not being found, without the usual prefix.
+  // Only answers that confirm no daemon; a dial can also fail for want of permission.
   [
-    /doesn't appear to be running|tailscaled\.service not running|tailscale is stopped|tailscaled: the system cannot find the file specified|failed to connect to local tailscale[\s\S]*(connection refused|no such file or directory|cannot find the file)/i,
+    /doesn't appear to be running|tailscaled\.service not running|tailscale is stopped|failed to connect to local tailscale[\s\S]*(connection refused|no such file or directory)/i,
     "not-running",
   ],
   [/permission denied|access denied|must be root|operation not permitted/i, "permission-denied"],
@@ -234,8 +230,7 @@ const readTailscaleOutput = Effect.fn("tailscale.readTailscaleOutput")(function*
   args: readonly string[],
 ) {
   const spawner = yield* ChildProcessSpawner.ChildProcessSpawner;
-  const hostPlatform = yield* HostProcess.Platform;
-  const executable = tailscaleCommandForPlatform(hostPlatform);
+  const executable = TAILSCALE_EXECUTABLE;
   const commandContext = {
     executable,
     subcommand,
@@ -388,8 +383,7 @@ const runTailscaleCommand = Effect.fn("tailscale.runTailscaleCommand")(function*
   timeoutInput: Duration.Input,
 ): Effect.fn.Return<void, TailscaleCommandError, ChildProcessSpawner.ChildProcessSpawner> {
   const spawner = yield* ChildProcessSpawner.ChildProcessSpawner;
-  const hostPlatform = yield* HostProcess.Platform;
-  const executable = tailscaleCommandForPlatform(hostPlatform);
+  const executable = TAILSCALE_EXECUTABLE;
   const commandContext = {
     executable,
     subcommand: "serve" as const,

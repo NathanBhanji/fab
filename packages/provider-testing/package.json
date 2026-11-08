@@ -31,7 +31,6 @@
     "@effect/platform-node": "catalog:",
     "@fab/contracts": "workspace:*",
     "@fab/provider-core": "workspace:*",
-    "@fab/shared": "workspace:*",
     "effect": "catalog:"
   },
   "devDependencies": {

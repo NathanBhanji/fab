@@ -1,5 +1,4 @@
 import type { DesktopSshEnvironmentTarget } from "@fab/contracts";
-import * as HostProcess from "@fab/shared/HostProcess";
 import * as Digest from "effect/crypto/Digest";
 import * as Duration from "effect/Duration";
 import * as Effect from "effect/Effect";
@@ -16,16 +15,6 @@ import { SshCommandError, SshInvalidTargetError } from "./errors.ts";
 
 const DEFAULT_SSH_COMMAND_TIMEOUT_MS = 60_000;
 const MAX_SSH_ERROR_OUTPUT_LENGTH = 4_000;
-
-/**
- * ssh is a real executable everywhere (`ssh.exe` on Windows), so it is always
- * spawned directly — cmd.exe shell mode would re-tokenize arguments such as
- * identity-file paths containing spaces.
- */
-const sshCommandForPlatform = (platform: NodeJS.Platform): string =>
-  platform === "win32" ? "ssh.exe" : "ssh";
-
-export const resolveSshCommand = Effect.map(HostProcess.Platform, sshCommandForPlatform);
 
 const encoder = new TextEncoder();
 
@@ -214,7 +203,7 @@ const runSshCommandInScope = Effect.fn("ssh/command.runSshCommand.inScope")(func
     ...(input.remoteCommandArgs ?? []),
   ];
   const spawner = yield* ChildProcessSpawner.ChildProcessSpawner;
-  const sshCommand = yield* resolveSshCommand;
+  const sshCommand = "ssh";
   yield* Effect.logDebug("ssh.command.start", {
     ...sshTargetLogFields(target),
     command: [sshCommand, ...args],

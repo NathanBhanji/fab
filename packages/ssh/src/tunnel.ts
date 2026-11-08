@@ -25,7 +25,6 @@ import {
   buildSshHostSpecEffect,
   getLastNonEmptyOutputLine,
   remoteStateKey,
-  resolveSshCommand,
   resolveSshTarget,
   runSshCommand,
   sshTargetLogFields,
@@ -1156,7 +1155,7 @@ const startSshTunnel = Effect.fn("ssh/tunnel.startSshTunnel")(function* (input: 
     "--",
     hostSpec,
   ];
-  const sshCommand = yield* resolveSshCommand;
+  const sshCommand = "ssh";
   const tunnelCommand = [sshCommand, ...args];
   const spawner = yield* ChildProcessSpawner.ChildProcessSpawner;
   const { scope } = input;

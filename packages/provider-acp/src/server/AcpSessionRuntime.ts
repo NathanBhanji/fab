@@ -108,9 +108,6 @@ export interface AcpSessionRuntimeOptions {
   readonly ownDescendantProcessGroups?: boolean;
   readonly processGroupPlatform?: NodeJS.Platform;
   readonly processGroupTerminationGrace?: Duration.Input;
-  readonly windowsProcessTreeTerminator?: (
-    pid: number,
-  ) => Effect.Effect<void, AcpProcessGroupTerminationError>;
   readonly posixProcessTreeController?: AcpPosixProcessTreeController;
   readonly linuxCgroupController?: AcpLinuxCgroupController | null;
   readonly cancelBehavior?: "interrupt" | "wait-for-prompt";
@@ -1019,49 +1016,6 @@ export function terminatePosixOwnedProcessTree(input: {
   }).pipe(withWallClock);
 }
 
-function windowsTaskkillResultIsSuccess(exitCode: number, _output?: string): boolean {
-  return exitCode === 0;
-}
-
-const terminateWindowsProcessTreeWithTaskkill = (
-  pid: number,
-): Effect.Effect<void, AcpProcessGroupTerminationError, ChildProcessSpawner.ChildProcessSpawner> =>
-  Effect.scoped(
-    Effect.gen(function* () {
-      const spawner = yield* ChildProcessSpawner.ChildProcessSpawner;
-      const taskkill = yield* spawner.spawn(
-        ChildProcess.make("taskkill", ["/PID", String(pid), "/T", "/F"]),
-      );
-      const outputFiber = yield* Stream.decodeText(taskkill.all).pipe(
-        Stream.mkString,
-        Effect.forkScoped,
-      );
-      const exitCode = Number(yield* taskkill.exitCode);
-      const output = yield* Fiber.join(outputFiber);
-      // A missing leader cannot prove that inherited descendants exited.
-      if (windowsTaskkillResultIsSuccess(exitCode, output)) return;
-      const trimmedOutput = output.trim();
-      return yield* new AcpProcessGroupTerminationError({
-        detail: `taskkill exited ${exitCode} for ACP process tree ${pid}`,
-        pid,
-        exitCode,
-        ...(trimmedOutput.length === 0
-          ? {}
-          : { cause: trimmedOutput.length > 500 ? trimmedOutput.slice(0, 500) : trimmedOutput }),
-      });
-    }),
-  ).pipe(
-    Effect.mapError((cause) =>
-      isAcpProcessGroupTerminationError(cause)
-        ? cause
-        : new AcpProcessGroupTerminationError({
-            cause,
-            detail: `Failed to run taskkill for ACP process tree ${pid}`,
-            pid,
-          }),
-    ),
-  );
-
 export function selectAcpAgentAuthMethod(
   authMethods: ReadonlyArray<EffectAcpSchema.AuthMethod> | undefined,
   preferredMethodId?: string,
@@ -1545,16 +1499,10 @@ export const make = Effect.fn("AcpSessionRuntime.make")(function* (
         return cause?.code === "ESRCH" ? Effect.succeed(false) : Effect.fail(error);
       }),
     );
-  const terminateWindowsProcessTree =
-    options.windowsProcessTreeTerminator ??
-    ((pid: number) =>
-      terminateWindowsProcessTreeWithTaskkill(pid).pipe(
-        Effect.provideService(ChildProcessSpawner.ChildProcessSpawner, spawner),
-      ));
   const terminatePosixProcessTree = Effect.fn("AcpSessionRuntime.terminatePosixProcessTree")(
     function* (grace: Duration.Input, platformOverride?: NodeJS.Platform) {
       const platform = platformOverride ?? options.processGroupPlatform;
-      if (platform === undefined || platform === "win32") {
+      if (platform === undefined) {
         return yield* new AcpProcessGroupTerminationError({
           detail: "POSIX ACP descendant ownership requires a supported host platform",
         });
@@ -1584,9 +1532,6 @@ export const make = Effect.fn("AcpSessionRuntime.make")(function* (
       return yield* new AcpProcessGroupTerminationError({
         detail: "Detached ACP process-group ownership requires a host platform",
       });
-    }
-    if (options.processGroupPlatform === "win32") {
-      return yield* terminateWindowsProcessTree(Number(child.pid));
     }
     if (linuxCgroupLease !== undefined) {
       if (posixController !== undefined) {
@@ -1619,15 +1564,11 @@ export const make = Effect.fn("AcpSessionRuntime.make")(function* (
   if (options.ownDetachedProcessGroup === true) {
     const hostPlatform = yield* HostProcess.Platform;
     const forceTerminateOwnedProcessGroup =
-      hostPlatform === "win32"
-        ? terminateWindowsProcessTreeWithTaskkill(Number(child.pid)).pipe(
-            Effect.provideService(ChildProcessSpawner.ChildProcessSpawner, spawner),
-          )
-        : linuxCgroupLease !== undefined
-          ? terminateLinuxCgroupLease(linuxCgroupLease)
-          : options.ownDescendantProcessGroups === true
-            ? terminatePosixProcessTree(0, hostPlatform)
-            : signalOwnedProcessGroup("SIGKILL").pipe(Effect.asVoid);
+      linuxCgroupLease !== undefined
+        ? terminateLinuxCgroupLease(linuxCgroupLease)
+        : options.ownDescendantProcessGroups === true
+          ? terminatePosixProcessTree(0, hostPlatform)
+          : signalOwnedProcessGroup("SIGKILL").pipe(Effect.asVoid);
     yield* Scope.addFinalizer(
       runtimeScope,
       Effect.uninterruptible(forceTerminateOwnedProcessGroup).pipe(

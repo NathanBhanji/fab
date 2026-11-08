@@ -89,16 +89,14 @@ async function sendDesktopAppActivationRequest(input: {
   readonly request: DesktopAppActivationRequest;
   readonly timeoutMs?: number;
 }): Promise<DesktopAppActivationResponse> {
-  if (input.address.directory !== null) {
-    const stat = await NodeFSP.lstat(input.address.directory);
-    if (
-      !stat.isDirectory() ||
-      input.userId === undefined ||
-      stat.uid !== input.userId ||
-      (stat.mode & 0o077) !== 0
-    ) {
-      throw new Error("The desktop app socket directory is not private or owned by this user.");
-    }
+  const stat = await NodeFSP.lstat(input.address.directory);
+  if (
+    !stat.isDirectory() ||
+    input.userId === undefined ||
+    stat.uid !== input.userId ||
+    (stat.mode & 0o077) !== 0
+  ) {
+    throw new Error("The desktop app socket directory is not private or owned by this user.");
   }
   return new Promise((resolve, reject) => {
     const socket = NodeNet.createConnection(input.address.address);

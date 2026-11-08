@@ -7,7 +7,6 @@ import * as Layer from "effect/Layer";
 import * as Path from "effect/Path";
 import * as Schema from "effect/Schema";
 import * as ChildProcessSpawner from "effect/process/ChildProcessSpawner";
-import * as HostProcess from "@fab/shared/HostProcess";
 import { resolveSelfInvocation } from "@fab/shared/nodeRuntime";
 
 import * as TestProviderHost from "@fab/provider-testing/TestProviderHost";
@@ -46,7 +45,6 @@ function layerGrokProviderAdapterRegistryReplay(
       const fileSystem = yield* FileSystem.FileSystem;
       const path = yield* Path.Path;
       const childProcessSpawner = yield* ChildProcessSpawner.ChildProcessSpawner;
-      const hostPlatform = yield* HostProcess.Platform;
       const continuationRequests = yield* ProviderContinuationRequests.ProviderContinuationRequests;
       const replayGate = options.replayGate;
       const replayDir = yield* fileSystem
@@ -62,7 +60,6 @@ function layerGrokProviderAdapterRegistryReplay(
         instanceId: GROK_DEFAULT_INSTANCE_ID,
         settings: DEFAULT_GROK_SETTINGS,
         environment: {},
-        hostPlatform,
         selfInvocation: yield* resolveSelfInvocation(),
         makeRuntime: (runtimeInput) =>
           makeAcpReplayRuntime({

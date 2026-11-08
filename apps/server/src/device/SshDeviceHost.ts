@@ -5,7 +5,7 @@ import {
   deviceToolInstallMessage,
   type SshDeviceHostConfig,
 } from "@fab/contracts";
-import { runSshCommand, baseSshArgs, resolveSshCommand } from "@fab/ssh/command";
+import { runSshCommand, baseSshArgs } from "@fab/ssh/command";
 import * as NetService from "@fab/shared/Net";
 import { waitForHttpReady } from "@fab/shared/httpReadiness";
 import * as Digest from "effect/crypto/Digest";
@@ -136,7 +136,7 @@ export const make = Effect.fn("SshDeviceHost.make")(function* (
   const spawner = yield* ChildProcessSpawner.ChildProcessSpawner;
   const digest = yield* Digest.Digest;
   const parentScope = yield* Scope.Scope;
-  const ssh = yield* resolveSshCommand;
+  const ssh = "ssh";
   const owner = yield* ownerFor(config.id);
   const provide = <A, E>(
     effect: Effect.Effect<

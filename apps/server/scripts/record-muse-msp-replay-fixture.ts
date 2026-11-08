@@ -57,7 +57,6 @@ if (fixture === undefined || variant === undefined) {
 }
 
 const museBinary = process.env.FAB_MUSE_BIN ?? "muse";
-// Match Fab's launch so Windows needs no FAB_MUSE_BIN for `muse.cmd`.
 const museStart = Effect.runSync(museLaunch(museBinary));
 const home = process.env.HOME ?? "";
 
